@@ -302,6 +302,8 @@ pub struct Once<T> {
     once: std::sync::Once,
     value: RefCell<MaybeUninit<T>>,
 }
+#[doc(include = "../README.md")]
+mod readme{}
 
 impl<T> Once<T> {
     pub fn new() -> Self {

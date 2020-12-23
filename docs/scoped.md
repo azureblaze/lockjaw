@@ -1,1 +1,1 @@
-scoped
+# Scoped bindings

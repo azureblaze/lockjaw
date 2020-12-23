@@ -14,18 +14,67 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#![allow(dead_code)]
+use lockjaw::{module, module_impl,component, injectable, root_epilogue, component_module_manifest};
 
-use lockjaw::{component, injectable, test_epilogue};
+#[injectable]
+struct GreetCounter{
+    counter : i32
+}
 
-#[injectable(scope = "crate::MyComponent")]
-pub struct Foo {}
+impl GreetCounter{
+    pub fn increment(&mut self) -> i32 {
+        self.counter = self.counter + 1;
+        self.counter
+    }
+}
 
-#[component(modules = "x::y")]
-pub trait MyComponent {}
+pub trait Greeter {
+    fn greet(&mut self) -> String;
+}
+
+#[injectable]
+struct GreeterImpl {
+    #[inject]
+    greet_counter : crate::GreetCounter,
+    #[inject]
+    phrase : String
+}
+
+impl Greeter for GreeterImpl{
+    fn greet(&mut self) -> String{
+        format!("{} {}", self.phrase, self.greet_counter.increment())
+    }
+}
+
+#[module]
+struct MyModule {}
+
+#[module_impl]
+impl MyModule {
+    #[binds]
+    pub fn bind_greeter(_impl : crate::GreeterImpl) -> impl crate::Greeter {}
+
+    #[provides]
+    pub fn provide_string() -> String {
+        "helloworld".to_owned()
+    }
+}
+
+#[component_module_manifest]
+struct ModuleManifest (crate::MyModule);
+
+#[component(modules = "crate::ModuleManifest")]
+trait MyComponent {
+    fn greeter(&self) -> Box<dyn crate::Greeter>;
+}
 
 pub fn main() {
     let component: Box<dyn MyComponent> = MyComponent::new();
-    component.foo();
+    let mut greeter = component.greeter();
+    assert_eq!(greeter.greet(), "helloworld 1");
+    assert_eq!(greeter.greet(), "helloworld 2");
+
+    assert_eq!(component.greeter().greet(), "helloworld 1");
 }
-test_epilogue!();
+
+root_epilogue!("main.rs");
