@@ -18,14 +18,12 @@ use crate::error::CompileError;
 #[allow(unused)]
 use crate::log;
 use crate::manifests::type_from_syn_type;
-use crate::protos::manifest::{Field, Injectable, Manifest, Type, Type_Root};
+use crate::protos::manifest::{Field, Injectable, Type, Type_Root};
 use crate::{environment, manifests, parsing};
 use proc_macro2::TokenStream;
-use quote::quote;
-use quote::{format_ident, ToTokens};
+use quote::ToTokens;
 use std::borrow::Borrow;
 use std::cell::RefCell;
-use syn::export::TokenStream2;
 use syn::spanned::Spanned;
 
 struct LocalInjectable {
@@ -85,75 +83,6 @@ pub fn handle_injectable_attribute(
         injectables.borrow_mut().push(injectable);
     });
     Ok(item.to_token_stream())
-}
-
-pub fn generate_injectables(manifest: &Manifest) -> TokenStream {
-    let mut result = TokenStream2::new();
-    for injectable in manifest.get_injectables() {
-        if injectable
-            .get_field_crate()
-            .ne(&environment::current_crate())
-        {
-            continue;
-        }
-        let tokens = generate_injectable(injectable);
-        result = quote! {
-            #result
-            #tokens
-        };
-    }
-    result
-}
-
-fn generate_injectable(injectable: &Injectable) -> TokenStream {
-    let mut has_ref = false;
-    let mut params = quote! {};
-    for field in injectable.get_fields() {
-        if field.get_injected() {
-            let param_name = format_ident!("{}", field.get_name());
-            let param_type = field.get_field_type().local_path();
-            if field.get_field_type().get_field_ref() {
-                params = quote! {
-                   #params #param_name : &'a #param_type,
-                };
-                has_ref = true;
-            } else {
-                params = quote! {
-                   #params #param_name : #param_type,
-                }
-            }
-        }
-    }
-    let mut ctor_params = quote! {};
-    for field in &injectable.fields {
-        let param_name = format_ident!("{}", field.get_name());
-        if field.get_injected() {
-            ctor_params = quote! {
-               #ctor_params #param_name,
-            }
-        } else {
-            let param_type = field.get_field_type().local_path();
-            ctor_params = quote! {
-               #ctor_params
-               #param_name : <#param_type>::default(),
-            }
-        }
-    }
-    let name = injectable.get_field_type().local_path();
-    let lifetime;
-    if has_ref {
-        lifetime = quote! {<'a>};
-    } else {
-        lifetime = quote! {};
-    }
-    let result = quote! {
-        impl #lifetime #name #lifetime {
-            pub fn lockjaw_new(#params) -> Self {
-               #name{#ctor_params}
-            }
-        }
-    };
-    result
 }
 
 pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {

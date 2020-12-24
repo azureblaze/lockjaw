@@ -1,4 +1,4 @@
-error: unable to provide hidden binding ::$CRATE::Foo (injectable)
+error: unable to provide scoped binding as regular object ::$CRATE::Foo (injectable)
 requested by:::$CRATE::MyComponent.foo
   --> $DIR/component_provision_non_scoped_of_scoped.rs:33:1
    |

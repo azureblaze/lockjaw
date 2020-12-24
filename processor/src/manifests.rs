@@ -26,7 +26,7 @@ use crate::error::{spanned_compile_error, CompileError};
 use proc_macro2::TokenStream;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{Path, TraitBound, TypeParamBound};
+use syn::{TraitBound, TypeParamBound};
 
 lazy_static! {
     /// auto used types that does not need fully qualified paths.
@@ -71,8 +71,10 @@ impl Type {
     /// Modifiers like & are omitted
     pub fn canonical_string_path(&self) -> String {
         match self.get_root() {
-            Type_Root::GLOBAL => format!("::{}", self.path_with_args()),
-            Type_Root::CRATE => format!("::{}::{}", self.get_field_crate(), self.path_with_args()),
+            Type_Root::GLOBAL => format!("::{}", self.path_with_args("")),
+            Type_Root::CRATE => {
+                format!("::{}::{}", self.get_field_crate(), self.path_with_args(""))
+            }
             Type_Root::PRIMITIVE => format!("{}", self.get_path()),
             Type_Root::UNSPECIFIED => panic!("canonical_string_path: root unspecified"),
         }
@@ -82,13 +84,17 @@ impl Type {
     ///
     /// Modifiers like & are omitted
     pub fn local_string_path(&self) -> String {
+        self.local_string_path_with_bound("")
+    }
+
+    fn local_string_path_with_bound(&self, bound: &str) -> String {
         match self.get_root() {
-            Type_Root::GLOBAL => format!("::{}", self.path_with_args()),
+            Type_Root::GLOBAL => format!("::{}", self.path_with_args(bound)),
             Type_Root::CRATE => {
                 if environment::current_crate().eq(self.get_field_crate()) {
-                    format!("crate::{}", self.path_with_args())
+                    format!("crate::{}", self.path_with_args(bound))
                 } else {
-                    format!("{}::{}", self.get_field_crate(), self.path_with_args())
+                    format!("{}::{}", self.get_field_crate(), self.path_with_args(bound))
                 }
             }
             Type_Root::PRIMITIVE => format!("{}", self.get_path()),
@@ -100,8 +106,13 @@ impl Type {
     /// converted to tokens.
     ///
     /// Modifiers like & are omitted
-    pub fn local_path(&self) -> Path {
+    pub fn syn_type(&self) -> syn::Type {
         syn::parse_str(&self.local_string_path()).expect("cannot parse type path")
+    }
+
+    pub fn syn_type_with_innner_lifetime_bound(&self, bound: &str) -> syn::Type {
+        syn::parse_str(&self.local_string_path_with_bound(bound))
+            .expect("cannot parse type path with bound")
     }
 
     /// Unique identifier token representing the type.
@@ -131,18 +142,23 @@ impl Type {
         format!("{}{}", prefix, self.canonical_string_path())
     }
 
-    fn path_with_args(&self) -> String {
+    fn path_with_args(&self, bound: &str) -> String {
         if self.args.is_empty() {
             return self.get_path().to_string();
         }
         let args = self
             .args
             .iter()
-            .map(|t| t.path_with_args())
+            .map(|t| t.path_with_args(""))
             .collect::<Vec<String>>()
             .join(",");
-
-        format!("{}<{}>", self.get_path(), args)
+        let bound_str;
+        if bound.is_empty() {
+            bound_str = "".to_owned();
+        } else {
+            bound_str = format!(" + '{}", bound);
+        }
+        format!("{}<{}{}>", self.get_path(), args, bound_str)
     }
 }
 

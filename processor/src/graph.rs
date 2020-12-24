@@ -40,7 +40,7 @@ pub struct Node {
     type_: Type,
     dependencies: Vec<Type>,
     node_type: NodeType,
-    private: bool,
+    scoped: bool,
 }
 
 /// An item in a module
@@ -166,7 +166,7 @@ pub fn generate_component(
     manifest: &Manifest,
 ) -> Result<TokenStream, TokenStream> {
     let graph = crate::graph::build_graph(manifest, component)?;
-    let component_name = component.get_field_type().local_path();
+    let component_name = component.get_field_type().syn_type();
     let component_impl_name = format_ident!(
         "{}Impl",
         component
@@ -180,7 +180,7 @@ pub fn generate_component(
 
     component_sections.merge(graph.generate_modules());
     component_sections.merge(graph.generate_providers(component)?);
-    component_sections.merge(graph.generate_provisions(component));
+    component_sections.merge(graph.generate_provisions(component)?);
 
     let fields = &component_sections.fields;
     let ctor_params = &component_sections.ctor_params;
@@ -202,7 +202,7 @@ pub fn generate_component(
     };
     let mut builder = quote! {};
     if graph.module_manifest.has_field_type() {
-        let module_manifest_name = graph.module_manifest.get_field_type().local_path();
+        let module_manifest_name = graph.module_manifest.get_field_type().syn_type();
         builder = quote! {
             impl dyn #component_name {
                 pub fn build (param : #module_manifest_name) -> Box<dyn #component_name>{
@@ -247,7 +247,7 @@ impl Graph {
 
         for module in self.module_manifest.get_modules() {
             let name = module.identifier();
-            let path = module.local_path();
+            let path = module.syn_type();
             result.add_fields(quote! {
                 #name : #path,
             });
@@ -258,7 +258,7 @@ impl Graph {
 
         for module in self.module_manifest.get_builder_modules() {
             let name = format_ident!("{}", module.get_name());
-            let path = module.get_field_type().local_path();
+            let path = module.get_field_type().syn_type();
             result.add_fields(quote! {
                 #name : #path,
             });
@@ -281,9 +281,9 @@ impl Graph {
                 provision.get_name()
             ));
             let dependency_node = self.get_node(provision.get_field_type(), &ancestors)?;
-            if dependency_node.private {
+            if dependency_node.scoped {
                 return compile_error(&format! {
-                    "unable to provide hidden binding {}\nrequested by:{}",
+                    "unable to provide scoped binding as regular object {}\nrequested by:{}",
                     dependency_node.get_name(),
                     ancestors.join("\nrequested by:")
                 });
@@ -298,12 +298,20 @@ impl Graph {
         Ok(result)
     }
 
-    fn generate_provisions(&self, component: &Component) -> ComponentSections {
+    fn generate_provisions(&self, component: &Component) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         for dependency in component.get_provisions() {
             let dependency_name = format_ident!("{}", dependency.get_name());
-
-            let dependency_path = dependency.get_field_type().local_path();
+            let dep_node = self.get_node(dependency.get_field_type(), &Vec::new())?;
+            let bound;
+            if self.has_scoped_deps(dep_node)? {
+                bound = "_";
+            } else {
+                bound = "";
+            }
+            let dependency_path = dependency
+                .get_field_type()
+                .syn_type_with_innner_lifetime_bound(bound);
             let dependency_type;
             if dependency.get_field_type().get_field_ref() {
                 dependency_type = quote! {& #dependency_path};
@@ -317,7 +325,7 @@ impl Graph {
                }
             });
         }
-        result
+        Ok(result)
     }
 
     fn get_node(&self, type_: &Type, ancestors: &Vec<String>) -> Result<&Node, TokenStream> {
@@ -364,7 +372,7 @@ impl Graph {
         }
 
         generated_nodes.insert(node.type_.identifier());
-        result.merge(node.visit(ProviderGenerator {}));
+        result.merge(node.visit(ProviderGenerator { graph: self })?);
 
         let mut new_ancestors = Vec::<String>::new();
         new_ancestors.push(node.get_name());
@@ -384,30 +392,81 @@ impl Graph {
         }
         Ok(result)
     }
+
+    fn has_scoped_deps(&self, node: &Node) -> Result<bool, TokenStream> {
+        for dep in &node.dependencies {
+            let dep_node = self.get_node(dep, &Vec::new())?;
+            if dep_node.scoped {
+                return Ok(true);
+            }
+            if self.has_scoped_deps(dep_node)? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
 }
 
 /// Generates node code.
-struct ProviderGenerator {}
-impl NodeVisitor<ComponentSections> for ProviderGenerator {
-    fn accept_injectable(&self, node: &Node, injectable: &Injectable) -> ComponentSections {
-        let mut args = quote! {};
+struct ProviderGenerator<'a> {
+    graph: &'a Graph,
+}
+impl NodeVisitor<Result<ComponentSections, TokenStream>> for ProviderGenerator<'_> {
+    fn accept_injectable(
+        &self,
+        node: &Node,
+        injectable: &Injectable,
+    ) -> Result<ComponentSections, TokenStream> {
+        let has_ref = self.graph.has_scoped_deps(node)?;
+        let mut params = quote! {};
         for field in injectable.get_fields() {
             if field.get_injected() {
-                let param_provider_name = field.get_field_type().identifier();
-                args = quote! {
-                    #args  self.#param_provider_name(),
+                let param_name = format_ident!("{}", field.get_name());
+                let param_type = field.get_field_type().syn_type();
+                if field.get_field_type().get_field_ref() {
+                    params = quote! {
+                       #params #param_name : &'a #param_type,
+                    };
+                } else {
+                    params = quote! {
+                       #params #param_name : #param_type,
+                    }
                 }
             }
         }
+        let mut ctor_params = quote! {};
+        for field in &injectable.fields {
+            let param_name = format_ident!("{}", field.get_name());
+            if field.get_injected() {
+                let param_provider_name = field.get_field_type().identifier();
+                ctor_params = quote! {
+                   #ctor_params
+                   #param_name : self.#param_provider_name(),
+                }
+            } else {
+                let param_type = field.get_field_type().syn_type();
+                ctor_params = quote! {
+                   #ctor_params
+                   #param_name : <#param_type>::default(),
+                }
+            }
+        }
+        let lifetime;
+        if has_ref {
+            lifetime = quote! {<'_>};
+        } else {
+            lifetime = quote! {};
+        }
+
         let name_ident = node.type_.identifier();
-        let injectable_path = node.type_.local_path();
+        let injectable_path = node.type_.syn_type();
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
-            fn #name_ident(&self) -> #injectable_path{
-                #injectable_path::lockjaw_new(#args)
+            fn #name_ident(&'_ self) -> #injectable_path #lifetime{
+                #injectable_path{#ctor_params}
             }
         });
-        result
+        Ok(result)
     }
 
     fn accept_provides(
@@ -415,7 +474,7 @@ impl NodeVisitor<ComponentSections> for ProviderGenerator {
         node: &Node,
         module: &ModuleInstance,
         provides: &Provider,
-    ) -> ComponentSections {
+    ) -> Result<ComponentSections, TokenStream> {
         let mut args = quote! {};
         for arg in provides.get_dependencies() {
             let arg_provider_name = arg.get_field_type().identifier();
@@ -424,13 +483,20 @@ impl NodeVisitor<ComponentSections> for ProviderGenerator {
             }
         }
 
+        let bound;
+        if self.graph.has_scoped_deps(node)? {
+            bound = "_";
+        } else {
+            bound = "";
+        }
+        let type_path = node.type_.syn_type_with_innner_lifetime_bound(bound);
+
         let name_ident = node.type_.identifier();
-        let type_path = node.type_.local_path();
         let module_method = format_ident!("{}", provides.get_name());
         let invoke_module;
 
         if provides.get_field_static() {
-            let module_path = module.type_.local_path();
+            let module_path = module.type_.syn_type();
             invoke_module = quote! {#module_path::#module_method(#args)}
         } else {
             let module_name = module.name.clone();
@@ -438,11 +504,11 @@ impl NodeVisitor<ComponentSections> for ProviderGenerator {
         }
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
-            fn #name_ident(&self) -> #type_path{
+            fn #name_ident(&'_ self) -> #type_path{
                 #invoke_module
             }
         });
-        result
+        Ok(result)
     }
 
     fn accept_binds(
@@ -450,64 +516,78 @@ impl NodeVisitor<ComponentSections> for ProviderGenerator {
         node: &Node,
         _module: &ModuleInstance,
         provides: &Provider,
-    ) -> ComponentSections {
+    ) -> Result<ComponentSections, TokenStream> {
         let arg = provides
             .get_dependencies()
             .first()
             .expect("binds must have one arg");
         let arg_provider_name = arg.get_field_type().identifier();
-        let args = quote! {
-            self.#arg_provider_name(),
-        };
 
         let name_ident = node.type_.identifier();
-        let type_path = node.type_.local_path();
+        let bound;
+        if self.graph.has_scoped_deps(node)? {
+            bound = "_";
+        } else {
+            bound = "";
+        }
+        let type_path = node.type_.syn_type_with_innner_lifetime_bound(bound);
 
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
-            fn #name_ident(&self) -> #type_path{
-                Box::new(#args)
+            fn #name_ident(&'_ self) -> #type_path{
+                Box::new(self.#arg_provider_name(),)
             }
         });
-        result
+        Ok(result)
     }
 
-    fn accept_boxed(&self, node: &Node, boxed_node: &Node) -> ComponentSections {
+    fn accept_boxed(
+        &self,
+        node: &Node,
+        boxed_node: &Node,
+    ) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = boxed_node.type_.identifier();
-        let args = quote! {
-            self.#arg_provider_name(),
-        };
-
         let name_ident = node.type_.identifier();
-        let type_path = node.type_.local_path();
+        let bound;
+        if self.graph.has_scoped_deps(node)? {
+            bound = "_";
+        } else {
+            bound = "";
+        }
+
+        let type_path = node.type_.syn_type_with_innner_lifetime_bound(bound);
 
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
-            fn #name_ident(&self) -> #type_path{
-                Box::new(#args)
+            fn #name_ident(&'_ self) -> #type_path{
+                Box::new(self.#arg_provider_name(),)
             }
         });
-        result
+        Ok(result)
     }
 
-    fn accept_scoped(&self, node: &Node, boxed_node: &Node) -> ComponentSections {
+    fn accept_scoped(
+        &self,
+        node: &Node,
+        boxed_node: &Node,
+    ) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = boxed_node.type_.identifier();
         let once_name = format_ident!("once_{}", node.type_.identifier());
-        let once_type = boxed_node.type_.local_path();
+        let once_type = boxed_node.type_.syn_type();
 
         let name_ident = node.type_.identifier();
-        let type_path = node.type_.local_path();
+        let type_path = node.type_.syn_type();
         let mut result = ComponentSections::new();
         result.add_fields(quote! {
             #once_name : lockjaw::Once<#once_type>,
         });
         result.add_ctor_params(quote! {#once_name : lockjaw::Once::new(),});
         result.add_methods(quote! {
-            fn #name_ident(&self) -> &#type_path{
+            fn #name_ident(&'_ self) -> &#type_path{
                 self.#once_name.get(|| self.#arg_provider_name())
             }
         });
-        result
+        Ok(result)
     }
 }
 
@@ -607,9 +687,9 @@ struct CanDepend<'a> {
 }
 
 impl<'a> CanDepend<'a> {
-    fn hidden(&self) -> Result<(), TokenStream> {
+    fn no_scope(&self) -> Result<(), TokenStream> {
         compile_error(&format!(
-            "unable to provide hidden binding {}\nrequested by:{}",
+            "unable to provide scoped binding as regular type {}\nrequested by:{}",
             self.target_node.get_name(),
             self.ancestors.join("\nrequested by:")
         ))
@@ -618,8 +698,8 @@ impl<'a> CanDepend<'a> {
 
 impl<'a> NodeVisitor<Result<(), TokenStream>> for CanDepend<'a> {
     fn accept_injectable(&self, _node: &Node, _injectable: &Injectable) -> Result<(), TokenStream> {
-        if self.target_node.private {
-            return self.hidden();
+        if self.target_node.scoped {
+            return self.no_scope();
         }
         Ok(())
     }
@@ -630,8 +710,8 @@ impl<'a> NodeVisitor<Result<(), TokenStream>> for CanDepend<'a> {
         _module: &ModuleInstance,
         _provides: &Provider,
     ) -> Result<(), TokenStream> {
-        if self.target_node.private {
-            return self.hidden();
+        if self.target_node.scoped {
+            return self.no_scope();
         }
         Ok(())
     }
@@ -642,15 +722,15 @@ impl<'a> NodeVisitor<Result<(), TokenStream>> for CanDepend<'a> {
         _module: &ModuleInstance,
         _provides: &Provider,
     ) -> Result<(), TokenStream> {
-        if self.target_node.private {
-            return self.hidden();
+        if self.target_node.scoped {
+            return self.no_scope();
         }
         Ok(())
     }
 
     fn accept_boxed(&self, _node: &Node, _boxed_node: &Node) -> Result<(), TokenStream> {
-        if self.target_node.private {
-            return self.hidden();
+        if self.target_node.scoped {
+            return self.no_scope();
         }
         Ok(())
     }
@@ -730,7 +810,7 @@ fn generate_injectable_nodes(injectable: &Injectable) -> Vec<Node> {
             .map(|field| field.get_field_type().clone())
             .collect(),
         node_type: NodeType::Injectable(injectable.clone()),
-        private: false,
+        scoped: false,
     };
     generate_node_variants(node)
 }
@@ -786,7 +866,7 @@ fn generate_provides_nodes(
             .map(|dependency| dependency.get_field_type().clone())
             .collect(),
         node_type,
-        private: false,
+        scoped: false,
     };
     generate_node_variants(node)
 }
@@ -794,13 +874,13 @@ fn generate_provides_nodes(
 fn generate_node_variants(node: Node) -> Vec<Node> {
     if !node.type_.get_scopes().is_empty() {
         let mut private_node = node.clone();
-        private_node.private = true;
+        private_node.scoped = true;
 
         let scoped_node = Node {
             type_: ref_type(&node.type_),
             dependencies: vec![private_node.type_.clone()],
             node_type: NodeType::Scoped(Box::new(private_node.clone())),
-            private: false,
+            scoped: false,
         };
 
         return vec![private_node, scoped_node];
@@ -812,7 +892,7 @@ fn generate_node_variants(node: Node) -> Vec<Node> {
                 type_: boxed_type(&node.type_),
                 dependencies: vec![node.type_.clone()],
                 node_type: NodeType::Boxed(Box::new(node.clone())),
-                private: false,
+                scoped: false,
             };
             return vec![node, boxed_node];
         }

@@ -251,5 +251,6 @@ pub fn generate_components(manifest: &Manifest) -> Result<TokenStream, TokenStre
             #tokens
         }
     }
+    //log!("{}", result.to_string());
     Ok(result)
 }

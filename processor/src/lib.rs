@@ -181,7 +181,6 @@ fn internal_epilogue(
             )
             .expect("cannot write manifest path");
         }
-        let injectables = injectables::generate_injectables(&merged_manifest);
         let components = components::generate_components(&merged_manifest)?;
 
         let path_test;
@@ -198,7 +197,6 @@ fn internal_epilogue(
         }
 
         let result = quote! {
-            #injectables
             #components
             #path_test
         };

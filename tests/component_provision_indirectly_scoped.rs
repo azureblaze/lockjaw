@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 use lockjaw::{
-    component, component_module_manifest, injectable, module, module_impl, root_epilogue,
+    component, component_module_manifest, injectable, module, module_impl, test_epilogue,
 };
 
 #[injectable(scope = "crate::MyComponent")]
@@ -78,4 +78,4 @@ pub fn main() {
     assert_eq!(component.greeter().greet(), "helloworld 2");
 }
 
-root_epilogue!("main.rs");
+test_epilogue!();
