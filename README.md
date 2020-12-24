@@ -70,8 +70,6 @@ pub fn main() {
 root_epilogue!("main.rs");
 ```
 
-test
-
 # Disclaimer
 
 This is not an officially supported Google product
