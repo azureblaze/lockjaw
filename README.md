@@ -55,7 +55,7 @@ struct ModuleManifest (crate::MyModule);
 
 #[component(modules = "crate::ModuleManifest")]
 trait MyComponent {
-    fn greeter(&self) -> Box<dyn crate::Greeter>;
+    fn greeter(&'_ self) -> Box<dyn crate::Greeter + '_>;
 }
 
 pub fn main() {

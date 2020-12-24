@@ -50,7 +50,7 @@ pub struct MyModuleManifest {
 
 #[component(modules = "crate::MyModuleManifest")]
 pub trait MyComponent {
-    fn my_trait(&self) -> Box<dyn crate::MyTrait>;
+    fn my_trait(&'_ self) -> Box<dyn crate::MyTrait + '_>;
 }
 #[test]
 pub fn main() {

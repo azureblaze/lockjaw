@@ -71,3 +71,15 @@ mod component_modules_not_path {}
 /// }
 /// ```
 mod component_modules_path_not_qualified {}
+
+///```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// pub trait Foo{}
+/// #[component]
+/// pub trait MyComponent {
+///     fn foo(&self) -> Box<dyn crate::Foo>;
+/// }
+///
+/// fn main(){}
+/// ```
+mod component_trait_object_provision_no_lifetime {}

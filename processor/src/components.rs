@@ -24,8 +24,8 @@ use crate::protos::manifest::{
 use crate::{environment, parsing};
 use crate::{graph, manifests};
 use proc_macro2::TokenStream;
-use quote::quote;
 use quote::quote_spanned;
+use quote::{quote, ToTokens};
 use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::ops::Deref;
@@ -68,6 +68,9 @@ pub fn handle_component_attribute(
             let mut provision = Dependency::new();
             provision.set_name(method.sig.ident.to_string());
             if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
+                if is_trait_object_without_lifetime(ty.deref()) {
+                    return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
+                }
                 provision.set_field_type(type_from_syn_type(ty.deref())?);
             } else {
                 return spanned_compile_error(
@@ -101,6 +104,17 @@ pub fn handle_component_attribute(
         #item_trait
     };
     Ok(result)
+}
+fn is_trait_object_without_lifetime(ty: &syn::Type) -> bool {
+    let tokens: Vec<String> = ty
+        .to_token_stream()
+        .into_iter()
+        .map(|t| t.to_string())
+        .collect();
+    if !tokens.contains(&"dyn".to_owned()) {
+        return false;
+    }
+    !tokens.contains(&"'".to_owned())
 }
 
 pub fn generate_component_manifest(base_path: &str) -> Vec<Component> {
