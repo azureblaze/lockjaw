@@ -114,45 +114,41 @@ pub fn test_mod_epilogue(input: TokenStream) -> TokenStream {
     })
 }
 
-fn extend_local_manifest(path: &String) -> Result<(), TokenStream> {
+fn extend_local_manifest(path: &str) -> Result<(), TokenStream> {
     MANIFEST.with(|m| {
         let mut manifest = m.borrow_mut();
-        let base_path = &environment::get_base_path(&path)?;
         manifests::extend(
             manifest.mut_injectables(),
-            injectables::generate_manifest(base_path),
+            injectables::generate_manifest(path),
         );
         manifests::extend(
             manifest.mut_components(),
-            components::generate_component_manifest(base_path),
+            components::generate_component_manifest(path),
         );
         manifests::extend(
             manifest.mut_component_module_manifests(),
-            components::generate_component_module_manifest(base_path),
+            components::generate_component_module_manifest(path),
         );
-        manifests::extend(
-            manifest.mut_modules(),
-            modules::generate_manifest(base_path),
-        );
+        manifests::extend(manifest.mut_modules(), modules::generate_manifest(path));
         Ok(())
     })
 }
 
 #[proc_macro]
-pub fn root_epilogue(input: TokenStream) -> TokenStream {
-    handle_error(|| internal_epilogue(environment::current_file_path(input.into())?, false))
+pub fn root_epilogue(_input: TokenStream) -> TokenStream {
+    handle_error(|| internal_epilogue("", false))
 }
 
 #[proc_macro]
 pub fn test_epilogue(_input: TokenStream) -> TokenStream {
-    handle_error(|| internal_epilogue("lib.rs".to_owned(), true))
+    handle_error(|| internal_epilogue("", true))
 }
 
 fn internal_epilogue(
-    path: String,
+    path: &str,
     for_test: bool,
 ) -> Result<proc_macro2::TokenStream, proc_macro2::TokenStream> {
-    extend_local_manifest(&path)?;
+    extend_local_manifest(path)?;
 
     MANIFEST.with(|manifest| {
         let merged_manifest = merge_manifest(&manifest.borrow_mut());
@@ -190,8 +186,19 @@ fn internal_epilogue(
             path_test = quote! {
                 #[test]
                 fn test_rootEpiloguePath_matchesMacro(){
-                    assert_eq!(file!().replace("\\","/"), #path.replace("\\", "/"),
-                        "path supplied to epilogue!() does not match actual path");
+                    let path = #path;
+                    let mod_path;
+                    let crate_name = module_path!().split("::").next().unwrap();
+                    if path.is_empty() {
+                        mod_path = crate_name.to_owned();
+                    } else {
+                        mod_path = format!("{}::{}", crate_name, path);
+                    }
+                    assert_eq!(
+                        module_path!(),
+                        mod_path,
+                        "path supplied to epilogue!() does not match actual path"
+                    );
                 }
             };
         }

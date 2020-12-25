@@ -23,4 +23,4 @@ pub trait DepComponent {
     fn dep(&self) -> crate::DepInjectable;
 }
 
-lockjaw::root_epilogue!("lib.rs");
+lockjaw::root_epilogue!();

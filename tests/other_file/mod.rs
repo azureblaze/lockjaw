@@ -22,4 +22,4 @@ pub trait OtherComponent {
     fn other_file(&self) -> crate::other_file::InjectableFromOtherFile;
 }
 
-lockjaw::test_mod_epilogue!("other_file/mod.rs");
+lockjaw::test_mod_epilogue!("other_file");
