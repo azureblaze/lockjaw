@@ -78,4 +78,4 @@ pub fn main() {
     assert_eq!(component.greeter().greet(), "helloworld 2");
 }
 
-root_epilogue!("main.rs");
+root_epilogue!();

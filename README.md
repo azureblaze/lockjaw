@@ -67,7 +67,7 @@ pub fn main() {
     assert_eq!(component.greeter().greet(), "helloworld 1");
 }
 
-root_epilogue!("main.rs");
+root_epilogue!();
 ```
 
 test
