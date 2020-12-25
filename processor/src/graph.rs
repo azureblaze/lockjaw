@@ -672,6 +672,13 @@ impl<'a> NodeVisitor<Result<Node, TokenStream>> for MergeNodeVisitor<'a> {
     }
 
     fn accept_boxed(&self, node: &Node, _boxed_node: &Node) -> Result<Node, TokenStream> {
+        if node
+            .type_
+            .canonical_string_path()
+            .eq(&self.new_node.type_.canonical_string_path())
+        {
+            return Ok(node.clone());
+        }
         self.duplicated(node)
     }
 
