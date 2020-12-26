@@ -4,22 +4,23 @@ Lockjaw is a fully static, compile-time [dependency injection](https://en.wikipe
 It is also what you get when jabbed by a rusty dagger.
 
 ```rust
-use lockjaw::{module, module_impl,component, injectable, root_epilogue, component_module_manifest};
-
+use lockjaw::{module, module_impl,component, injectable, test_epilogue, component_module_manifest, MaybeScoped};
+use std::ops::Add;
 #[injectable]
 struct GreetCounter{
-    counter : i32
+    counter : ::std::cell::RefCell<i32>
 }
 
 impl GreetCounter{
-    pub fn increment(&mut self) -> i32 {
-        self.counter = self.counter + 1;
-        self.counter
+    pub fn increment(&self) -> i32 {
+        let mut m = self.counter.borrow_mut();
+        *m = m.add(1);
+        m.clone()
     }
 }
 
 pub trait Greeter {
-    fn greet(&mut self) -> String;
+    fn greet(&self) -> String;
 }
 
 #[injectable]
@@ -31,7 +32,7 @@ struct GreeterImpl {
 }
 
 impl Greeter for GreeterImpl{
-    fn greet(&mut self) -> String{
+    fn greet(&self) -> String{
         format!("{} {}", self.phrase, self.greet_counter.increment())
     }
 }
@@ -55,19 +56,19 @@ struct ModuleManifest (crate::MyModule);
 
 #[component(modules = "crate::ModuleManifest")]
 trait MyComponent {
-    fn greeter(&'_ self) -> Box<dyn crate::Greeter + '_>;
+    fn greeter(&'_ self) -> MaybeScoped<'_, dyn crate::Greeter + '_>;
 }
 
 pub fn main() {
     let component: Box<dyn MyComponent> = MyComponent::new();
-    let mut greeter = component.greeter();
+    let greeter = component.greeter();
     assert_eq!(greeter.greet(), "helloworld 1");
     assert_eq!(greeter.greet(), "helloworld 2");
 
     assert_eq!(component.greeter().greet(), "helloworld 1");
 }
 
-root_epilogue!();
+test_epilogue!();
 ```
 
 # Disclaimer

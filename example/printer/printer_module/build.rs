@@ -14,20 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#![allow(dead_code)]
+use lockjaw;
 
-use lockjaw::{component, injectable, test_epilogue, MaybeScoped};
-
-#[injectable]
-pub struct Foo {}
-
-#[component]
-pub trait MyComponent {
-    fn foo(&self) -> MaybeScoped<crate::Foo>;
+fn main() {
+    lockjaw::build_script();
 }
-#[test]
-pub fn main() {
-    let component: Box<dyn MyComponent> = MyComponent::new();
-    component.foo();
-}
-test_epilogue!();

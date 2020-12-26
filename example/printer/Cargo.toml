@@ -12,34 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-[workspace]
-members = [
-    "processor",
-    "example",
-    "example/printer",
-    "example/printer/printer_module",
-    "example/printer/printer_test_module",
-    "tests/test_dep"
-]
 
 [package]
-name = "lockjaw"
-version = "0.0.4"
-authors = ["Ta-wei Yen"]
+name = "printer"
+version = "0.1.0"
+authors = ["Ta-wei Yen <yen.david.tawei@gmail.com>"]
 edition = "2018"
-description = "Compile time dependency injection framework inspired by dagger"
-license = "Apache-2.0"
-repository = "https://github.com/azureblaze/lockjaw"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lockjaw_processor = {path="processor", version = "0.0.4"}
-regex = "1"
-
-[build-dependencies]
-rustc_version = "0.3"
-
-[dev-dependencies]
-trybuild = "1.0"
-test_dep = {path="tests/test_dep"}

@@ -27,7 +27,7 @@ pub trait MyTrait {
     fn hello(&self) -> String;
 }
 
-#[injectable]
+#[injectable(scope = "crate::MyComponent")]
 pub struct MyTraitImpl {}
 
 impl MyTrait for MyTraitImpl {
@@ -41,7 +41,7 @@ pub struct MyModule {}
 #[module_impl]
 impl MyModule {
     #[binds]
-    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> impl crate::MyTrait {}
+    pub fn bind_my_trait(_impl: &crate::MyTraitImpl) -> impl crate::MyTrait {}
 }
 
 #[component_module_manifest]

@@ -16,20 +16,20 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, injectable, test_epilogue};
+use lockjaw::{component, injectable, test_epilogue, MaybeScoped};
 
 #[injectable]
 pub struct Foo {}
 
 #[injectable]
-pub struct Bar {
+pub struct Bar<'a> {
     #[inject]
-    foo: Box<crate::Foo>,
+    foo: MaybeScoped<'a, crate::Foo>,
 }
 
 #[component]
 pub trait MyComponent {
-    fn bar(&self) -> crate::Bar;
+    fn bar(&'_ self) -> crate::Bar<'_>;
 }
 #[test]
 pub fn main() {

@@ -58,8 +58,8 @@ pub enum NodeType {
     Provides(ModuleInstance, Provider),
     /// A node created by #[binds]
     Binds(ModuleInstance, Provider),
-    /// Auto created node to provide Box<T> from T
-    Boxed(Box<Node>),
+    /// Auto created node to provide MaybeScoped<T> from T
+    MaybeScoped(Box<Node>),
     /// A node created by #[injectable/provides/binds (scope="..")]
     Scoped(Box<Node>),
 }
@@ -68,7 +68,7 @@ trait NodeVisitor<R> {
     fn accept_injectable(&self, node: &Node, injectable: &Injectable) -> R;
     fn accept_provides(&self, node: &Node, module: &ModuleInstance, provides: &Provider) -> R;
     fn accept_binds(&self, node: &Node, module: &ModuleInstance, provides: &Provider) -> R;
-    fn accept_boxed(&self, node: &Node, boxed_node: &Node) -> R;
+    fn accept_maybe_scoped(&self, node: &Node, boxed_node: &Node) -> R;
     fn accept_scoped(&self, node: &Node, boxed_node: &Node) -> R;
 }
 
@@ -82,7 +82,7 @@ impl Node {
             NodeType::Binds(ref module, ref provides) => {
                 visitor.accept_binds(&self, &module, provides)
             }
-            NodeType::Boxed(ref node) => visitor.accept_boxed(&self, node.deref()),
+            NodeType::MaybeScoped(ref node) => visitor.accept_maybe_scoped(&self, node.deref()),
             NodeType::Scoped(ref node) => visitor.accept_scoped(&self, node.deref()),
         }
     }
@@ -165,6 +165,8 @@ pub fn generate_component(
     component: &Component,
     manifest: &Manifest,
 ) -> Result<TokenStream, TokenStream> {
+    //log!("manifest: {:#?}", manifest);
+
     let graph = crate::graph::build_graph(manifest, component)?;
     let component_name = component.get_field_type().syn_type();
     let component_impl_name = format_ident!(
@@ -186,16 +188,17 @@ pub fn generate_component(
     let ctor_params = &component_sections.ctor_params;
     let methods = &component_sections.methods;
     let trait_methods = &component_sections.trait_methods;
-
     let component_impl = quote! {
+        #[allow(non_snake_case)]
+        #[allow(non_camel_case_types)]
         struct #component_impl_name {
             #fields
         }
-
+        #[allow(non_snake_case)]
         impl #component_impl_name {
             #methods
         }
-
+        #[allow(non_snake_case)]
         impl #component_name for #component_impl_name {
             #trait_methods
         }
@@ -205,6 +208,7 @@ pub fn generate_component(
         let module_manifest_name = graph.module_manifest.get_field_type().syn_type();
         builder = quote! {
             impl dyn #component_name {
+                #[allow(unused)]
                 pub fn build (param : #module_manifest_name) -> Box<dyn #component_name>{
                    Box::new(#component_impl_name{#ctor_params})
                 }
@@ -302,16 +306,7 @@ impl Graph {
         let mut result = ComponentSections::new();
         for dependency in component.get_provisions() {
             let dependency_name = format_ident!("{}", dependency.get_name());
-            let dep_node = self.get_node(dependency.get_field_type(), &Vec::new())?;
-            let bound;
-            if self.has_scoped_deps(dep_node)? {
-                bound = "_";
-            } else {
-                bound = "";
-            }
-            let dependency_path = dependency
-                .get_field_type()
-                .syn_type_with_innner_lifetime_bound(bound);
+            let dependency_path = dependency.get_field_type().syn_type();
             let dependency_type;
             if dependency.get_field_type().get_field_ref() {
                 dependency_type = quote! {& #dependency_path};
@@ -483,13 +478,7 @@ impl NodeVisitor<Result<ComponentSections, TokenStream>> for ProviderGenerator<'
             }
         }
 
-        let bound;
-        if self.graph.has_scoped_deps(node)? {
-            bound = "_";
-        } else {
-            bound = "";
-        }
-        let type_path = node.type_.syn_type_with_innner_lifetime_bound(bound);
+        let type_path = node.type_.syn_type();
 
         let name_ident = node.type_.identifier();
         let module_method = format_ident!("{}", provides.get_name());
@@ -524,45 +513,48 @@ impl NodeVisitor<Result<ComponentSections, TokenStream>> for ProviderGenerator<'
         let arg_provider_name = arg.get_field_type().identifier();
 
         let name_ident = node.type_.identifier();
-        let bound;
-        if self.graph.has_scoped_deps(node)? {
-            bound = "_";
-        } else {
-            bound = "";
-        }
-        let type_path = node.type_.syn_type_with_innner_lifetime_bound(bound);
+        let type_path = node.type_.syn_type();
 
         let mut result = ComponentSections::new();
-        result.add_methods(quote! {
-            fn #name_ident(&'_ self) -> #type_path{
-                Box::new(self.#arg_provider_name(),)
-            }
-        });
+        if arg.get_field_type().get_field_ref() {
+            result.add_methods(quote! {
+                fn #name_ident(&'_ self) -> #type_path{
+                    lockjaw::MaybeScoped::Ref(self.#arg_provider_name())
+                }
+            });
+        } else {
+            result.add_methods(quote! {
+                fn #name_ident(&'_ self) -> #type_path{
+                    lockjaw::MaybeScoped::Val(Box::new(self.#arg_provider_name()))
+                }
+            });
+        }
         Ok(result)
     }
 
-    fn accept_boxed(
+    fn accept_maybe_scoped(
         &self,
         node: &Node,
         boxed_node: &Node,
     ) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = boxed_node.type_.identifier();
         let name_ident = node.type_.identifier();
-        let bound;
-        if self.graph.has_scoped_deps(node)? {
-            bound = "_";
-        } else {
-            bound = "";
-        }
-
-        let type_path = node.type_.syn_type_with_innner_lifetime_bound(bound);
+        let type_path = node.type_.syn_type();
 
         let mut result = ComponentSections::new();
-        result.add_methods(quote! {
-            fn #name_ident(&'_ self) -> #type_path{
-                Box::new(self.#arg_provider_name(),)
-            }
-        });
+        if boxed_node.type_.get_field_ref() {
+            result.add_methods(quote! {
+                fn #name_ident(&'_ self) -> #type_path{
+                    lockjaw::MaybeScoped::Ref(self.#arg_provider_name())
+                }
+            });
+        } else {
+            result.add_methods(quote! {
+                fn #name_ident(&'_ self) -> #type_path{
+                    lockjaw::MaybeScoped::Val(Box::new(self.#arg_provider_name()))
+                }
+            });
+        }
         Ok(result)
     }
 
@@ -619,7 +611,7 @@ impl NodeVisitor<String> for ProviderNameVisitor {
         )
     }
 
-    fn accept_boxed(&self, node: &Node, _boxed_node: &Node) -> String {
+    fn accept_maybe_scoped(&self, node: &Node, _boxed_node: &Node) -> String {
         format!("{} (auto boxed)", node.type_.canonical_string_path())
     }
 
@@ -671,7 +663,7 @@ impl<'a> NodeVisitor<Result<Node, TokenStream>> for MergeNodeVisitor<'a> {
         self.duplicated(node)
     }
 
-    fn accept_boxed(&self, node: &Node, _boxed_node: &Node) -> Result<Node, TokenStream> {
+    fn accept_maybe_scoped(&self, node: &Node, _boxed_node: &Node) -> Result<Node, TokenStream> {
         if node
             .type_
             .canonical_string_path()
@@ -735,10 +727,7 @@ impl<'a> NodeVisitor<Result<(), TokenStream>> for CanDepend<'a> {
         Ok(())
     }
 
-    fn accept_boxed(&self, _node: &Node, _boxed_node: &Node) -> Result<(), TokenStream> {
-        if self.target_node.scoped {
-            return self.no_scope();
-        }
+    fn accept_maybe_scoped(&self, _node: &Node, _boxed_node: &Node) -> Result<(), TokenStream> {
         Ok(())
     }
 
@@ -804,6 +793,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
             .collect::<Result<Vec<()>, TokenStream>>()?;
         }
     }
+    //log!("graph: {:#?}", result.map);
     Ok(result)
 }
 
@@ -853,7 +843,7 @@ fn generate_provides_nodes(
     let type_;
     let node_type;
     if provider.get_binds() {
-        type_ = boxed_type(provider.get_field_type());
+        type_ = maybe_scoped_type(provider.get_field_type());
         node_type = NodeType::Binds(
             get_module_instance(module_manifest, module_type),
             provider.clone(),
@@ -890,15 +880,22 @@ fn generate_node_variants(node: Node) -> Vec<Node> {
             scoped: false,
         };
 
-        return vec![private_node, scoped_node];
+        let maybe_scoped_node = Node {
+            type_: maybe_scoped_type(&private_node.type_),
+            dependencies: vec![private_node.type_.clone()],
+            node_type: NodeType::MaybeScoped(Box::new(private_node.clone())),
+            scoped: false,
+        };
+
+        return vec![private_node, scoped_node, maybe_scoped_node];
     }
 
     if node.type_.scopes.is_empty() {
-        if node.type_.get_path().ne("std::boxed::Box") {
+        if node.type_.get_path().ne("lockjaw::MaybeScoped") {
             let boxed_node = Node {
-                type_: boxed_type(&node.type_),
+                type_: maybe_scoped_type(&node.type_),
                 dependencies: vec![node.type_.clone()],
-                node_type: NodeType::Boxed(Box::new(node.clone())),
+                node_type: NodeType::MaybeScoped(Box::new(node.clone())),
                 scoped: false,
             };
             return vec![node, boxed_node];
@@ -908,10 +905,10 @@ fn generate_node_variants(node: Node) -> Vec<Node> {
     return vec![];
 }
 
-fn boxed_type(type_: &Type) -> Type {
+fn maybe_scoped_type(type_: &Type) -> Type {
     let mut boxed_type = Type::new();
     boxed_type.set_root(Type_Root::GLOBAL);
-    boxed_type.set_path("std::boxed::Box".to_string());
+    boxed_type.set_path("lockjaw::MaybeScoped".to_string());
     boxed_type.mut_args().push(type_.clone());
     boxed_type
 }
