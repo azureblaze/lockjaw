@@ -16,6 +16,7 @@ limitations under the License.
 
 use lockjaw::{
     component, component_module_manifest, injectable, module, module_impl, test_epilogue,
+    MaybeScoped,
 };
 
 #[injectable(scope = "crate::MyComponent")]
@@ -68,7 +69,7 @@ pub struct ModuleManifest(crate::MyModule);
 
 #[component(modules = "crate::ModuleManifest")]
 pub trait MyComponent {
-    fn greeter(&'_ self) -> Box<dyn crate::Greeter + '_>;
+    fn greeter(&'_ self) -> MaybeScoped<'_, dyn crate::Greeter>;
 }
 
 pub fn main() {

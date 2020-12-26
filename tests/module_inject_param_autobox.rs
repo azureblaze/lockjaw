@@ -18,10 +18,11 @@ limitations under the License.
 
 use lockjaw::{
     component, component_module_manifest, injectable, module, module_impl, test_epilogue,
+    MaybeScoped,
 };
 
-pub struct Foo {
-    bar: Bar,
+pub struct Foo<'a> {
+    bar: MaybeScoped<'a, Bar>,
 }
 
 #[injectable()]
@@ -32,8 +33,8 @@ pub struct MyModule {}
 #[module_impl]
 impl MyModule {
     #[provides]
-    pub fn provide_foo(bar: Box<crate::Bar>) -> crate::Foo {
-        Foo { bar: *bar }
+    pub fn provide_foo(bar: MaybeScoped<'_, crate::Bar>) -> crate::Foo<'_> {
+        Foo { bar }
     }
 }
 

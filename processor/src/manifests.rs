@@ -37,6 +37,7 @@ lazy_static! {
         m.insert("Result".into(), "std::result::Result".into());
         m.insert("String".into(), "std::string::String".into());
         m.insert("Vec".into(), "std::vec::Vec".into());
+        m.insert("MaybeScoped".into(),"lockjaw::MaybeScoped".into() );
         m
     };
 }
@@ -71,9 +72,9 @@ impl Type {
     /// Modifiers like & are omitted
     pub fn canonical_string_path(&self) -> String {
         match self.get_root() {
-            Type_Root::GLOBAL => format!("::{}", self.path_with_args("")),
+            Type_Root::GLOBAL => format!("::{}", self.path_with_args()),
             Type_Root::CRATE => {
-                format!("::{}::{}", self.get_field_crate(), self.path_with_args(""))
+                format!("::{}::{}", self.get_field_crate(), self.path_with_args())
             }
             Type_Root::PRIMITIVE => format!("{}", self.get_path()),
             Type_Root::UNSPECIFIED => panic!("canonical_string_path: root unspecified"),
@@ -84,17 +85,13 @@ impl Type {
     ///
     /// Modifiers like & are omitted
     pub fn local_string_path(&self) -> String {
-        self.local_string_path_with_bound("")
-    }
-
-    fn local_string_path_with_bound(&self, bound: &str) -> String {
         match self.get_root() {
-            Type_Root::GLOBAL => format!("::{}", self.path_with_args(bound)),
+            Type_Root::GLOBAL => format!("::{}", self.path_with_args()),
             Type_Root::CRATE => {
                 if environment::current_crate().eq(self.get_field_crate()) {
-                    format!("crate::{}", self.path_with_args(bound))
+                    format!("crate::{}", self.path_with_args())
                 } else {
-                    format!("{}::{}", self.get_field_crate(), self.path_with_args(bound))
+                    format!("{}::{}", self.get_field_crate(), self.path_with_args())
                 }
             }
             Type_Root::PRIMITIVE => format!("{}", self.get_path()),
@@ -108,11 +105,6 @@ impl Type {
     /// Modifiers like & are omitted
     pub fn syn_type(&self) -> syn::Type {
         syn::parse_str(&self.local_string_path()).expect("cannot parse type path")
-    }
-
-    pub fn syn_type_with_innner_lifetime_bound(&self, bound: &str) -> syn::Type {
-        syn::parse_str(&self.local_string_path_with_bound(bound))
-            .expect("cannot parse type path with bound")
     }
 
     /// Unique identifier token representing the type.
@@ -142,23 +134,17 @@ impl Type {
         format!("{}{}", prefix, self.canonical_string_path())
     }
 
-    fn path_with_args(&self, bound: &str) -> String {
+    fn path_with_args(&self) -> String {
         if self.args.is_empty() {
             return self.get_path().to_string();
         }
         let args = self
             .args
             .iter()
-            .map(|t| t.path_with_args(""))
+            .map(|t| t.path_with_args())
             .collect::<Vec<String>>()
             .join(",");
-        let bound_str;
-        if bound.is_empty() {
-            bound_str = "".to_owned();
-        } else {
-            bound_str = format!(" + '{}", bound);
-        }
-        format!("{}<{}{}>", self.get_path(), args, bound_str)
+        format!("{}<{}>", self.get_path(), args)
     }
 }
 
@@ -271,10 +257,17 @@ fn get_args(segment: &syn::PathSegment) -> Result<Vec<Type>, TokenStream> {
     let mut result = Vec::<Type>::new();
     if let syn::PathArguments::AngleBracketed(ref angle) = segment.arguments {
         for generic_arg in &angle.args {
-            if let syn::GenericArgument::Type(ref type_) = generic_arg {
-                result.push(type_from_syn_type(type_)?);
-            } else {
-                return spanned_compile_error(segment.span(), "unable to handle generic argument");
+            match generic_arg {
+                syn::GenericArgument::Type(ref type_) => result.push(type_from_syn_type(type_)?),
+                syn::GenericArgument::Lifetime(ref _lifetime) => {
+                    // Do nothing
+                }
+                _ => {
+                    return spanned_compile_error(
+                        segment.span(),
+                        "unable to handle generic argument",
+                    )
+                }
             }
         }
     }

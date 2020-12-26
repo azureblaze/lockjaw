@@ -14,20 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#![allow(dead_code)]
-
-use lockjaw::{component, injectable, test_epilogue, MaybeScoped};
+use lockjaw::{injectable, module, module_impl, root_epilogue};
+use printer::Printer;
 
 #[injectable]
-pub struct Foo {}
+pub struct PrinterImpl {}
 
-#[component]
-pub trait MyComponent {
-    fn foo(&self) -> MaybeScoped<crate::Foo>;
+impl Printer for PrinterImpl {
+    fn print(&self, message: &str) {
+        println!("{}", message);
+    }
 }
-#[test]
-pub fn main() {
-    let component: Box<dyn MyComponent> = MyComponent::new();
-    component.foo();
+
+#[module]
+pub struct Module {}
+
+#[module_impl]
+impl Module {
+    #[binds]
+    pub fn bind_printer(impl_: crate::PrinterImpl) -> impl ::printer::Printer {}
 }
-test_epilogue!();
+
+root_epilogue!();

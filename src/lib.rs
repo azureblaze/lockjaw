@@ -18,8 +18,7 @@ limitations under the License.
 
 use std::cell::RefCell;
 use std::mem::MaybeUninit;
-
-mod doctests;
+use std::ops::Deref;
 
 /// Annotates a trait that composes the dependency graph and provides items in the graph
 /// (An "injector").
@@ -296,6 +295,9 @@ pub mod docs {
     #[doc(include = "../docs/scoped.md")]
     pub mod scoped {}
 }
+
+mod doctests;
+
 /// once
 #[doc(hidden)]
 pub struct Once<T> {
@@ -325,6 +327,32 @@ impl<T> Once<T> {
                 value.borrow_mut().as_mut_ptr().write(initializer());
             });
             &*value.borrow().as_ptr()
+        }
+    }
+}
+
+/// Wrapper around an injection that may be scoped(owned by the component) or free standing(owned by
+/// the item injecting it). Deref to access the content.
+///
+/// Typically this is used when the dependent does not care who owns the dependency, as it will
+/// not try to move it. Injecting scoped dependency as 'T' or injected free standing dependency as
+/// '&T' is a compile failure, but both can be injected as 'MaybeScoped<T>'
+///
+/// # Lifetime
+///
+/// 'MaybeScoped'\'s lifetime is bounded by the component providing it.
+pub enum MaybeScoped<'a, T: ?Sized + 'a> {
+    Val(Box<T>),
+    Ref(&'a T),
+}
+
+impl<T: ?Sized> Deref for MaybeScoped<'_, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            MaybeScoped::Val(val) => val.deref(),
+            MaybeScoped::Ref(r) => r,
         }
     }
 }

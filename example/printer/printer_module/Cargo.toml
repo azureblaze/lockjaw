@@ -1,0 +1,14 @@
+[package]
+name = "printer_module"
+version = "0.1.0"
+authors = ["Ta-wei Yen <yen.david.tawei@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+printer = {path ="../"}
+lockjaw = {path ="../../../"}
+
+[build-dependencies]
+lockjaw = {path = "../../../"}

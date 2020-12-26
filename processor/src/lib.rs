@@ -247,6 +247,7 @@ fn deps() -> HashSet<String> {
 
 fn merge_manifest(manifest: &Manifest) -> Manifest {
     let deps = deps();
+    //log!("deps: {:?}", deps);
 
     let mut result = manifest.clone();
 

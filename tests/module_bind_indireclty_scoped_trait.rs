@@ -21,6 +21,7 @@ use lockjaw::{
     MaybeScoped,
 };
 
+#[injectable(scope = "crate::MyComponent")]
 pub struct Foo {}
 
 pub trait MyTrait {
@@ -28,9 +29,12 @@ pub trait MyTrait {
 }
 
 #[injectable]
-pub struct MyTraitImpl {}
+pub struct MyTraitImpl<'a> {
+    #[inject]
+    foo: &'a crate::Foo,
+}
 
-impl MyTrait for MyTraitImpl {
+impl MyTrait for MyTraitImpl<'_> {
     fn hello(&self) -> String {
         "hello".to_owned()
     }

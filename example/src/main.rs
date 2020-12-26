@@ -16,36 +16,21 @@ limitations under the License.
 
 use lockjaw::{
     component, component_module_manifest, injectable, module, module_impl, root_epilogue,
+    MaybeScoped,
 };
-
-#[injectable(scope = "crate::MyComponent")]
-struct GreetCounter {
-    counter: ::std::cell::RefCell<i32>,
-}
-
-impl GreetCounter {
-    pub fn increment(&self) -> i32 {
-        let mut value = self.counter.borrow_mut();
-        *value = *value + 1;
-        *value
-    }
-}
-
-pub trait Greeter {
-    fn greet(&self) -> String;
-}
+use std::ops::Deref;
 
 #[injectable]
-struct GreeterImpl<'a> {
-    #[inject]
-    counter: &'a crate::GreetCounter,
+pub struct Greeter<'a> {
     #[inject]
     phrase: String,
+    #[inject]
+    printer: MaybeScoped<'a, dyn ::printer::Printer>,
 }
 
-impl Greeter for GreeterImpl<'_> {
-    fn greet(&self) -> String {
-        format!("{} {}", self.phrase, self.counter.increment())
+impl Greeter<'_> {
+    pub fn greet(&self) {
+        self.printer.print(&self.phrase);
     }
 }
 
@@ -54,9 +39,6 @@ struct MyModule {}
 
 #[module_impl]
 impl MyModule {
-    #[binds]
-    pub fn bind_greeter(_impl: crate::GreeterImpl) -> impl crate::Greeter {}
-
     #[provides]
     pub fn provide_string() -> String {
         "helloworld".to_owned()
@@ -64,18 +46,40 @@ impl MyModule {
 }
 
 #[component_module_manifest]
-pub struct ModuleManifest(crate::MyModule);
+pub struct ModuleManifest(crate::MyModule, ::printer_module::Module);
 
 #[component(modules = "crate::ModuleManifest")]
 pub trait MyComponent {
-    fn greeter(&'_ self) -> Box<dyn crate::Greeter + '_>;
+    fn greeter(&self) -> crate::Greeter;
 }
 
 pub fn main() {
     let component = MyComponent::new();
 
-    assert_eq!(component.greeter().greet(), "helloworld 1");
-    assert_eq!(component.greeter().greet(), "helloworld 2");
+    component.greeter().greet();
+}
+
+#[cfg(test)]
+#[component_module_manifest]
+pub struct TestModuleManifest(crate::MyModule, ::printer_test_module::Module);
+
+#[cfg(test)]
+#[component(modules = "crate::TestModuleManifest")]
+pub trait TestComponent {
+    fn greeter(&self) -> crate::Greeter;
+
+    fn test_printer(&self) -> &::printer_test_module::TestPrinter;
+}
+
+#[test]
+fn test_greeter() {
+    let component = TestComponent::new();
+    component.greeter().greet();
+
+    assert_eq!(
+        component.test_printer().get_messages().deref()[..],
+        vec!["helloworld".to_owned()][..]
+    );
 }
 
 root_epilogue!();
