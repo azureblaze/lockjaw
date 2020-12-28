@@ -27,3 +27,26 @@ mod injectable_non_struct {}
 /// struct S(String);
 /// ```
 mod injectable_tuple {}
+
+///```compile_fail
+/// use lockjaw::{component, injectable, test_epilogue};
+///
+/// pub struct Foo {}
+///
+/// #[injectable]
+/// pub struct Bar {
+///     foo: crate::Foo,
+/// }
+///
+/// #[component]
+/// pub trait MyComponent {
+///     fn bar(&self) -> crate::Bar;
+/// }
+///
+/// pub fn main() {
+///     let component: Box<dyn MyComponent> = MyComponent::new();
+///     component.bar();
+/// }
+/// test_epilogue!();
+///```
+mod injectable_no_default {}
