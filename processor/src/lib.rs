@@ -151,7 +151,7 @@ fn internal_epilogue(
     extend_local_manifest(path)?;
 
     MANIFEST.with(|manifest| {
-        let merged_manifest = merge_manifest(&manifest.borrow_mut());
+        let merged_manifest = merge_manifest(&manifest.borrow_mut(), for_test);
         manifest.borrow_mut().clear();
         if !for_test {
             let out_dir = environment::lockjaw_output_dir()?;
@@ -213,7 +213,7 @@ fn internal_epilogue(
     })
 }
 
-fn deps() -> HashSet<String> {
+fn deps(for_test: bool) -> HashSet<String> {
     let tree = String::from_utf8(
         Command::new("cargo")
             .current_dir(std::env::var("CARGO_MANIFEST_DIR").expect("missing manifest dir"))
@@ -221,7 +221,7 @@ fn deps() -> HashSet<String> {
             .arg("--prefix")
             .arg("depth")
             .arg("-e")
-            .arg("normal")
+            .arg(if for_test { "normal,dev" } else { "normal" })
             .output()
             .unwrap()
             .stdout,
@@ -245,8 +245,8 @@ fn deps() -> HashSet<String> {
     deps
 }
 
-fn merge_manifest(manifest: &Manifest) -> Manifest {
-    let deps = deps();
+fn merge_manifest(manifest: &Manifest, for_test: bool) -> Manifest {
+    let deps = deps(for_test);
     //log!("deps: {:?}", deps);
 
     let mut result = manifest.clone();
