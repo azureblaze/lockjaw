@@ -4,7 +4,7 @@ Lockjaw is a fully static, compile-time [dependency injection](https://en.wikipe
 It is also what you get when jabbed by a rusty dagger.
 
 ```rust
-use lockjaw::{module, module_impl,component, injectable, test_epilogue, component_module_manifest, MaybeScoped};
+use lockjaw::{module, module_impl,component, injectable, epilogue, component_module_manifest, MaybeScoped};
 use std::ops::Add;
 #[injectable]
 struct GreetCounter{
@@ -68,7 +68,7 @@ pub fn main() {
     assert_eq!(component.greeter().greet(), "helloworld 1");
 }
 
-test_epilogue!();
+epilogue!();
 ```
 
 # Disclaimer

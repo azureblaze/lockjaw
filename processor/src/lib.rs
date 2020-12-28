@@ -135,12 +135,23 @@ fn extend_local_manifest(path: &str) -> Result<(), TokenStream> {
 }
 
 #[proc_macro]
-pub fn root_epilogue(_input: TokenStream) -> TokenStream {
+pub fn epilogue(_input: TokenStream) -> TokenStream {
+    let result = quote! {
+        #[cfg(not(test))]
+        lockjaw::private_root_epilogue!();
+        #[cfg(test)]
+        lockjaw::private_test_epilogue!();
+    };
+    result.into()
+}
+
+#[proc_macro]
+pub fn private_root_epilogue(_input: TokenStream) -> TokenStream {
     handle_error(|| internal_epilogue("", false))
 }
 
 #[proc_macro]
-pub fn test_epilogue(_input: TokenStream) -> TokenStream {
+pub fn private_test_epilogue(_input: TokenStream) -> TokenStream {
     handle_error(|| internal_epilogue("", true))
 }
 

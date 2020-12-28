@@ -25,7 +25,7 @@ limitations under the License.
 ///
 /// fn main(){}
 ///
-/// test_epilogue!();
+/// epilogue!();
 /// ```
 mod graph_missing_binding {}
 
@@ -51,7 +51,7 @@ mod graph_missing_binding {}
 ///
 /// fn main(){}
 ///
-/// test_epilogue!();
+/// epilogue!();
 /// ```
 mod graph_cyclic_dependency {}
 
@@ -82,7 +82,7 @@ mod graph_cyclic_dependency {}
 ///
 /// fn main(){}
 ///
-/// test_epilogue!();
+/// epilogue!();
 /// ```
 mod graph_duplicated_binding {}
 
@@ -95,6 +95,6 @@ mod graph_duplicated_binding {}
 ///
 /// fn main(){}
 ///
-/// test_epilogue!();
+/// epilogue!();
 /// ```
 mod graph_missing_module_manifest {}

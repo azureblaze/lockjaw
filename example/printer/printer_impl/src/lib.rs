@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{injectable, module, module_impl, root_epilogue};
+use lockjaw::{epilogue, injectable, module, module_impl};
 use printer::Printer;
 
 #[injectable]
@@ -35,4 +35,4 @@ impl Module {
     pub fn bind_printer(impl_: crate::PrinterImpl) -> impl ::printer::Printer {}
 }
 
-root_epilogue!();
+epilogue!();

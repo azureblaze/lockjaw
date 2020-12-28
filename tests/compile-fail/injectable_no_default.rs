@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, injectable, test_epilogue};
+use lockjaw::{component, epilogue, injectable};
 
 pub struct Foo {}
 
@@ -32,4 +32,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = MyComponent::new();
     component.bar();
 }
-test_epilogue!();
+epilogue!();

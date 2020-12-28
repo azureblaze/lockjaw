@@ -87,7 +87,7 @@ mod component_trait_object_provision_no_lifetime {}
 ///```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 ///
-/// use lockjaw::{component, injectable, test_epilogue};
+/// use lockjaw::{component, injectable, epilogue};
 ///
 /// #[injectable(scope = "crate::MyComponent")]
 /// pub struct Foo {}
@@ -101,6 +101,6 @@ mod component_trait_object_provision_no_lifetime {}
 ///     let component: Box<dyn MyComponent> = MyComponent::new();
 ///     component.foo();
 /// }
-/// test_epilogue!();
+/// epilogue!();
 ///```
 mod componenet_provision_non_scoped_of_scoped {}
