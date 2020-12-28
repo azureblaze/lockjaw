@@ -1,5 +1,5 @@
 [package]
-name = "printer_module"
+name = "printer_impl"
 version = "0.1.0"
 authors = ["Ta-wei Yen <yen.david.tawei@gmail.com>"]
 edition = "2018"
