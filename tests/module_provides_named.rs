@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, module, module_impl, test_epilogue};
+use lockjaw::{component, component_module_manifest, epilogue, module, module_impl};
 
 pub use String as NamedString;
 
@@ -51,4 +51,4 @@ pub fn main() {
     assert_eq!(component.string(), "string");
     assert_eq!(component.named_string(), "named_string");
 }
-test_epilogue!();
+epilogue!();

@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, injectable, test_epilogue};
+use lockjaw::{component, epilogue, injectable};
 
 #[injectable(scope = "crate::MyComponent")]
 pub struct Foo {
@@ -45,4 +45,4 @@ pub fn main() {
     assert_eq!(foo1.count(), 1);
     assert_eq!(foo2.count(), 2);
 }
-test_epilogue!();
+epilogue!();

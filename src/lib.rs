@@ -37,7 +37,7 @@ use std::ops::Deref;
 ///     let component: Box<dyn MyComponent> = MyComponent::new();
 ///     let foo : Foo = component.foo();
 /// }
-/// # test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// # Creating injected types
@@ -71,7 +71,7 @@ use std::ops::Deref;
 /// }
 ///
 /// # fn main(){}
-/// # test_epilogue!();
+/// # epilogue!();
 /// ```
 /// # Installing modules
 /// Each component can install their separate set of [`modules`](module) to form a different
@@ -113,7 +113,7 @@ use std::ops::Deref;
 /// }
 ///
 /// # fn main() {}
-/// # test_epilogue!();
+/// # epilogue!();
 /// ```
 ///
 /// Component can select different modules providing the same type to change the behavior of types
@@ -170,7 +170,7 @@ use std::ops::Deref;
 ///     let other_component: Box<dyn OtherComponent> = OtherComponent::new();
 ///     assert_eq!(other_component.foo().string, "other_string");
 /// }
-/// # test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// # Creating component instances
@@ -213,7 +213,7 @@ use std::ops::Deref;
 ///
 ///     assert_eq!(component.string(), "foo");  
 /// }
-/// # test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// If a field is not attributed with `#[builder]`, lockjaw will auto generated it when building the
@@ -254,7 +254,7 @@ use std::ops::Deref;
 ///
 ///     assert_eq!(component.int(), 42);  
 /// }
-/// # test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// Lockjaw also generates `COMPONENT::new() -> Box<dyn COMPONENT>` if the component does not
@@ -271,20 +271,23 @@ use std::ops::Deref;
 /// pub fn main() {
 ///     let component: Box<dyn MyComponent> = MyComponent::new();
 /// }
-/// # test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// Each instance of the component will have independent set of [scoped injections](docs::scoped)
 pub use lockjaw_processor::component;
 pub use lockjaw_processor::component_module_manifest;
+pub use lockjaw_processor::epilogue;
 pub use lockjaw_processor::inject;
 pub use lockjaw_processor::injectable;
 pub use lockjaw_processor::mod_epilogue;
 pub use lockjaw_processor::module;
 pub use lockjaw_processor::module_impl;
+#[doc(hidden)]
+pub use lockjaw_processor::private_root_epilogue;
+#[doc(hidden)]
+pub use lockjaw_processor::private_test_epilogue;
 pub use lockjaw_processor::provides;
-pub use lockjaw_processor::root_epilogue;
-pub use lockjaw_processor::test_epilogue;
 pub use lockjaw_processor::test_mod_epilogue;
 
 /// Documentation for concepts that does not belong to individual items.

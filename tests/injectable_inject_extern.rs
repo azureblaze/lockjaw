@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, injectable, test_epilogue};
+use lockjaw::{component, epilogue, injectable};
 
 #[allow(dead_code)]
 #[injectable]
@@ -32,4 +32,4 @@ fn main() {
     let _bar = component.bar();
 }
 
-test_epilogue!();
+epilogue!();

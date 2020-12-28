@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, test_epilogue};
+use lockjaw::{component, epilogue};
 
 mod baz {
     #[lockjaw::injectable(path = "baz")]
@@ -31,4 +31,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = MyComponent::new();
     component.foo();
 }
-test_epilogue!();
+epilogue!();

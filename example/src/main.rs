@@ -79,7 +79,4 @@ fn test_greeter() {
     );
 }
 
-#[cfg(not(test))]
-lockjaw::root_epilogue!();
-#[cfg(test)]
-lockjaw::test_epilogue!();
+lockjaw::epilogue!();

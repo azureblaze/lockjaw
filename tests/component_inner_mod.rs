@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{injectable, test_epilogue};
+use lockjaw::{epilogue, injectable};
 
 #[injectable]
 pub struct Foo {}
@@ -32,4 +32,4 @@ pub fn main() {
     let component: Box<dyn m::MyComponent> = m::MyComponent::new();
     component.foo();
 }
-test_epilogue!();
+epilogue!();

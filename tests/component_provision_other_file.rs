@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, test_epilogue};
+use lockjaw::{component, epilogue};
 
 mod other_file;
 
@@ -29,4 +29,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = MyComponent::new();
     component.other_file();
 }
-test_epilogue!();
+epilogue!();

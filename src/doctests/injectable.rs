@@ -29,7 +29,7 @@ mod injectable_non_struct {}
 mod injectable_tuple {}
 
 ///```compile_fail
-/// use lockjaw::{component, injectable, test_epilogue};
+/// use lockjaw::{component, injectable, epilogue};
 ///
 /// pub struct Foo {}
 ///
@@ -47,6 +47,6 @@ mod injectable_tuple {}
 ///     let component: Box<dyn MyComponent> = MyComponent::new();
 ///     component.bar();
 /// }
-/// test_epilogue!();
+/// epilogue!();
 ///```
 mod injectable_no_default {}

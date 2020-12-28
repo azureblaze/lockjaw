@@ -23,4 +23,4 @@ pub fn main() {
     let component: Box<dyn other_file::OtherComponent> = other_file::OtherComponent::new();
     component.other_file();
 }
-lockjaw::test_epilogue!();
+lockjaw::epilogue!();

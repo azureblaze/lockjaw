@@ -17,8 +17,7 @@ limitations under the License.
 #![allow(dead_code)]
 
 use lockjaw::{
-    component, component_module_manifest, injectable, module, module_impl, test_epilogue,
-    MaybeScoped,
+    component, component_module_manifest, epilogue, injectable, module, module_impl, MaybeScoped,
 };
 
 pub struct Foo<'a> {
@@ -52,4 +51,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = MyComponent::new();
     component.foo();
 }
-test_epilogue!();
+epilogue!();

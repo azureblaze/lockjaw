@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, module, module_impl, test_epilogue};
+use lockjaw::{component, component_module_manifest, epilogue, module, module_impl};
 
 pub struct Foo {}
 
@@ -41,4 +41,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = MyComponent::new();
     assert_eq!(component.my_trait().hello(), "hello");
 }
-test_epilogue!();
+epilogue!();

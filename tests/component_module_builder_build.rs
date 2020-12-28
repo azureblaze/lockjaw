@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, module, module_impl, test_epilogue};
+use lockjaw::{component, component_module_manifest, epilogue, module, module_impl};
 
 pub struct Foo {}
 
@@ -51,4 +51,4 @@ pub fn main() {
     });
     assert_eq!(component.string(), "foo");
 }
-test_epilogue!();
+epilogue!();
