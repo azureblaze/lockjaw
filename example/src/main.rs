@@ -46,7 +46,7 @@ impl MyModule {
 }
 
 #[component_module_manifest]
-pub struct ModuleManifest(crate::MyModule, ::printer_module::Module);
+pub struct ModuleManifest(crate::MyModule, ::printer_impl::Module);
 
 #[component(modules = "crate::ModuleManifest")]
 pub trait MyComponent {
@@ -61,14 +61,14 @@ pub fn main() {
 
 #[cfg(test)]
 #[component_module_manifest]
-pub struct TestModuleManifest(crate::MyModule, ::printer_test_module::Module);
+pub struct TestModuleManifest(crate::MyModule, ::printer_test::Module);
 
 #[cfg(test)]
 #[component(modules = "crate::TestModuleManifest")]
 pub trait TestComponent {
     fn greeter(&self) -> crate::Greeter;
 
-    fn test_printer(&self) -> &::printer_test_module::TestPrinter;
+    fn test_printer(&self) -> &::printer_test::TestPrinter;
 }
 
 #[test]

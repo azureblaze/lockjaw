@@ -17,8 +17,8 @@ members = [
     "processor",
     "example",
     "example/printer",
-    "example/printer/printer_module",
-    "example/printer/printer_test_module",
+    "example/printer/printer_impl",
+    "example/printer/printer_test",
     "tests/test_dep"
 ]
 
