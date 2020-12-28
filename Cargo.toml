@@ -41,5 +41,4 @@ regex = "1"
 rustc_version = "0.3"
 
 [dev-dependencies]
-trybuild = "1.0"
 test_dep = {path="tests/test_dep"}

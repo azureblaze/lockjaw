@@ -25,10 +25,9 @@ edition = "2018"
 lockjaw = {path = "../"}
 printer = {path = "printer"}
 printer_impl = {path = "printer/printer_impl" }
-#TODO: support dev-dependencies
-printer_test = {path = "printer/printer_test" }
 
 [build-dependencies]
 lockjaw = {path = "../"}
 
 [dev-dependencies]
+printer_test = {path = "printer/printer_test" }

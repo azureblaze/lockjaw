@@ -14,10 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{
-    component, component_module_manifest, injectable, module, module_impl, root_epilogue,
-    MaybeScoped,
-};
+use lockjaw::{component, component_module_manifest, injectable, module, module_impl, MaybeScoped};
 use std::ops::Deref;
 
 #[injectable]
@@ -82,4 +79,7 @@ fn test_greeter() {
     );
 }
 
-root_epilogue!();
+#[cfg(not(test))]
+lockjaw::root_epilogue!();
+#[cfg(test)]
+lockjaw::test_epilogue!();
