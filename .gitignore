@@ -10,4 +10,8 @@ Cargo.lock
 /.idea/*
 
 # generated
-/processor/src/protos/*
+/processor/src/protos/**
+
+/.SynologyWorkingDirectory/**
+
+desktop.ini
