@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 pub trait Printer {
-    fn print(&self, message: &str);
+    fn print(&mut self, message: &str);
 }

@@ -67,6 +67,7 @@ message Type {
   optional bool trait_object = 5;
   optional bool ref = 6;
   repeated Type scopes = 7;
+  optional bool mut = 8;
 }
 
 message Module {
