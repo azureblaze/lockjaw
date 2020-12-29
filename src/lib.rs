@@ -37,7 +37,7 @@ use std::ops::Deref;
 ///     let component: Box<dyn MyComponent> = MyComponent::new();
 ///     let foo : Foo = component.foo();
 /// }
-/// epilogue!();
+/// private_test_epilogue!();
 /// ```
 ///
 /// # Creating injected types
@@ -71,7 +71,7 @@ use std::ops::Deref;
 /// }
 ///
 /// # fn main(){}
-/// # epilogue!();
+/// # private_test_epilogue!();
 /// ```
 /// # Installing modules
 /// Each component can install their separate set of [`modules`](module) to form a different
@@ -113,7 +113,7 @@ use std::ops::Deref;
 /// }
 ///
 /// # fn main() {}
-/// # epilogue!();
+/// # private_test_epilogue!();
 /// ```
 ///
 /// Component can select different modules providing the same type to change the behavior of types
@@ -170,7 +170,7 @@ use std::ops::Deref;
 ///     let other_component: Box<dyn OtherComponent> = OtherComponent::new();
 ///     assert_eq!(other_component.foo().string, "other_string");
 /// }
-/// epilogue!();
+/// private_test_epilogue!();
 /// ```
 ///
 /// # Creating component instances
@@ -213,7 +213,7 @@ use std::ops::Deref;
 ///
 ///     assert_eq!(component.string(), "foo");  
 /// }
-/// epilogue!();
+/// private_test_epilogue!();
 /// ```
 ///
 /// If a field is not attributed with `#[builder]`, lockjaw will auto generated it when building the
@@ -254,7 +254,7 @@ use std::ops::Deref;
 ///
 ///     assert_eq!(component.int(), 42);  
 /// }
-/// epilogue!();
+/// private_test_epilogue!();
 /// ```
 ///
 /// Lockjaw also generates `COMPONENT::new() -> Box<dyn COMPONENT>` if the component does not
@@ -271,7 +271,7 @@ use std::ops::Deref;
 /// pub fn main() {
 ///     let component: Box<dyn MyComponent> = MyComponent::new();
 /// }
-/// epilogue!();
+/// private_test_epilogue!();
 /// ```
 ///
 /// Each instance of the component will have independent set of [scoped injections](docs::scoped)

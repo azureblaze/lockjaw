@@ -137,9 +137,9 @@ fn extend_local_manifest(path: &str) -> Result<(), TokenStream> {
 #[proc_macro]
 pub fn epilogue(_input: TokenStream) -> TokenStream {
     let result = quote! {
-        #[cfg(not(test))]
+        #[cfg(not(any(test,doctest)))]
         lockjaw::private_root_epilogue!();
-        #[cfg(test)]
+        #[cfg(any(test,doctest))]
         lockjaw::private_test_epilogue!();
     };
     result.into()
@@ -147,7 +147,15 @@ pub fn epilogue(_input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn private_root_epilogue(_input: TokenStream) -> TokenStream {
-    handle_error(|| internal_epilogue("", false))
+    handle_error(|| {
+        if environment::current_crate().eq("lockjaw") {
+            // rustdoc --test somehow does not compile with cfg(test), and needs to be manually
+            // redirected.
+            internal_epilogue("", true)
+        } else {
+            internal_epilogue("", false)
+        }
+    })
 }
 
 #[proc_macro]
@@ -196,7 +204,7 @@ fn internal_epilogue(
         } else {
             path_test = quote! {
                 #[test]
-                fn test_rootEpiloguePath_matchesMacro(){
+                fn epilogue_invoked_at_crate_root(){
                     let path = #path;
                     let mod_path;
                     let crate_name = module_path!().split("::").next().unwrap();
@@ -208,7 +216,7 @@ fn internal_epilogue(
                     assert_eq!(
                         module_path!(),
                         mod_path,
-                        "path supplied to epilogue!() does not match actual path"
+                        "lockjaw::epilogue!() called in a file other than lib.rs or main.rs"
                     );
                 }
             };
@@ -219,8 +227,42 @@ fn internal_epilogue(
             #path_test
         };
 
-        //log!("{:#}", components);
-        Ok(result)
+        if for_test {
+            return Ok(result);
+        }
+
+        #[cfg(feature = "debug_output")]
+        {
+            let content = format!(
+                "/* manifest:\n{:#?}\n*/\n{}",
+                merged_manifest,
+                result.to_string()
+            );
+            let path = format!(
+                "{}debug_{}.rs",
+                environment::lockjaw_output_dir()?,
+                environment::current_crate()
+            );
+            std::fs::create_dir_all(Path::new(&environment::lockjaw_output_dir()?))
+                .expect("cannot create output dir");
+            std::fs::write(Path::new(&path), &content)
+                .expect(&format!("cannot write debug output to {}", path));
+
+            Command::new("rustfmt")
+                .arg(&path)
+                .output()
+                .map_compile_error("unable to format output")?;
+
+            Ok(quote! {
+                std::include!(#path);
+            })
+        }
+
+        #[cfg(not(feature = "debug_output"))]
+        {
+            //log!("{:#}", components);
+            Ok(result)
+        }
     })
 }
 

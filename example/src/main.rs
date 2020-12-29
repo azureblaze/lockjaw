@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 use lockjaw::{component, component_module_manifest, injectable, module, module_impl, MaybeScoped};
-use std::ops::Deref;
 
 #[injectable]
 pub struct Greeter<'a> {
@@ -74,7 +73,7 @@ fn test_greeter() {
     component.greeter().greet();
 
     assert_eq!(
-        component.test_printer().get_messages().deref()[..],
+        component.test_printer().get_messages()[..],
         vec!["helloworld".to_owned()][..]
     );
 }
