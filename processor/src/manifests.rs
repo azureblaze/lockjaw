@@ -122,6 +122,7 @@ impl Type {
                 .replace("::", "_")
                 .replace("<", "_L_")
                 .replace(">", "_R_")
+                .replace(" ", "_")
         )
     }
 
@@ -135,8 +136,9 @@ impl Type {
     }
 
     fn path_with_args(&self) -> String {
+        let prefix = if self.get_trait_object() { "dyn " } else { "" };
         if self.args.is_empty() {
-            return self.get_path().to_string();
+            return format!("{}{}", prefix, self.get_path());
         }
         let args = self
             .args
@@ -144,7 +146,7 @@ impl Type {
             .map(|t| t.path_with_args())
             .collect::<Vec<String>>()
             .join(",");
-        format!("{}<{}>", self.get_path(), args)
+        format!("{}{}<{}>", prefix, self.get_path(), args)
     }
 }
 

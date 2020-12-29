@@ -196,7 +196,7 @@ fn internal_epilogue(
             )
             .expect("cannot write manifest path");
         }
-        let components = components::generate_components(&merged_manifest)?;
+        let (components, messages) = components::generate_components(&merged_manifest)?;
 
         let path_test;
         if for_test {
@@ -233,16 +233,17 @@ fn internal_epilogue(
 
         #[cfg(feature = "debug_output")]
         {
-            let content = format!(
-                "/* manifest:\n{:#?}\n*/\n{}",
-                merged_manifest,
-                result.to_string()
-            );
+            let mut content = format!("/* manifest:\n{:#?}\n*/\n", merged_manifest);
+            for message in messages {
+                content.push_str(&format!("/*\n{}\n*/\n", message));
+            }
+            content.push_str(&result.to_string());
             let path = format!(
                 "{}debug_{}.rs",
                 environment::lockjaw_output_dir()?,
                 environment::current_crate()
             );
+            log!("writing debug output to {}", path);
             std::fs::create_dir_all(Path::new(&environment::lockjaw_output_dir()?))
                 .expect("cannot create output dir");
             std::fs::write(Path::new(&path), &content)
