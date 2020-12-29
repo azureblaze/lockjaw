@@ -24,13 +24,10 @@ edition = "2018"
 [dependencies]
 printer = {path = "printer"}
 printer_impl = {path = "printer/printer_impl" }
+lockjaw = {path = "../"}
 
 [build-dependencies]
 lockjaw = {path = "../"}
 
 [dev-dependencies]
 printer_test = {path = "printer/printer_test" }
-
-[dependencies.lockjaw]
-path = "../"
-features = ["debug_output"]

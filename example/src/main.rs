@@ -78,4 +78,4 @@ fn test_greeter() {
     );
 }
 
-lockjaw::epilogue!();
+lockjaw::epilogue!(debug_output);

@@ -135,44 +135,55 @@ fn extend_local_manifest(path: &str) -> Result<(), TokenStream> {
 }
 
 #[proc_macro]
-pub fn epilogue(_input: TokenStream) -> TokenStream {
+pub fn epilogue(input: TokenStream) -> TokenStream {
+    let input2: proc_macro2::TokenStream = input.into();
     let result = quote! {
         #[cfg(not(any(test,doctest)))]
-        lockjaw::private_root_epilogue!();
+        lockjaw::private_root_epilogue!(#input2);
         #[cfg(any(test,doctest))]
-        lockjaw::private_test_epilogue!();
+        lockjaw::private_test_epilogue!(#input2);
     };
     result.into()
 }
 
+#[derive(Default)]
+struct EpilogueConfig {
+    for_test: bool,
+    debug_output: bool,
+}
+
 #[proc_macro]
-pub fn private_root_epilogue(_input: TokenStream) -> TokenStream {
+pub fn private_root_epilogue(input: TokenStream) -> TokenStream {
     handle_error(|| {
-        if environment::current_crate().eq("lockjaw") {
-            // rustdoc --test somehow does not compile with cfg(test), and needs to be manually
-            // redirected.
-            internal_epilogue("", true)
-        } else {
-            internal_epilogue("", false)
-        }
+        let set: HashSet<String> = input.into_iter().map(|t| t.to_string()).collect();
+        let config = EpilogueConfig {
+            debug_output: set.contains("debug_output"),
+            ..EpilogueConfig::default()
+        };
+        internal_epilogue(config)
     })
 }
 
 #[proc_macro]
 pub fn private_test_epilogue(_input: TokenStream) -> TokenStream {
-    handle_error(|| internal_epilogue("", true))
+    handle_error(|| {
+        let config = EpilogueConfig {
+            for_test: true,
+            ..EpilogueConfig::default()
+        };
+        internal_epilogue(config)
+    })
 }
 
 fn internal_epilogue(
-    path: &str,
-    for_test: bool,
+    config: EpilogueConfig,
 ) -> Result<proc_macro2::TokenStream, proc_macro2::TokenStream> {
-    extend_local_manifest(path)?;
+    extend_local_manifest("")?;
 
     MANIFEST.with(|manifest| {
-        let merged_manifest = merge_manifest(&manifest.borrow_mut(), for_test);
+        let merged_manifest = merge_manifest(&manifest.borrow_mut(), config.for_test);
         manifest.borrow_mut().clear();
-        if !for_test {
+        if !config.for_test {
             let out_dir = environment::lockjaw_output_dir()?;
             let manifest_path = format!("{}manifest.pb", out_dir);
             std::fs::create_dir_all(Path::new(&environment::proc_artifact_dir()))
@@ -199,20 +210,15 @@ fn internal_epilogue(
         let (components, messages) = components::generate_components(&merged_manifest)?;
 
         let path_test;
-        if for_test {
+        if config.for_test {
             path_test = quote! {}
         } else {
             path_test = quote! {
                 #[test]
                 fn epilogue_invoked_at_crate_root(){
-                    let path = #path;
                     let mod_path;
                     let crate_name = module_path!().split("::").next().unwrap();
-                    if path.is_empty() {
-                        mod_path = crate_name.to_owned();
-                    } else {
-                        mod_path = format!("{}::{}", crate_name, path);
-                    }
+                    mod_path = crate_name.to_owned();
                     assert_eq!(
                         module_path!(),
                         mod_path,
@@ -227,12 +233,11 @@ fn internal_epilogue(
             #path_test
         };
 
-        if for_test {
+        if config.for_test {
             return Ok(result);
         }
 
-        #[cfg(feature = "debug_output")]
-        {
+        if config.debug_output {
             let mut content = format!("/* manifest:\n{:#?}\n*/\n", merged_manifest);
             for message in messages {
                 content.push_str(&format!("/*\n{}\n*/\n", message));
@@ -257,11 +262,7 @@ fn internal_epilogue(
             Ok(quote! {
                 std::include!(#path);
             })
-        }
-
-        #[cfg(not(feature = "debug_output"))]
-        {
-            //log!("{:#}", components);
+        } else {
             Ok(result)
         }
     })
