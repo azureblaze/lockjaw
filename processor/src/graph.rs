@@ -330,23 +330,35 @@ impl Graph {
             let dependency_name = format_ident!("{}", dependency.get_name());
             let dependency_path = dependency.get_field_type().syn_type();
             let dependency_type;
-            if dependency.get_field_type().get_field_ref() {
-                dependency_type = quote! {& #dependency_path};
+            let return_mut = if dependency.get_field_type().get_field_mut() {
+                quote! {mut}
             } else {
-                dependency_type = quote! {#dependency_path}
-            }
+                quote! {}
+            };
+            let return_ref = if dependency.get_field_type().get_field_ref() {
+                quote! {&}
+            } else {
+                quote! {}
+            };
+
+            dependency_type = quote! {#return_ref #return_mut #dependency_path};
+
             let provider_name = dependency.get_field_type().identifier();
             let dep_node = self.get_node(
                 dependency.get_field_type(),
                 &vec!["generate_provisions".to_owned()],
             )?;
-            let m = if self.has_scoped_mutable_deps(dep_node)? {
+            let self_mut = if dependency.get_field_type().get_field_mut()
+                || self.has_scoped_mutable_deps(dep_node)?
+            {
                 quote! {mut}
             } else {
                 quote! {}
             };
+
             result.add_trait_methods(quote! {
-               fn #dependency_name(& #m self) -> #dependency_type {
+               #[doc="provision"]
+               fn #dependency_name(& #self_mut self) -> #dependency_type {
                   self.#provider_name()
                }
             });
@@ -435,7 +447,7 @@ impl Graph {
     fn has_scoped_mutable_deps(&self, node: &Node) -> Result<bool, TokenStream> {
         for dep in &node.dependencies {
             let dep_node = self.get_node(dep, &vec!["has_scoped_mutable_deps".to_owned()])?;
-            if dep_node.scoped && dep_node.mutable {
+            if dep_node.type_.get_field_mut() {
                 return Ok(true);
             }
             if dep_node.type_.get_path().eq("lockjaw::MaybeScopedMut") {

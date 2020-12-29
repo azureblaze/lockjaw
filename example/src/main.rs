@@ -32,6 +32,9 @@ impl Greeter<'_> {
     }
 }
 
+#[injectable(scope = "crate::MyComponent")]
+pub struct Foo {}
+
 #[module]
 struct MyModule {}
 
@@ -49,6 +52,7 @@ pub struct ModuleManifest(crate::MyModule, ::printer_impl::Module);
 #[component(modules = "crate::ModuleManifest")]
 pub trait MyComponent {
     fn greeter(&mut self) -> crate::Greeter;
+    fn foo(&self) -> &crate::Foo;
 }
 
 pub fn main() {
@@ -66,7 +70,8 @@ pub struct TestModuleManifest(crate::MyModule, ::printer_test::Module);
 pub trait TestComponent {
     fn greeter(&mut self) -> crate::Greeter;
 
-    fn test_printer(&mut self) -> &::printer_test::TestPrinter;
+    fn test_printer(&self) -> &::printer_test::TestPrinter;
+    fn test_printer_mut(&mut self) -> &mut ::printer_test::TestPrinter;
 }
 
 #[test]
