@@ -249,8 +249,9 @@ pub fn generate_component_module_manifest(base_path: &str) -> Vec<ComponentModul
     })
 }
 
-pub fn generate_components(manifest: &Manifest) -> Result<TokenStream, TokenStream> {
+pub fn generate_components(manifest: &Manifest) -> Result<(TokenStream, Vec<String>), TokenStream> {
     let mut result = quote! {};
+    let mut messages = Vec::<String>::new();
     for component in manifest.get_components() {
         if component
             .get_field_type()
@@ -259,12 +260,13 @@ pub fn generate_components(manifest: &Manifest) -> Result<TokenStream, TokenStre
         {
             continue;
         }
-        let tokens = graph::generate_component(component, manifest)?;
+        let (tokens, message) = graph::generate_component(component, manifest)?;
         result = quote! {
             #result
             #tokens
-        }
+        };
+        messages.push(message);
     }
     //log!("{}", result.to_string());
-    Ok(result)
+    Ok((result, messages))
 }

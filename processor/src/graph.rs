@@ -164,7 +164,7 @@ impl ComponentSections {
 pub fn generate_component(
     component: &Component,
     manifest: &Manifest,
-) -> Result<TokenStream, TokenStream> {
+) -> Result<(TokenStream, String), TokenStream> {
     //log!("manifest: {:#?}", manifest);
 
     let graph = crate::graph::build_graph(manifest, component)?;
@@ -226,10 +226,13 @@ pub fn generate_component(
         };
     }
 
-    Ok(quote! {
-        #component_impl
-        #builder
-    })
+    Ok((
+        quote! {
+            #component_impl
+            #builder
+        },
+        format!("graph: {:#?}", graph.map),
+    ))
 }
 
 impl Graph {
@@ -793,7 +796,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
             .collect::<Result<Vec<()>, TokenStream>>()?;
         }
     }
-    //log!("graph: {:#?}", result.map);
+    // log!("graph: {:#?}", result.map);
     Ok(result)
 }
 
