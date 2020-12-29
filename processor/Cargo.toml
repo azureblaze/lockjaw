@@ -31,7 +31,6 @@ proc-macro = true
 [features]
 default = []
 proto_generation = ["protoc-rust", "protoc-bin-vendored"]
-debug_output = []
 
 [dependencies]
 quote = "1.0"
