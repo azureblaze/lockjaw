@@ -155,24 +155,32 @@ struct EpilogueConfig {
 #[proc_macro]
 pub fn private_root_epilogue(input: TokenStream) -> TokenStream {
     handle_error(|| {
-        let set: HashSet<String> = input.into_iter().map(|t| t.to_string()).collect();
         let config = EpilogueConfig {
-            debug_output: set.contains("debug_output"),
-            ..EpilogueConfig::default()
+            // rustdoc --test does not run with #[cfg(test)] and will reach here.
+            for_test: environment::current_crate().eq("lockjaw"),
+            ..create_epilogue_config(input)
         };
         internal_epilogue(config)
     })
 }
 
 #[proc_macro]
-pub fn private_test_epilogue(_input: TokenStream) -> TokenStream {
+pub fn private_test_epilogue(input: TokenStream) -> TokenStream {
     handle_error(|| {
         let config = EpilogueConfig {
             for_test: true,
-            ..EpilogueConfig::default()
+            ..create_epilogue_config(input)
         };
         internal_epilogue(config)
     })
+}
+
+fn create_epilogue_config(input: TokenStream) -> EpilogueConfig {
+    let set: HashSet<String> = input.into_iter().map(|t| t.to_string()).collect();
+    EpilogueConfig {
+        debug_output: set.contains("debug_output"),
+        ..EpilogueConfig::default()
+    }
 }
 
 fn internal_epilogue(
@@ -232,10 +240,6 @@ fn internal_epilogue(
             #components
             #path_test
         };
-
-        if config.for_test {
-            return Ok(result);
-        }
 
         if config.debug_output {
             let mut content = format!("/* manifest:\n{:#?}\n*/\n", merged_manifest);

@@ -14,18 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, component_module_manifest, injectable, module, module_impl, MaybeScoped};
+use lockjaw::{
+    component, component_module_manifest, injectable, module, module_impl, MaybeScopedMut,
+};
 
 #[injectable]
 pub struct Greeter<'a> {
     #[inject]
     phrase: String,
     #[inject]
-    printer: MaybeScoped<'a, dyn ::printer::Printer>,
+    printer: MaybeScopedMut<'a, dyn ::printer::Printer>,
 }
 
 impl Greeter<'_> {
-    pub fn greet(&self) {
+    pub fn greet(&mut self) {
         self.printer.print(&self.phrase);
     }
 }
@@ -46,11 +48,11 @@ pub struct ModuleManifest(crate::MyModule, ::printer_impl::Module);
 
 #[component(modules = "crate::ModuleManifest")]
 pub trait MyComponent {
-    fn greeter(&self) -> crate::Greeter;
+    fn greeter(&mut self) -> crate::Greeter;
 }
 
 pub fn main() {
-    let component = MyComponent::new();
+    let mut component = MyComponent::new();
 
     component.greeter().greet();
 }
@@ -62,14 +64,14 @@ pub struct TestModuleManifest(crate::MyModule, ::printer_test::Module);
 #[cfg(test)]
 #[component(modules = "crate::TestModuleManifest")]
 pub trait TestComponent {
-    fn greeter(&self) -> crate::Greeter;
+    fn greeter(&mut self) -> crate::Greeter;
 
-    fn test_printer(&self) -> &::printer_test::TestPrinter;
+    fn test_printer(&mut self) -> &::printer_test::TestPrinter;
 }
 
 #[test]
 fn test_greeter() {
-    let component = TestComponent::new();
+    let mut component = TestComponent::new();
     component.greeter().greet();
 
     assert_eq!(
