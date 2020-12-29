@@ -42,3 +42,8 @@ rustc_version = "0.3"
 
 [dev-dependencies]
 test_dep = {path="tests/test_dep"}
+
+[features]
+# writes epilouge!() result to a file and include!() it, instead of returning hygenic token streams. This makes
+# debugging faulty results easier.
+debug_output = ["lockjaw_processor/debug_output"]
