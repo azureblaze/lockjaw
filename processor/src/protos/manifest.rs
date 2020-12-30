@@ -1705,7 +1705,6 @@ pub struct Type {
     trait_object: ::std::option::Option<bool>,
     field_ref: ::std::option::Option<bool>,
     pub scopes: ::protobuf::RepeatedField<Type>,
-    field_mut: ::std::option::Option<bool>,
     // special fields
     pub unknown_fields: ::protobuf::UnknownFields,
     pub cached_size: ::protobuf::CachedSize,
@@ -1900,25 +1899,6 @@ impl Type {
     pub fn take_scopes(&mut self) -> ::protobuf::RepeatedField<Type> {
         ::std::mem::replace(&mut self.scopes, ::protobuf::RepeatedField::new())
     }
-
-    // optional bool mut = 8;
-
-
-    pub fn get_field_mut(&self) -> bool {
-        self.field_mut.unwrap_or(false)
-    }
-    pub fn clear_field_mut(&mut self) {
-        self.field_mut = ::std::option::Option::None;
-    }
-
-    pub fn has_field_mut(&self) -> bool {
-        self.field_mut.is_some()
-    }
-
-    // Param is passed by value, moved
-    pub fn set_field_mut(&mut self, v: bool) {
-        self.field_mut = ::std::option::Option::Some(v);
-    }
 }
 
 impl ::protobuf::Message for Type {
@@ -1969,13 +1949,6 @@ impl ::protobuf::Message for Type {
                 7 => {
                     ::protobuf::rt::read_repeated_message_into(wire_type, is, &mut self.scopes)?;
                 },
-                8 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
-                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
-                    }
-                    let tmp = is.read_bool()?;
-                    self.field_mut = ::std::option::Option::Some(tmp);
-                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -2011,9 +1984,6 @@ impl ::protobuf::Message for Type {
             let len = value.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         };
-        if let Some(v) = self.field_mut {
-            my_size += 2;
-        }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
         my_size
@@ -2045,9 +2015,6 @@ impl ::protobuf::Message for Type {
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         };
-        if let Some(v) = self.field_mut {
-            os.write_bool(8, v)?;
-        }
         os.write_unknown_fields(self.get_unknown_fields())?;
         ::std::result::Result::Ok(())
     }
@@ -2121,11 +2088,6 @@ impl ::protobuf::Message for Type {
                 |m: &Type| { &m.scopes },
                 |m: &mut Type| { &mut m.scopes },
             ));
-            fields.push(::protobuf::reflect::accessor::make_option_accessor::<_, ::protobuf::types::ProtobufTypeBool>(
-                "mut",
-                |m: &Type| { &m.field_mut },
-                |m: &mut Type| { &mut m.field_mut },
-            ));
             ::protobuf::reflect::MessageDescriptor::new_pb_name::<Type>(
                 "Type",
                 fields,
@@ -2149,7 +2111,6 @@ impl ::protobuf::Clear for Type {
         self.trait_object = ::std::option::Option::None;
         self.field_ref = ::std::option::Option::None;
         self.scopes.clear();
-        self.field_mut = ::std::option::Option::None;
         self.unknown_fields.clear();
     }
 }
@@ -2818,21 +2779,21 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x20\x03(\x0b2\x0b.DependencyR\x0ebuilderModules\x12\x1f\n\x07modules\
     \x18\x03\x20\x03(\x0b2\x05.TypeR\x07modules\";\n\nDependency\x12\x12\n\
     \x04name\x18\x01\x20\x01(\tR\x04name\x12\x19\n\x04type\x18\x02\x20\x01(\
-    \x0b2\x05.TypeR\x04type\"\x90\x02\n\x04Type\x12\x1e\n\x04root\x18\x01\
+    \x0b2\x05.TypeR\x04type\"\xfe\x01\n\x04Type\x12\x1e\n\x04root\x18\x01\
     \x20\x01(\x0e2\n.Type.RootR\x04root\x12\x12\n\x04path\x18\x02\x20\x01(\t\
     R\x04path\x12\x14\n\x05crate\x18\x03\x20\x01(\tR\x05crate\x12\x19\n\x04a\
     rgs\x18\x04\x20\x03(\x0b2\x05.TypeR\x04args\x12!\n\x0ctrait_object\x18\
     \x05\x20\x01(\x08R\x0btraitObject\x12\x10\n\x03ref\x18\x06\x20\x01(\x08R\
-    \x03ref\x12\x1d\n\x06scopes\x18\x07\x20\x03(\x0b2\x05.TypeR\x06scopes\
-    \x12\x10\n\x03mut\x18\x08\x20\x01(\x08R\x03mut\"=\n\x04Root\x12\x0f\n\
-    \x0bUNSPECIFIED\x10\0\x12\n\n\x06GLOBAL\x10\x01\x12\t\n\x05CRATE\x10\x02\
-    \x12\r\n\tPRIMITIVE\x10\x03\"L\n\x06Module\x12\x19\n\x04type\x18\x01\x20\
-    \x01(\x0b2\x05.TypeR\x04type\x12'\n\tproviders\x18\x02\x20\x03(\x0b2\t.P\
-    roviderR\tproviders\"\x9e\x01\n\x08Provider\x12\x12\n\x04name\x18\x01\
-    \x20\x01(\tR\x04name\x12\x19\n\x04type\x18\x02\x20\x01(\x0b2\x05.TypeR\
-    \x04type\x12/\n\x0cdependencies\x18\x03\x20\x03(\x0b2\x0b.DependencyR\
-    \x0cdependencies\x12\x1c\n\x06static\x18\x04\x20\x01(\x08:\x04trueR\x06s\
-    tatic\x12\x14\n\x05binds\x18\x05\x20\x01(\x08R\x05binds\
+    \x03ref\x12\x1d\n\x06scopes\x18\x07\x20\x03(\x0b2\x05.TypeR\x06scopes\"=\
+    \n\x04Root\x12\x0f\n\x0bUNSPECIFIED\x10\0\x12\n\n\x06GLOBAL\x10\x01\x12\
+    \t\n\x05CRATE\x10\x02\x12\r\n\tPRIMITIVE\x10\x03\"L\n\x06Module\x12\x19\
+    \n\x04type\x18\x01\x20\x01(\x0b2\x05.TypeR\x04type\x12'\n\tproviders\x18\
+    \x02\x20\x03(\x0b2\t.ProviderR\tproviders\"\x9e\x01\n\x08Provider\x12\
+    \x12\n\x04name\x18\x01\x20\x01(\tR\x04name\x12\x19\n\x04type\x18\x02\x20\
+    \x01(\x0b2\x05.TypeR\x04type\x12/\n\x0cdependencies\x18\x03\x20\x03(\x0b\
+    2\x0b.DependencyR\x0cdependencies\x12\x1c\n\x06static\x18\x04\x20\x01(\
+    \x08:\x04trueR\x06static\x12\x14\n\x05binds\x18\x05\x20\x01(\x08R\x05bin\
+    ds\
 ";
 
 static file_descriptor_proto_lazy: ::protobuf::rt::LazyV2<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::rt::LazyV2::INIT;

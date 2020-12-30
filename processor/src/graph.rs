@@ -27,23 +27,10 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use syn::export::Formatter;
 
-#[derive(Debug, Eq, PartialEq, Hash)]
-struct IdentName(String);
-
-trait ToIdentName {
-    fn to_ident_name(&self) -> IdentName;
-}
-
-impl ToIdentName for Ident {
-    fn to_ident_name(&self) -> IdentName {
-        IdentName(self.to_string())
-    }
-}
-
 /// Dependency graph and other related data
 #[derive(Default, Debug)]
 pub struct Graph {
-    map: HashMap<IdentName, Node>,
+    map: HashMap<Ident, Node>,
     module_manifest: ComponentModuleManifest,
 }
 
@@ -54,7 +41,6 @@ pub struct Node {
     dependencies: Vec<Type>,
     node_type: NodeType,
     scoped: bool,
-    mutable: bool,
 }
 
 /// An item in a module
@@ -251,20 +237,15 @@ pub fn generate_component(
 
 impl Graph {
     fn add_node(&mut self, node: &Node) -> Result<(), TokenStream> {
-        if self
-            .map
-            .contains_key(&node.type_.identifier().to_ident_name())
-        {
+        if self.map.contains_key(&node.type_.identifier()) {
             let merged_node = self
                 .map
-                .get(&node.type_.identifier().to_ident_name())
+                .get(&node.type_.identifier())
                 .expect("cannot find node")
                 .visit(MergeNodeVisitor { new_node: &node })?;
-            self.map
-                .insert(merged_node.type_.identifier().to_ident_name(), merged_node);
+            self.map.insert(merged_node.type_.identifier(), merged_node);
         }
-        self.map
-            .insert(node.type_.identifier().to_ident_name(), node.clone());
+        self.map.insert(node.type_.identifier(), node.clone());
         Ok(())
     }
 
@@ -330,35 +311,14 @@ impl Graph {
             let dependency_name = format_ident!("{}", dependency.get_name());
             let dependency_path = dependency.get_field_type().syn_type();
             let dependency_type;
-            let return_mut = if dependency.get_field_type().get_field_mut() {
-                quote! {mut}
+            if dependency.get_field_type().get_field_ref() {
+                dependency_type = quote! {& #dependency_path};
             } else {
-                quote! {}
-            };
-            let return_ref = if dependency.get_field_type().get_field_ref() {
-                quote! {&}
-            } else {
-                quote! {}
-            };
-
-            dependency_type = quote! {#return_ref #return_mut #dependency_path};
-
+                dependency_type = quote! {#dependency_path}
+            }
             let provider_name = dependency.get_field_type().identifier();
-            let dep_node = self.get_node(
-                dependency.get_field_type(),
-                &vec!["generate_provisions".to_owned()],
-            )?;
-            let self_mut = if dependency.get_field_type().get_field_mut()
-                || self.has_scoped_mutable_deps(dep_node)?
-            {
-                quote! {mut}
-            } else {
-                quote! {}
-            };
-
             result.add_trait_methods(quote! {
-               #[doc="provision"]
-               fn #dependency_name(& #self_mut self) -> #dependency_type {
+               fn #dependency_name(&self) -> #dependency_type {
                   self.#provider_name()
                }
             });
@@ -368,7 +328,7 @@ impl Graph {
 
     fn get_node(&self, type_: &Type, ancestors: &Vec<String>) -> Result<&Node, TokenStream> {
         self.map
-            .get(&type_.identifier().to_ident_name())
+            .get(&type_.identifier())
             .map_compile_error(&format!(
                 "missing bindings for {}\nrequested by: {} ",
                 type_.readable(),
@@ -433,27 +393,11 @@ impl Graph {
 
     fn has_scoped_deps(&self, node: &Node) -> Result<bool, TokenStream> {
         for dep in &node.dependencies {
-            let dep_node = self.get_node(dep, &&vec!["has_scoped_deps".to_owned()])?;
+            let dep_node = self.get_node(dep, &Vec::new())?;
             if dep_node.scoped {
                 return Ok(true);
             }
             if self.has_scoped_deps(dep_node)? {
-                return Ok(true);
-            }
-        }
-        Ok(false)
-    }
-
-    fn has_scoped_mutable_deps(&self, node: &Node) -> Result<bool, TokenStream> {
-        for dep in &node.dependencies {
-            let dep_node = self.get_node(dep, &vec!["has_scoped_mutable_deps".to_owned()])?;
-            if dep_node.type_.get_field_mut() {
-                return Ok(true);
-            }
-            if dep_node.type_.get_path().eq("lockjaw::MaybeScopedMut") {
-                return Ok(true);
-            }
-            if self.has_scoped_mutable_deps(dep_node)? {
                 return Ok(true);
             }
         }
@@ -505,24 +449,18 @@ impl NodeVisitor<Result<ComponentSections, TokenStream>> for ProviderGenerator<'
                 }
             }
         }
-        let lifetime = if has_ref {
-            quote! {<'_>}
+        let lifetime;
+        if has_ref {
+            lifetime = quote! {<'_>};
         } else {
-            quote! {}
-        };
-
-        let mut_ = if self.graph.has_scoped_mutable_deps(node)? {
-            quote! {mut}
-        } else {
-            quote! {}
-        };
+            lifetime = quote! {};
+        }
 
         let name_ident = node.type_.identifier();
         let injectable_path = node.type_.syn_type();
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
-            #[doc="injectable"]
-            fn #name_ident(&'_ #mut_ self) -> #injectable_path #lifetime{
+            fn #name_ident(&'_ self) -> #injectable_path #lifetime{
                 #injectable_path{#ctor_params}
             }
         });
@@ -558,7 +496,6 @@ impl NodeVisitor<Result<ComponentSections, TokenStream>> for ProviderGenerator<'
         }
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
-            #[doc="provides"]
             fn #name_ident(&'_ self) -> #type_path{
                 #invoke_module
             }
@@ -570,38 +507,28 @@ impl NodeVisitor<Result<ComponentSections, TokenStream>> for ProviderGenerator<'
         &self,
         node: &Node,
         _module: &ModuleInstance,
-        _provides: &Provider,
+        provides: &Provider,
     ) -> Result<ComponentSections, TokenStream> {
-        let arg = node.dependencies.first().expect("binds must have one arg");
-        let arg_provider_name = arg.identifier();
+        let arg = provides
+            .get_dependencies()
+            .first()
+            .expect("binds must have one arg");
+        let arg_provider_name = arg.get_field_type().identifier();
 
         let name_ident = node.type_.identifier();
         let type_path = node.type_.syn_type();
 
-        let scope_type = if node.mutable {
-            quote! {MaybeScopedMut}
-        } else {
-            quote! {MaybeScoped}
-        };
-        let mut_ = if node.mutable {
-            quote! {mut}
-        } else {
-            quote! {}
-        };
-
         let mut result = ComponentSections::new();
-        if arg.get_field_ref() {
+        if arg.get_field_type().get_field_ref() {
             result.add_methods(quote! {
-                #[doc="binds"]
-                fn #name_ident(&'_ #mut_ self) -> #type_path{
-                    lockjaw::#scope_type::Ref(self.#arg_provider_name())
+                fn #name_ident(&'_ self) -> #type_path{
+                    lockjaw::MaybeScoped::Ref(self.#arg_provider_name())
                 }
             });
         } else {
             result.add_methods(quote! {
-                #[doc="binds"]
-                fn #name_ident(&'_ #mut_ self) -> #type_path{
-                    lockjaw::#scope_type::Val(Box::new(self.#arg_provider_name()))
+                fn #name_ident(&'_ self) -> #type_path{
+                    lockjaw::MaybeScoped::Val(Box::new(self.#arg_provider_name()))
                 }
             });
         }
@@ -617,30 +544,17 @@ impl NodeVisitor<Result<ComponentSections, TokenStream>> for ProviderGenerator<'
         let name_ident = node.type_.identifier();
         let type_path = node.type_.syn_type();
 
-        let scope_type = if node.mutable {
-            quote! {MaybeScopedMut}
-        } else {
-            quote! {MaybeScoped}
-        };
-        let mut_ = if node.mutable {
-            quote! {mut}
-        } else {
-            quote! {}
-        };
-
         let mut result = ComponentSections::new();
         if boxed_node.type_.get_field_ref() {
             result.add_methods(quote! {
-                #[doc="maybe_scoped"]
-                fn #name_ident(&'_ #mut_ self) -> #type_path{
-                    lockjaw::#scope_type::Ref(self.#arg_provider_name())
+                fn #name_ident(&'_ self) -> #type_path{
+                    lockjaw::MaybeScoped::Ref(self.#arg_provider_name())
                 }
             });
         } else {
             result.add_methods(quote! {
-                #[doc="maybe_scoped"]
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::#scope_type::Val(Box::new(self.#arg_provider_name()))
+                    lockjaw::MaybeScoped::Val(Box::new(self.#arg_provider_name()))
                 }
             });
         }
@@ -653,37 +567,19 @@ impl NodeVisitor<Result<ComponentSections, TokenStream>> for ProviderGenerator<'
         boxed_node: &Node,
     ) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = boxed_node.type_.identifier();
-        let mut non_mut_type = node.type_.clone();
-        non_mut_type.set_field_mut(false);
-        let once_name = format_ident!("once_{}", non_mut_type.identifier());
+        let once_name = format_ident!("once_{}", node.type_.identifier());
         let once_type = boxed_node.type_.syn_type();
 
         let name_ident = node.type_.identifier();
         let type_path = node.type_.syn_type();
         let mut result = ComponentSections::new();
-        if !node.mutable {
-            result.add_fields(quote! {
-                #once_name : lockjaw::Once<#once_type>,
-            });
-            result.add_ctor_params(quote! {#once_name : lockjaw::Once::new(),});
-        }
-
-        let mut_ = if node.mutable {
-            quote! {mut}
-        } else {
-            quote! {}
-        };
-
-        let get = if node.mutable {
-            quote! {get_mut}
-        } else {
-            quote! {get}
-        };
-
+        result.add_fields(quote! {
+            #once_name : lockjaw::Once<#once_type>,
+        });
+        result.add_ctor_params(quote! {#once_name : lockjaw::Once::new(),});
         result.add_methods(quote! {
-            #[doc="scoped"]
-            fn #name_ident(&'_ #mut_ self) -> & #mut_ #type_path{
-                self.#once_name.#get(|| self.#arg_provider_name())
+            fn #name_ident(&'_ self) -> &#type_path{
+                self.#once_name.get(|| self.#arg_provider_name())
             }
         });
         Ok(result)
@@ -828,6 +724,9 @@ impl<'a> NodeVisitor<Result<(), TokenStream>> for CanDepend<'a> {
         _module: &ModuleInstance,
         _provides: &Provider,
     ) -> Result<(), TokenStream> {
+        if self.target_node.scoped {
+            return self.no_scope();
+        }
         Ok(())
     }
 
@@ -888,11 +787,10 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
         }
         for provider in module.get_providers() {
             let _ = generate_provides_nodes(
-                manifest,
                 &result.module_manifest,
                 &module.get_field_type(),
                 provider,
-            )?
+            )
             .iter()
             .map(|node| result.add_node(node))
             .collect::<Result<Vec<()>, TokenStream>>()?;
@@ -913,7 +811,6 @@ fn generate_injectable_nodes(injectable: &Injectable) -> Vec<Node> {
             .collect(),
         node_type: NodeType::Injectable(injectable.clone()),
         scoped: false,
-        mutable: true,
     };
     generate_node_variants(node)
 }
@@ -942,165 +839,73 @@ fn get_module_instance(manifest: &ComponentModuleManifest, module_type: &Type) -
 }
 
 fn generate_provides_nodes(
-    manifest: &Manifest,
     module_manifest: &ComponentModuleManifest,
     module_type: &Type,
     provider: &Provider,
-) -> Result<Vec<Node>, TokenStream> {
-    let deps: Vec<Type> = provider
-        .get_dependencies()
-        .iter()
-        .map(|dependency| dependency.get_field_type().clone())
-        .collect();
-
+) -> Vec<Node> {
     let type_;
     let node_type;
     if provider.get_binds() {
-        let dep = deps.first().expect("missing binds dep");
-        let dep_path = dep.canonical_string_path();
-        let injectable = manifest
-            .get_injectables()
-            .iter()
-            .find(|i| i.get_field_type().canonical_string_path().eq(&dep_path))
-            .map_compile_error(&format!(
-                "trying to bind {} to {} in {}, but it is not an injectable",
-                dep.readable(),
-                provider.get_field_type().readable(),
-                get_module_instance(module_manifest, module_type)
-                    .name
-                    .to_string()
-            ))?;
-        let mut nodes = Vec::new();
-        if injectable.get_field_type().get_scopes().is_empty() {
-            nodes.push(Node {
-                type_: maybe_scoped_type(provider.get_field_type()),
-                node_type: NodeType::Binds(
-                    get_module_instance(module_manifest, module_type),
-                    provider.clone(),
-                ),
-                dependencies: deps.clone(),
-                scoped: false,
-                mutable: false,
-            });
-
-            nodes.push(Node {
-                type_: maybe_scoped_mut_type(provider.get_field_type()),
-                node_type: NodeType::Binds(
-                    get_module_instance(module_manifest, module_type),
-                    provider.clone(),
-                ),
-                dependencies: deps.clone(),
-                scoped: false,
-                mutable: true,
-            });
-        } else {
-            nodes.push(Node {
-                type_: maybe_scoped_type(provider.get_field_type()),
-                node_type: NodeType::Binds(
-                    get_module_instance(module_manifest, module_type),
-                    provider.clone(),
-                ),
-                dependencies: vec![ref_type(dep)],
-                scoped: false,
-                mutable: false,
-            });
-
-            nodes.push(Node {
-                type_: maybe_scoped_mut_type(provider.get_field_type()),
-                node_type: NodeType::Binds(
-                    get_module_instance(module_manifest, module_type),
-                    provider.clone(),
-                ),
-                dependencies: vec![ref_mut_type(dep)],
-                scoped: false,
-                mutable: true,
-            });
-        }
-        return Ok(nodes);
+        type_ = maybe_scoped_type(provider.get_field_type());
+        node_type = NodeType::Binds(
+            get_module_instance(module_manifest, module_type),
+            provider.clone(),
+        );
+    } else {
+        type_ = provider.get_field_type().clone();
+        node_type = NodeType::Provides(
+            get_module_instance(module_manifest, module_type),
+            provider.clone(),
+        );
     }
-    type_ = provider.get_field_type().clone();
-    node_type = NodeType::Provides(
-        get_module_instance(module_manifest, module_type),
-        provider.clone(),
-    );
-
     let node = Node {
         type_,
-        dependencies: deps,
+        dependencies: provider
+            .get_dependencies()
+            .iter()
+            .map(|dependency| dependency.get_field_type().clone())
+            .collect(),
         node_type,
         scoped: false,
-        mutable: true,
     };
-    Ok(generate_node_variants(node))
+    generate_node_variants(node)
 }
 
 fn generate_node_variants(node: Node) -> Vec<Node> {
     if !node.type_.get_scopes().is_empty() {
         let mut private_node = node.clone();
         private_node.scoped = true;
-        let mut nodes = Vec::new();
-        nodes.push(Node {
+
+        let scoped_node = Node {
             type_: ref_type(&node.type_),
             dependencies: vec![private_node.type_.clone()],
             node_type: NodeType::Scoped(Box::new(private_node.clone())),
             scoped: false,
-            mutable: false,
-        });
+        };
 
-        nodes.push(Node {
+        let maybe_scoped_node = Node {
             type_: maybe_scoped_type(&private_node.type_),
             dependencies: vec![private_node.type_.clone()],
             node_type: NodeType::MaybeScoped(Box::new(private_node.clone())),
-            mutable: false,
             scoped: false,
-        });
+        };
 
-        if node.mutable {
-            let mut_ref_node = Node {
-                type_: ref_mut_type(&node.type_),
-                dependencies: vec![private_node.type_.clone()],
-                node_type: NodeType::Scoped(Box::new(private_node.clone())),
-                scoped: false,
-                mutable: true,
-            };
+        return vec![private_node, scoped_node, maybe_scoped_node];
+    }
 
-            nodes.push(Node {
-                type_: maybe_scoped_mut_type(&mut_ref_node.type_),
-                dependencies: vec![ref_type(&node.type_)],
-                node_type: NodeType::MaybeScoped(Box::new(mut_ref_node.clone())),
-                mutable: true,
-                scoped: false,
-            });
-            nodes.push(mut_ref_node);
-        }
-        nodes.push(private_node);
-        return nodes;
-    } else {
-        let mut nodes = Vec::new();
-        if node.type_.get_path().ne("lockjaw::MaybeScoped")
-            && node.type_.get_path().ne("lockjaw::MaybeScopedMut")
-        {
-            nodes.push(Node {
+    if node.type_.scopes.is_empty() {
+        if node.type_.get_path().ne("lockjaw::MaybeScoped") {
+            let boxed_node = Node {
                 type_: maybe_scoped_type(&node.type_),
                 dependencies: vec![node.type_.clone()],
                 node_type: NodeType::MaybeScoped(Box::new(node.clone())),
-                mutable: false,
                 scoped: false,
-            });
-
-            if node.mutable {
-                nodes.push(Node {
-                    type_: maybe_scoped_mut_type(&node.type_),
-                    dependencies: vec![node.type_.clone()],
-                    node_type: NodeType::MaybeScoped(Box::new(node.clone())),
-                    mutable: true,
-                    scoped: false,
-                });
-            }
+            };
+            return vec![node, boxed_node];
         }
-        nodes.push(node);
-        return nodes;
+        return vec![node];
     }
+    return vec![];
 }
 
 fn maybe_scoped_type(type_: &Type) -> Type {
@@ -1111,23 +916,8 @@ fn maybe_scoped_type(type_: &Type) -> Type {
     boxed_type
 }
 
-fn maybe_scoped_mut_type(type_: &Type) -> Type {
-    let mut boxed_type = Type::new();
-    boxed_type.set_root(Type_Root::GLOBAL);
-    boxed_type.set_path("lockjaw::MaybeScopedMut".to_string());
-    boxed_type.mut_args().push(type_.clone());
-    boxed_type
-}
-
 fn ref_type(type_: &Type) -> Type {
     let mut ref_type = type_.clone();
     ref_type.set_field_ref(true);
-    ref_type
-}
-
-fn ref_mut_type(type_: &Type) -> Type {
-    let mut ref_type = type_.clone();
-    ref_type.set_field_ref(true);
-    ref_type.set_field_mut(true);
     ref_type
 }

@@ -18,7 +18,7 @@ limitations under the License.
 
 use std::cell::RefCell;
 use std::mem::MaybeUninit;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 /// Annotates a trait that composes the dependency graph and provides items in the graph
 /// (An "injector").
@@ -301,16 +301,16 @@ pub mod docs {
 
 mod doctests;
 
-#[cfg(nightly)]
-#[doc(include = "../README.md")]
-mod readme {}
-
 /// once
 #[doc(hidden)]
 pub struct Once<T> {
     once: std::sync::Once,
     value: RefCell<MaybeUninit<T>>,
 }
+
+#[cfg(nightly)]
+#[doc(include = "../README.md")]
+mod readme {}
 
 impl<T> Once<T> {
     pub fn new() -> Self {
@@ -330,19 +330,6 @@ impl<T> Once<T> {
                 value.borrow_mut().as_mut_ptr().write(initializer());
             });
             &*value.borrow().as_ptr()
-        }
-    }
-
-    pub fn get_mut<F>(&self, initializer: F) -> &mut T
-    where
-        F: FnOnce() -> T,
-    {
-        unsafe {
-            let value = &self.value;
-            self.once.call_once(|| {
-                value.borrow_mut().as_mut_ptr().write(initializer());
-            });
-            &mut *value.borrow_mut().as_mut_ptr()
         }
     }
 }
@@ -369,32 +356,6 @@ impl<T: ?Sized> Deref for MaybeScoped<'_, T> {
         match self {
             MaybeScoped::Val(val) => val.deref(),
             MaybeScoped::Ref(r) => r,
-        }
-    }
-}
-
-/// Mutable version of [MaybeScoped]
-pub enum MaybeScopedMut<'a, T: ?Sized + 'a> {
-    Val(Box<T>),
-    Ref(&'a mut T),
-}
-
-impl<T: ?Sized> Deref for MaybeScopedMut<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            MaybeScopedMut::Val(val) => val.deref(),
-            MaybeScopedMut::Ref(r) => r,
-        }
-    }
-}
-
-impl<T: ?Sized> DerefMut for MaybeScopedMut<'_, T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        match self {
-            MaybeScopedMut::Val(val) => val.deref_mut(),
-            MaybeScopedMut::Ref(r) => r,
         }
     }
 }
