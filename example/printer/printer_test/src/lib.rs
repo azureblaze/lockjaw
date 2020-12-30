@@ -16,21 +16,22 @@ limitations under the License.
 
 use lockjaw::{epilogue, injectable, module, module_impl};
 use printer::Printer;
+use std::cell::Ref;
 
 #[injectable(scope = "::example::TestComponent")]
 pub struct TestPrinter {
-    pub messages: Vec<String>,
+    pub messages: ::std::cell::RefCell<Vec<String>>,
 }
 
 impl TestPrinter {
-    pub fn get_messages(&self) -> &Vec<String> {
-        &self.messages
+    pub fn get_messages(&self) -> Ref<Vec<String>> {
+        self.messages.borrow()
     }
 }
 
 impl Printer for TestPrinter {
-    fn print(&mut self, message: &str) {
-        self.messages.push(message.to_owned())
+    fn print(&self, message: &str) {
+        self.messages.borrow_mut().push(message.to_owned())
     }
 }
 
@@ -40,7 +41,7 @@ pub struct Module {}
 #[module_impl]
 impl Module {
     #[binds]
-    pub fn bind_printer(_impl: crate::TestPrinter) -> impl ::printer::Printer {}
+    pub fn bind_printer(_impl: &crate::TestPrinter) -> impl ::printer::Printer {}
 }
 
 epilogue!();

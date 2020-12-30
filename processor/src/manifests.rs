@@ -38,7 +38,6 @@ lazy_static! {
         m.insert("String".into(), "std::string::String".into());
         m.insert("Vec".into(), "std::vec::Vec".into());
         m.insert("MaybeScoped".into(),"lockjaw::MaybeScoped".into() );
-        m.insert("MaybeScopedMut".into(),"lockjaw::MaybeScopedMut".into() );
         m
     };
 }
@@ -116,9 +115,6 @@ impl Type {
         if self.get_field_ref() {
             prefix.push_str("ref_");
         }
-        if self.get_field_mut() {
-            prefix.push_str("mut_");
-        }
         quote::format_ident!(
             "{}{}",
             prefix,
@@ -135,9 +131,6 @@ impl Type {
         let mut prefix = String::new();
         if self.get_field_ref() {
             prefix.push_str("ref ");
-        }
-        if self.get_field_mut() {
-            prefix.push_str("mut ");
         }
         format!("{}{}", prefix, self.canonical_string_path())
     }
@@ -175,9 +168,6 @@ pub fn type_from_syn_type(syn_type: &syn::Type) -> Result<Type, TokenStream> {
         syn::Type::Reference(ref reference) => {
             let mut t: Type = type_from_syn_type(reference.elem.deref())?;
             t.set_field_ref(true);
-            if reference.mutability.is_some() {
-                t.set_field_mut(true);
-            }
             return Ok(t);
         }
         _ => {

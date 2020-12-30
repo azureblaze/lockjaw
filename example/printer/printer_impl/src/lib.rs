@@ -21,7 +21,7 @@ use printer::Printer;
 pub struct PrinterImpl {}
 
 impl Printer for PrinterImpl {
-    fn print(&mut self, message: &str) {
+    fn print(&self, message: &str) {
         println!("{}", message);
     }
 }
