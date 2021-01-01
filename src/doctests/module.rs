@@ -160,3 +160,10 @@ mod binds_self {}
 ///
 /// ```
 mod binds_no_identifier {}
+
+/// ```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// #[module(foo="bar")]
+/// struct S {}
+/// ```
+mod module_unknown_metadata {}

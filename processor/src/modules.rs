@@ -18,15 +18,25 @@ use crate::error::{spanned_compile_error, CompileError};
 use crate::manifests::type_from_syn_type;
 use crate::protos::manifest::{Dependency, Module, Provider, Type, Type_Root};
 use crate::{environment, manifests, parsing};
+use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::ops::Deref;
 use syn::spanned::Spanned;
 
 thread_local! {
     static MODULES :RefCell<HashMap<String, LocalModule>> = RefCell::new(HashMap::new());
+}
+
+lazy_static! {
+    static ref MODULE_METADATA_KEYS: HashSet<String> = {
+        let mut set = HashSet::<String>::new();
+        set.insert("path".to_owned());
+        set
+    };
 }
 
 struct LocalModule {
@@ -42,7 +52,13 @@ pub fn handle_module_attribute(
     let span = input.span();
     let item_struct: syn::ItemStruct =
         syn::parse2(input.clone()).map_spanned_compile_error(span, "struct expected")?;
-    let attributes = parsing::get_attributes(attr)?;
+    let attributes = parsing::get_attribute_metadata(attr.clone())?;
+
+    for key in attributes.keys() {
+        if !MODULE_METADATA_KEYS.contains(key) {
+            return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
+        }
+    }
 
     let module = LocalModule {
         name: item_struct.ident.to_string(),
@@ -116,7 +132,7 @@ pub fn handle_module_impl_attribute(input: TokenStream) -> Result<TokenStream, T
                                 } ,
                             }
                         }
-                        let provides_attr = parsing::get_parenthesized_attributes(attr.tokens.clone())?;
+                        let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
                         let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
                         manifests::extend(proto_provider.mut_field_type().mut_scopes(),scopes);
                         module.providers.push(proto_provider);
@@ -148,7 +164,7 @@ pub fn handle_module_impl_attribute(input: TokenStream) -> Result<TokenStream, T
                                 proto_provider.mut_dependencies().push(dependency);
                             } ,
                         }
-                        let provides_attr = parsing::get_parenthesized_attributes(attr.tokens.clone())?;
+                        let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
                         let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
                         manifests::extend(proto_provider.mut_field_type().mut_scopes(),scopes);
                         module.providers.push(proto_provider);

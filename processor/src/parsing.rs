@@ -42,7 +42,7 @@ pub fn is_attribute(syn_attr: &syn::Attribute, attr: &str) -> bool {
     }
 }
 
-pub fn get_parenthesized_attributes(
+pub fn get_parenthesized_attribute_metadata(
     attr: TokenStream,
 ) -> Result<HashMap<String, String>, TokenStream> {
     if attr.is_empty() {
@@ -56,14 +56,14 @@ pub fn get_parenthesized_attributes(
         .map_spanned_compile_error(attr.span(), "')' expected at end")?
         .to_owned();
 
-    get_attributes(
+    get_attribute_metadata(
         TokenStream::from_str(&s)
             .map_spanned_compile_error(attr.span(), "cannot parse string to tokens")?,
     )
 }
 
 /// Converts #[attr(key1="value1", key2="value2")] to key-value map.
-pub fn get_attributes(attr: TokenStream) -> Result<HashMap<String, String>, TokenStream> {
+pub fn get_attribute_metadata(attr: TokenStream) -> Result<HashMap<String, String>, TokenStream> {
     let mut result = HashMap::new();
     let parser =
         syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;

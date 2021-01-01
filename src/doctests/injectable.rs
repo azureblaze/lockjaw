@@ -16,14 +16,14 @@ limitations under the License.
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
-/// #[injectable]
+/// #[lockjaw::injectable]
 /// trait S {}
 /// ```
 mod injectable_non_struct {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
-/// #[injectable]
+/// #[lockjaw::injectable]
 /// struct S(String);
 /// ```
 mod injectable_tuple {}
@@ -50,3 +50,10 @@ mod injectable_tuple {}
 /// epilogue!();
 ///```
 mod injectable_no_default {}
+
+/// ```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// #[lockjaw::injectable(foo="bar")]
+/// struct S {};
+/// ```
+mod injectable_unknown_metadata {}

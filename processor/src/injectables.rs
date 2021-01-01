@@ -14,16 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::error::CompileError;
+use crate::error::{spanned_compile_error, CompileError};
 #[allow(unused)]
 use crate::log;
 use crate::manifests::type_from_syn_type;
 use crate::protos::manifest::{Field, Injectable, Type, Type_Root};
 use crate::{environment, manifests, parsing};
+use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use std::borrow::Borrow;
 use std::cell::RefCell;
+use std::collections::HashSet;
 use syn::spanned::Spanned;
 
 struct LocalInjectable {
@@ -38,6 +40,15 @@ thread_local! {
     static INJECTABLES :RefCell<Vec<LocalInjectable>> = RefCell::new(Vec::new());
 }
 
+lazy_static! {
+    static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
+        let mut set = HashSet::<String>::new();
+        set.insert("scope".to_owned());
+        set.insert("path".to_owned());
+        set
+    };
+}
+
 pub fn handle_injectable_attribute(
     attr: TokenStream,
     input: TokenStream,
@@ -46,7 +57,14 @@ pub fn handle_injectable_attribute(
     let mut item: syn::ItemStruct =
         syn::parse2(input).map_spanned_compile_error(span, "struct expected")?;
 
-    let attributes = parsing::get_attributes(attr)?;
+    let attributes = parsing::get_attribute_metadata(attr.clone())?;
+
+    for key in attributes.keys() {
+        if !INJECTABLE_METADATA_KEYS.contains(key) {
+            return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
+        }
+    }
+
     let scopes = parsing::get_types(attributes.get("scope").map(Clone::clone))?;
     let mut injectable = LocalInjectable {
         identifier: item.ident.to_string(),
