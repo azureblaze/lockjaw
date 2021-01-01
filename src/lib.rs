@@ -20,8 +20,8 @@ use std::cell::RefCell;
 use std::mem::MaybeUninit;
 use std::ops::Deref;
 
-/// Annotates a trait that composes the dependency graph and provides items in the graph
-/// (An "injector").
+/// Annotates a trait that composes the dependency graph and provides items in
+/// the graph (An "injector").
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
@@ -39,44 +39,36 @@ use std::ops::Deref;
 /// }
 /// private_test_epilogue!();
 /// ```
+/// # Generated methods
 ///
-/// # Creating injected types
+/// # `pub fn build(modules: COMPONENT_MODULE_MANIFEST) -> impl COMPONENT`
 ///
-/// A component can declare methods to allow injected types to be created for code outside the
-/// dependency graph. the method should take only `&self` as parameter, and return the injected
-/// type.
+/// Create an instance of the component, with modules in `modules` installed.
+/// `COMPONENT_MODULE_MANIFEST` is the [annotated struct](component_module_manifest) in the
+/// [`modules` metadata](#modules).
 ///
-/// Methods in a component must take only `&self` as parameter, and return a injected type. If the
-/// returned type is not injected compilation will fail.
+/// NOTE: fields not annotated with [`#[builder]`](component_module_manifest#builder) will be
+/// stripped from the struct and should not be specified as they are auto-generated.
 ///
-/// See [`injectable`] and [`module`] for how to make a type injectable.
+/// # `pub fn new() -> impl COMPONENT`
 ///
-/// Most types used by lockjaw must be fully qualified, i.e. it must start with either `::` or
-/// `crate::`. The only expections are types included in the rust [prelude](std::prelude):
-/// *   [Box]
-/// *   [Option]
-/// *   [Result]
-/// *   [String]
-/// *   [Vec]
+/// Create an instance of the component. Only generated if no module instances are required,
+/// which means either the component does not install any module with the [`modules`](#modules)
+/// metadata, or none of the fields in
+/// [`#[component_module_manifest]`](component_module_manifest) struct are annotated with
+/// [`#[builder]`](component_module_manifest#builder).
 ///
-/// lockjaw will complain non-fully qualified type at compile time
+/// # Metadata
 ///
-/// ```compile_fail
-/// # #[macro_use] extern crate lockjaw_processor;
-/// # #[injectable]
-/// # struct Foo{}
-/// #[component]
-/// trait MyComponent {
-///     fn foo(&self) -> Foo;
-/// }
+/// Components accept addtional metadata in the form of
+/// `#[component(key="value")]`. Currently all values are string literals.
 ///
-/// # fn main(){}
-/// # private_test_epilogue!();
-/// ```
-/// # Installing modules
-/// Each component can install their separate set of [`modules`](module) to form a different
-/// dependency graph. Modules should be specified in a struct witht the [`component_module_manifest`]
-/// attribute, and passed to `modules` in the `component` attribute.
+/// ## `modules`
+///
+/// Comma-separated, fully qualifed path a struct annotated by
+/// [`#[component_module_manifest]`](component_module_manifest), which contains
+/// [`modules`](module) to be installed as fields. Bindings in listed modules will be
+/// incorporated into the dependency graph.
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
@@ -116,8 +108,112 @@ use std::ops::Deref;
 /// # private_test_epilogue!();
 /// ```
 ///
-/// Component can select different modules providing the same type to change the behavior of types
-/// that depend on it.
+/// ## `path`
+/// Optional [path](https://doc.rust-lang.org/reference/paths.html) relative to the path of the
+/// current file.
+///
+/// Lockjaw retrieves the path of the current file from [`epilogue!()`](epilogue) and
+/// [`mod_epilogue!()`](mod_epilogue), but if the `component` is nested under a
+/// [`mod`](https://doc.rust-lang.org/reference/items/modules.html) then the extra path must be
+/// specified.
+///
+/// ```
+/// # use lockjaw::{epilogue, injectable};
+/// # #[injectable]
+/// # pub struct Foo {}
+///
+/// mod nested {
+///     #[lockjaw::component(path = "nested")]
+///     pub trait MyComponent {
+///         fn foo(&self) -> crate::Foo;
+///     }
+/// }
+/// pub fn main() {
+///     let component = nested::MyComponent::new();
+///     component.foo();
+/// }
+/// epilogue!();
+/// ```
+///
+/// # Creating injected types
+///
+/// A component can declare methods to allow injected types to be created for code outside the
+/// dependency graph. the method should take only `&self` as parameter, and return the injected
+/// type.
+///
+/// Methods in a component must take only `&self` as parameter, and return a injected type. If
+/// the returned type is not injected compilation will fail.
+///
+/// See [`injectable`] and [`module`] for how to make a type injectable.
+///
+/// Most types used by lockjaw must be fully qualified, i.e. it must start with either `::` or
+/// `crate::`. The only expections are types included in the rust [prelude](std::prelude):
+///     * [Box]
+///     * [Option]
+///     * [Result]
+///     * [String]
+///     * [Vec]
+///
+/// lockjaw will complain non-fully qualified type at compile time
+///
+/// ```compile_fail
+/// # #[macro_use] extern crate lockjaw_processor;
+/// # #[injectable]
+/// # struct Foo{}
+/// #[component]
+/// trait MyComponent {
+///     fn foo(&self) -> Foo;
+/// }
+///
+/// # fn main(){}
+/// # private_test_epilogue!();
+/// ```
+/// # Installing modules
+/// Each component can install their separate set of [`modules`](module) to form a different
+/// dependency graph. Modules should be specified in a struct witht the
+/// [`component_module_manifest`] attribute, and passed to `modules` in the `component`
+/// attribute.
+///
+/// ```
+/// # #[macro_use] extern crate lockjaw_processor;
+/// # #[module]
+/// # struct StringModule {}
+/// # #[module_impl]
+/// # impl StringModule {
+/// #     #[provides]
+/// #     pub fn provide_string() -> String {
+/// #         "string".to_owned()
+/// #     }
+/// # }
+/// #
+/// # #[module]
+/// # struct UnsignedModule {}
+/// # #[module_impl]
+/// # impl UnsignedModule {
+/// #     #[provides]
+/// #     pub fn provide_unsigned() -> u32 {
+/// #         42
+/// #     }
+/// # }
+/// #
+///
+/// #[component_module_manifest]
+/// struct MyModuleManifest {
+///     string : crate::StringModule,
+///     unsigned : crate::UnsignedModule
+/// }
+/// #[component(modules = "crate::MyModuleManifest")]
+/// trait MyComponent {
+///     fn string(&self) -> String;
+///     fn unsigned(&self) -> u32;
+/// }
+///
+/// # fn main() {}
+/// # private_test_epilogue!();
+/// ```
+///
+/// Component can select different modules providing the same type to change the behavior of
+/// types that depend on it.
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
@@ -175,8 +271,8 @@ use std::ops::Deref;
 ///
 /// # Creating component instances
 ///
-/// Lockjaw generates `COMPONENT::build(param: COMPONENT_MODULE_MANIFEST) -> Box<dyn COMPONENT>`,
-/// which takes instances of modules and create the component.
+/// Lockjaw generates `COMPONENT::build(param: COMPONENT_MODULE_MANIFEST) -> Box<dyn
+/// COMPONENT>`, which takes instances of modules and create the component.
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
@@ -216,8 +312,8 @@ use std::ops::Deref;
 /// private_test_epilogue!();
 /// ```
 ///
-/// If a field is not attributed with `#[builder]`, lockjaw will auto generated it when building the
-/// component. The field will be stripped from the manifests.
+/// If a field is not attributed with `#[builder]`, lockjaw will auto generated it when
+/// building the component. The field will be stripped from the manifests.
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
@@ -274,11 +370,104 @@ use std::ops::Deref;
 /// private_test_epilogue!();
 /// ```
 ///
-/// Each instance of the component will have independent set of [scoped injections](docs::scoped)
+/// Each instance of the component will have independent set of [scoped
+/// injections](docs::scoped)
 pub use lockjaw_processor::component;
+
+/// Annotates a struct that lists [`modules`](module) to be installed in a
+/// [`component`](component).
+///
+/// The annotated struct will become the parameter for
+/// [`COMPONENT.build()`](component#pub-fn-buildmodules-component_module_manifest---impl-component)
+///
+/// `Modules` not annotated with [`#[builder]`](#builder) are stripped from the struct, as
+/// lockjaw will auto generate them
+///
+/// ```
+/// # #[macro_use] extern crate lockjaw_processor;
+/// # #[module]
+/// # struct StringModule {}
+/// # #[module_impl]
+/// # impl StringModule {
+/// #     #[provides]
+/// #     pub fn provide_string() -> String {
+/// #         "string".to_owned()
+/// #     }
+/// # }
+/// #
+/// # #[module]
+/// # struct UnsignedModule {}
+/// # #[module_impl]
+/// # impl UnsignedModule {
+/// #     #[provides]
+/// #     pub fn provide_unsigned() -> u32 {
+/// #         42
+/// #     }
+/// # }
+/// #
+///
+/// #[component_module_manifest]
+/// struct MyModuleManifest {
+///     string : crate::StringModule,
+///     unsigned : crate::UnsignedModule
+/// }
+/// #[component(modules = "crate::MyModuleManifest")]
+/// trait MyComponent {
+///     fn string(&self) -> String;
+///     fn unsigned(&self) -> u32;
+/// }
+///
+/// # fn main() {}
+/// # private_test_epilogue!();
+/// ```
+///
+/// # Field annotations
+///
+/// ## `#[builder]`
+/// Annotates a module that cannot be auto generated (as it is not an empty struct) and must be
+/// explicitly provided to
+/// [`COMPONENT.build()`](component#pub-fn-buildmodules-component_module_manifest---impl-component)
+///
+/// ```
+/// # #[macro_use] extern crate lockjaw_processor;
+/// #[module]
+/// struct StringModule {
+///     string : String
+/// }
+/// #[module_impl]
+/// impl StringModule {
+///     #[provides]
+///     pub fn provide_string(&self) -> String {
+///         self.string.clone()
+///     }
+/// }
+///
+/// #[component_module_manifest]
+/// struct MyModuleManifest {
+///     #[builder]
+///     module : crate::StringModule,
+/// }
+/// #[component(modules = "crate::MyModuleManifest")]
+/// trait MyComponent {
+///     fn string(&self) -> String;
+/// }
+///
+/// fn main() {
+///     let component = MyComponent::build(MyModuleManifest{
+///         module: StringModule{
+///             string: "foo".to_owned()
+///         }
+///     });
+///     
+///     assert_eq!("foo", component.string());
+/// }
+/// epilogue!();
+/// ```
 pub use lockjaw_processor::component_module_manifest;
+
+/// Macro that must be called in in the crate root (`lib.rs` or `main.rs`), after any other lockjaw
+/// macros.
 pub use lockjaw_processor::epilogue;
-pub use lockjaw_processor::inject;
 pub use lockjaw_processor::injectable;
 pub use lockjaw_processor::mod_epilogue;
 pub use lockjaw_processor::module;
@@ -360,6 +549,10 @@ impl<T: ?Sized> Deref for MaybeScoped<'_, T> {
     }
 }
 
+/// Function that must be called inside the
+/// [cargo build script](https://doc.rust-lang.org/cargo/reference/build-scripts.html) to setup the
+/// lockjaw environment.
+///
 pub fn build_script() {
     // Do nothing. just forcing env var OUT_DIR to be set.
 }
