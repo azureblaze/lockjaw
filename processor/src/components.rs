@@ -23,11 +23,13 @@ use crate::protos::manifest::{
 };
 use crate::{environment, parsing};
 use crate::{graph, manifests};
+use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::quote_spanned;
 use quote::{quote, ToTokens};
 use std::borrow::Borrow;
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::ops::Deref;
 use syn::spanned::Spanned;
 
@@ -37,6 +39,15 @@ thread_local! {
 
 thread_local! {
     static COMPONENT_MODULE_MANIFESTS :RefCell<Vec<LocalComponentModuleManifest>> = RefCell::new(Vec::new());
+}
+
+lazy_static! {
+    static ref COMPONENT_METADATA_KEYS: HashSet<String> = {
+        let mut set = HashSet::<String>::new();
+        set.insert("modules".to_owned());
+        set.insert("path".to_owned());
+        set
+    };
 }
 
 /// Stores partial data until the true path can be resolved in the file epilogue.
@@ -82,7 +93,14 @@ pub fn handle_component_attribute(
         }
     }
     let module_manifest;
-    let attributes = parsing::get_attributes(attr.clone())?;
+    let attributes = parsing::get_attribute_metadata(attr.clone())?;
+
+    for key in attributes.keys() {
+        if !COMPONENT_METADATA_KEYS.contains(key) {
+            return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
+        }
+    }
+
     if let Some(value) = attributes.get("modules") {
         let path: syn::Path = syn::parse_str(value)
             .map_spanned_compile_error(attr.span(), "path expected for modules")?;
@@ -160,7 +178,7 @@ pub fn handle_component_module_manifest_attribute(
     let span = input.span();
     let item_struct: syn::ItemStruct =
         syn::parse2(input).map_spanned_compile_error(span, "struct expected")?;
-    let attributes = parsing::get_attributes(attr.clone())?;
+    let attributes = parsing::get_attribute_metadata(attr.clone())?;
     let mut builder_modules = <Vec<Dependency>>::new();
     let mut modules = <Vec<Type>>::new();
     let mut fields = quote! {};

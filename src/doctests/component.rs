@@ -104,3 +104,14 @@ mod component_trait_object_provision_no_lifetime {}
 /// epilogue!();
 ///```
 mod componenet_provision_non_scoped_of_scoped {}
+
+///```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+///
+/// #[lockjaw::component(foo="bar")]
+/// pub trait MyComponent {
+/// }
+
+/// epilogue!();
+///```
+mod componenet_unknown_metadata {}
