@@ -88,8 +88,10 @@ pub fn mod_epilogue(input: TokenStream) -> TokenStream {
         extend_local_manifest(&path)?;
         let path_test = quote! {
             #[test]
-            fn test_modEpiloguePath_matchesMacro(){
-                assert_eq!(file!().replace("\\","/"), #path.replace("\\", "/"),
+            fn mod_epilogue_path_matches_macro_input(){
+                let crate_name = module_path!().split("::").next().unwrap();
+                let mod_path = format!("{}::{}",crate_name, #path);
+                assert_eq!(module_path!(), mod_path,
                     "path supplied to epilogue!() does not match actual path");
             }
         };
@@ -219,9 +221,8 @@ fn internal_epilogue(
             path_test = quote! {
                 #[test]
                 fn epilogue_invoked_at_crate_root(){
-                    let mod_path;
                     let crate_name = module_path!().split("::").next().unwrap();
-                    mod_path = crate_name.to_owned();
+                    let mod_path = crate_name.to_owned();
                     assert_eq!(
                         module_path!(),
                         mod_path,

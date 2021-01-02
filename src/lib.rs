@@ -37,7 +37,7 @@ use std::ops::Deref;
 ///     let component: Box<dyn MyComponent> = MyComponent::new();
 ///     let foo : Foo = component.foo();
 /// }
-/// private_test_epilogue!();
+/// epilogue!();
 /// ```
 /// # Generated methods
 ///
@@ -61,7 +61,7 @@ use std::ops::Deref;
 /// # Metadata
 ///
 /// Components accept addtional metadata in the form of
-/// `#[component(key="value")]`. Currently all values are string literals.
+/// `#[component(key="value", key2="value2")]`. Currently all values are string literals.
 ///
 /// ## `modules`
 ///
@@ -424,8 +424,8 @@ pub use lockjaw_processor::component;
 /// # Field annotations
 ///
 /// ## `#[builder]`
-/// Annotates a module that cannot be auto generated (as it is not an empty struct) and must be
-/// explicitly provided to
+/// Annotates a module field that cannot be auto generated (as it is not an empty struct) and must
+/// be explicitly provided to
 /// [`COMPONENT.build()`](component#pub-fn-buildmodules-component_module_manifest---impl-component)
 ///
 /// ```
@@ -465,9 +465,131 @@ pub use lockjaw_processor::component;
 /// ```
 pub use lockjaw_processor::component_module_manifest;
 
-/// Macro that must be called in in the crate root (`lib.rs` or `main.rs`), after any other lockjaw
-/// macros.
+/// Resolves the dependency graph and generate componenent code. Must be called in in the crate root
+/// (`lib.rs` or `main.rs`), after any other lockjaw macros, and outside any `mod`/functions
+///
+/// a unit test will be generated to ensure it is called in the correct file.
+///
+/// # Parameters
+/// The macro accepts additional parameters in the from of identifiers. Regular users should rarely
+/// need to use these.
+///
+/// ## `debug_output`
+/// Writes the `epilogue!()` output to a file and `include!()` it, instead of inserting a hygienic
+/// token stream. This allows easier debugging of code generation issues.
 pub use lockjaw_processor::epilogue;
+
+/// Annotates a struct that can be provided to the dependency graph.
+///
+/// ```
+/// # use lockjaw::{epilogue, injectable};
+/// # #[macro_use] extern crate lockjaw_processor;
+/// #[injectable]
+/// struct Bar{}
+///
+/// #[injectable]
+/// struct Foo{
+///     #[inject]
+///     bar : crate::Bar,
+///     s : String,
+/// }
+///
+/// #[component]
+/// trait MyComponent {
+///     fn foo(&self) -> crate::Foo;
+/// }
+///
+/// pub fn main() {
+///     let component = MyComponent::new();
+///     let foo = component.foo();
+/// }
+/// epilogue!();
+/// ```
+///
+/// # Fields
+///
+/// ## `#[inject]` fields
+/// Fields annotated with `#[inject]` are automatically injected from the dependency graph.
+///
+/// ## Unannotated fields
+/// Fields without annotations are initialized with the default value, and must implement
+/// [`Default`](https://doc.rust-lang.org/std/default/trait.Default.html) or compilation will fail.
+///
+/// # Metadata
+///
+/// Injectables accept addtional metadata in the form of
+/// `#[injectable(key="value", key2="value2")]`. Currently all values are string literals.
+///
+/// ## `path`
+/// Optional [path](https://doc.rust-lang.org/reference/paths.html) relative to the path of the
+/// current file.
+///
+/// Lockjaw retrieves the path of the current file from [`epilogue!()`](epilogue) and
+/// [`mod_epilogue!()`](mod_epilogue), but if the `injectable` is nested under a
+/// [`mod`](https://doc.rust-lang.org/reference/items/modules.html) then the extra path must be
+/// specified.
+///
+/// ```
+/// # use lockjaw::{epilogue, injectable};
+///
+/// mod nested {
+///     #[lockjaw::injectable(path = "nested")]
+///     pub struct Foo {}
+/// }
+/// #[lockjaw::component]
+/// pub trait MyComponent {
+///     fn foo(&self) -> crate::nested::Foo;
+/// }
+///
+/// pub fn main() {
+///     let component = MyComponent::new();
+///     component.foo();
+/// }
+/// epilogue!();
+/// ```
+/// ## `scope`
+///
+/// Optional fully qualified path to a [`component`](component), which makes the `injectable` a
+/// scoped singleton under the `component`.
+///
+/// The `injectable` will only be provided in the `component`, and all objects generated from the
+/// same `component` instance will share the same scoped `injecetable` instance. Since it is shared,
+/// the scoped `injectable` can only be depended on as  `&T` or [`MaybeScoped<T>`](MaybeScoped), and
+/// the scoped `injectable` or any objects that depends on it will share the lifetime of the
+/// `component`.
+///
+/// ```
+/// # use lockjaw::{epilogue, injectable};
+/// #[injectable(scope = "crate::MyComponent")]
+/// pub struct Foo {}
+///
+/// #[injectable]
+/// pub struct Bar<'a>{
+///     #[inject]
+///     foo : &'a crate::Foo
+/// }
+///
+/// #[lockjaw::component]
+/// pub trait MyComponent {
+///     fn bar(&self) -> crate::Bar;
+/// }
+///
+/// pub fn main() {
+///     let component = MyComponent::new();
+///     let bar1 = component.bar();
+///     let bar2 = component.bar();
+///     let bar1_ptr: *const Bar = &bar1;
+///     let bar2_ptr: *const Bar = &bar2;
+///     assert_ne!(bar1_ptr, bar2_ptr);
+///     let foo1_ptr : *const Foo = bar1.foo;
+///     let foo2_ptr : *const Foo = bar2.foo;
+///     assert_eq!(foo1_ptr, foo2_ptr);
+/// }
+/// epilogue!();
+/// ```
+///
+/// Scoped `injectables` are shared and cannot be mutable while they commonly needs mutability.
+/// users must implement internal mutability.
 pub use lockjaw_processor::injectable;
 pub use lockjaw_processor::mod_epilogue;
 pub use lockjaw_processor::module;
@@ -553,6 +675,14 @@ impl<T: ?Sized> Deref for MaybeScoped<'_, T> {
 /// [cargo build script](https://doc.rust-lang.org/cargo/reference/build-scripts.html) to setup the
 /// lockjaw environment.
 ///
+/// lockjaw should be added to `[build-dependencies]` of the crate.
+///
+/// ```
+/// // build.rs
+/// fn main() {
+///     lockjaw::build_script();
+/// }
+/// ```
 pub fn build_script() {
     // Do nothing. just forcing env var OUT_DIR to be set.
 }
