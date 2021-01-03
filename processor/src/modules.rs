@@ -25,6 +25,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::Deref;
+use syn::export::ToTokens;
 use syn::spanned::Spanned;
 
 thread_local! {
@@ -33,6 +34,14 @@ thread_local! {
 
 lazy_static! {
     static ref MODULE_METADATA_KEYS: HashSet<String> = {
+        let mut set = HashSet::<String>::new();
+        set.insert("path".to_owned());
+        set
+    };
+}
+
+lazy_static! {
+    static ref MODULE_IMPL_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("path".to_owned());
         set
@@ -67,33 +76,43 @@ pub fn handle_module_attribute(
     };
 
     MODULES.with(|module_map| {
-        module_map
-            .borrow_mut()
-            .insert(item_struct.ident.to_string(), module)
+        module_map.borrow_mut().insert(
+            with_additional_path(&item_struct.ident.to_string(), attributes.get("path")),
+            module,
+        )
     });
 
     Ok(input)
 }
 
-pub fn handle_module_impl_attribute(input: TokenStream) -> Result<TokenStream, TokenStream> {
+pub fn handle_module_impl_attribute(
+    attr: TokenStream,
+    input: TokenStream,
+) -> Result<TokenStream, TokenStream> {
     MODULES.with(|mm| {
         let span = input.span();
+        let attributes = parsing::get_attribute_metadata(attr.clone())?;
+
+        for key in attributes.keys() {
+            if !MODULE_IMPL_METADATA_KEYS.contains(key) {
+                return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
+            }
+        }
+
         let mut module_map = mm.borrow_mut();
-        let mut item_impl: syn::ItemImpl = syn::parse2(input.clone()).map_spanned_compile_error(
-            span,
-            "impl expected"
-        )?;
-        let module:& mut LocalModule;
+        let mut item_impl: syn::ItemImpl =
+            syn::parse2(input.clone()).map_spanned_compile_error(span, "impl expected")?;
+        let module: &mut LocalModule;
         if let syn::Type::Path(path) = item_impl.self_ty.deref() {
             module = module_map
-                .get_mut(
-                    &path
-                        .path
-                        .get_ident()
-                        .map_spanned_compile_error(path.path.span(),"identifier expected. #[module] and #[module_impl] must annotate a module in the same mod.")?
-                        .to_string(),
-                )
-                .map_spanned_compile_error(path.path.span(),"module not registered. add #[module] to the struct first")?;
+                .get_mut(&with_additional_path(
+                    &path.path.to_token_stream().to_string().replace(" ", ""),
+                    attributes.get("path"),
+                ))
+                .map_spanned_compile_error(
+                    path.path.span(),
+                    "module not registered. add #[module] to the struct first",
+                )?;
         } else {
             return spanned_compile_error(item_impl.span(), "path expected");
         }
@@ -101,7 +120,7 @@ pub fn handle_module_impl_attribute(input: TokenStream) -> Result<TokenStream, T
 
         for i in 0..item_impl.items.len() {
             #[allow(unused_mut)] // required
-            let mut item =item_impl.items.get_mut(i).unwrap();
+            let mut item = item_impl.items.get_mut(i).unwrap();
             if let syn::ImplItem::Method(ref mut method) = item {
                 let mut new_attrs: Vec<syn::Attribute> = Vec::new();
                 for attr in &method.attrs {
@@ -111,62 +130,89 @@ pub fn handle_module_impl_attribute(input: TokenStream) -> Result<TokenStream, T
                         if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
                             proto_provider.set_field_type(type_from_syn_type(ty.deref())?);
                         } else {
-                            return spanned_compile_error(method.sig.span(), "return type expected");
+                            return spanned_compile_error(
+                                method.sig.span(),
+                                "return type expected",
+                            );
                         }
                         for args in &method.sig.inputs {
                             match args {
                                 syn::FnArg::Receiver(ref receiver) => {
                                     if receiver.reference.is_none() {
-                                        return spanned_compile_error(args.span(),"modules should not consume self");
+                                        return spanned_compile_error(
+                                            args.span(),
+                                            "modules should not consume self",
+                                        );
                                     }
-                                    proto_provider.set_field_static(false);},
-                                syn::FnArg::Typed(ref type_)=> {
+                                    proto_provider.set_field_static(false);
+                                }
+                                syn::FnArg::Typed(ref type_) => {
                                     let mut dependency = Dependency::new();
                                     if let syn::Pat::Ident(ref ident) = type_.pat.deref() {
                                         dependency.set_name(ident.ident.to_string())
                                     } else {
-                                        return spanned_compile_error(args.span(),"identifier expected");
+                                        return spanned_compile_error(
+                                            args.span(),
+                                            "identifier expected",
+                                        );
                                     }
-                                    dependency.set_field_type(type_from_syn_type(type_.ty.deref())?);
+                                    dependency
+                                        .set_field_type(type_from_syn_type(type_.ty.deref())?);
                                     proto_provider.mut_dependencies().push(dependency);
-                                } ,
+                                }
                             }
                         }
-                        let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
-                        let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
-                        manifests::extend(proto_provider.mut_field_type().mut_scopes(),scopes);
+                        let provides_attr =
+                            parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
+                        let scopes =
+                            parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
+                        manifests::extend(proto_provider.mut_field_type().mut_scopes(), scopes);
                         module.providers.push(proto_provider);
-                    } else if parsing::is_attribute(attr, "binds"){
+                    } else if parsing::is_attribute(attr, "binds") {
                         let mut proto_provider = Provider::new();
                         proto_provider.set_binds(true);
                         proto_provider.set_name(method.sig.ident.to_string());
                         if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
                             proto_provider.set_field_type(type_from_syn_type(ty.deref())?);
                         } else {
-                            return spanned_compile_error(method.sig.span(), "return type expected");
+                            return spanned_compile_error(
+                                method.sig.span(),
+                                "return type expected",
+                            );
                         }
                         if method.sig.inputs.len() != 1 {
-                            return spanned_compile_error(method.sig.span(),"binds method must only take the binding type as parameter");
+                            return spanned_compile_error(
+                                method.sig.span(),
+                                "binds method must only take the binding type as parameter",
+                            );
                         }
                         let args = method.sig.inputs.first().expect("missing binds arg");
                         match args {
                             syn::FnArg::Receiver(ref _receiver) => {
-                                    return spanned_compile_error(args.span(),"binds method must only take the binding type as parameter");
-                                },
-                            syn::FnArg::Typed(ref type_)=> {
+                                return spanned_compile_error(
+                                    args.span(),
+                                    "binds method must only take the binding type as parameter",
+                                );
+                            }
+                            syn::FnArg::Typed(ref type_) => {
                                 let mut dependency = Dependency::new();
                                 if let syn::Pat::Ident(ref ident) = type_.pat.deref() {
                                     dependency.set_name(ident.ident.to_string());
                                 } else {
-                                    return spanned_compile_error(args.span(),"identifier expected");
+                                    return spanned_compile_error(
+                                        args.span(),
+                                        "identifier expected",
+                                    );
                                 }
                                 dependency.set_field_type(type_from_syn_type(type_.ty.deref())?);
                                 proto_provider.mut_dependencies().push(dependency);
-                            } ,
+                            }
                         }
-                        let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
-                        let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
-                        manifests::extend(proto_provider.mut_field_type().mut_scopes(),scopes);
+                        let provides_attr =
+                            parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
+                        let scopes =
+                            parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
+                        manifests::extend(proto_provider.mut_field_type().mut_scopes(), scopes);
                         module.providers.push(proto_provider);
                         removed_item_indices.push(i);
                     } else {
@@ -183,6 +229,15 @@ pub fn handle_module_impl_attribute(input: TokenStream) -> Result<TokenStream, T
 
         Ok(quote! {#item_impl})
     })
+}
+
+fn with_additional_path(path: &str, additional_path: Option<&String>) -> String {
+    format!(
+        "{}{}{}",
+        additional_path.unwrap_or(&"".to_owned()),
+        if additional_path.is_some() { "::" } else { "" },
+        path
+    )
 }
 
 pub fn generate_manifest(base_path: &str) -> Vec<Module> {
