@@ -72,8 +72,8 @@ pub fn module(attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn module_impl(_attr: TokenStream, input: TokenStream) -> TokenStream {
-    handle_error(|| modules::handle_module_impl_attribute(input.into()))
+pub fn module_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
+    handle_error(|| modules::handle_module_impl_attribute(attr.into(), input.into()))
 }
 
 #[proc_macro_attribute]

@@ -602,6 +602,7 @@ pub use lockjaw_processor::injectable;
 /// Lockjaw requires this information to resolve the path of the bindings in the current file.
 pub use lockjaw_processor::mod_epilogue;
 
+/// Annotates a struct
 pub use lockjaw_processor::module;
 pub use lockjaw_processor::module_impl;
 #[doc(hidden)]
