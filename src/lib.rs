@@ -105,7 +105,7 @@ use std::ops::Deref;
 /// }
 ///
 /// # fn main() {}
-/// # private_test_epilogue!();
+/// # epilogue!();
 /// ```
 ///
 /// ## `path`
@@ -166,7 +166,7 @@ use std::ops::Deref;
 /// }
 ///
 /// # fn main(){}
-/// # private_test_epilogue!();
+/// # epilogue!();
 /// ```
 /// # Installing modules
 /// Each component can install their separate set of [`modules`](module) to form a different
@@ -209,7 +209,7 @@ use std::ops::Deref;
 /// }
 ///
 /// # fn main() {}
-/// # private_test_epilogue!();
+/// # epilogue!();
 /// ```
 ///
 /// Component can select different modules providing the same type to change the behavior of
@@ -266,7 +266,7 @@ use std::ops::Deref;
 ///     let other_component: Box<dyn OtherComponent> = OtherComponent::new();
 ///     assert_eq!(other_component.foo().string, "other_string");
 /// }
-/// private_test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// # Creating component instances
@@ -309,7 +309,7 @@ use std::ops::Deref;
 ///
 ///     assert_eq!(component.string(), "foo");  
 /// }
-/// private_test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// If a field is not attributed with `#[builder]`, lockjaw will auto generated it when
@@ -350,7 +350,7 @@ use std::ops::Deref;
 ///
 ///     assert_eq!(component.int(), 42);  
 /// }
-/// private_test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// Lockjaw also generates `COMPONENT::new() -> Box<dyn COMPONENT>` if the component does not
@@ -367,7 +367,7 @@ use std::ops::Deref;
 /// pub fn main() {
 ///     let component: Box<dyn MyComponent> = MyComponent::new();
 /// }
-/// private_test_epilogue!();
+/// epilogue!();
 /// ```
 ///
 /// Each instance of the component will have independent set of [scoped
@@ -418,7 +418,7 @@ pub use lockjaw_processor::component;
 /// }
 ///
 /// # fn main() {}
-/// # private_test_epilogue!();
+/// # epilogue!();
 /// ```
 ///
 /// # Field annotations
@@ -465,7 +465,7 @@ pub use lockjaw_processor::component;
 /// ```
 pub use lockjaw_processor::component_module_manifest;
 
-/// Resolves the dependency graph and generate componenent code. Must be called in in the crate root
+/// Resolves the dependency graph and generate component code. Must be called in in the crate root
 /// (`lib.rs` or `main.rs`), after any other lockjaw macros, and outside any `mod`/functions
 ///
 /// a unit test will be generated to ensure it is called in the correct file.
@@ -591,7 +591,17 @@ pub use lockjaw_processor::epilogue;
 /// Scoped `injectables` are shared and cannot be mutable while they commonly needs mutability.
 /// users must implement internal mutability.
 pub use lockjaw_processor::injectable;
+
+/// Must be called at the end of a non-root (not `lib.rs` or `main.rs`) file that uses lockjaw
+/// To let it know a file has concluded. The path from the crate root to the current `mod` the file
+/// represents must be passed in as a string literal. i.e.
+/// * `src/foo.rs` => `mod_epilogue!("foo");`
+/// * `src/bar/mod.rs` => `mod_epilogue!("bar");`
+/// * `src/bar/baz.rs` => `mod_epilogue!("bar::baz");`
+///
+/// Lockjaw requires this information to resolve the path of the bindings in the current file.
 pub use lockjaw_processor::mod_epilogue;
+
 pub use lockjaw_processor::module;
 pub use lockjaw_processor::module_impl;
 #[doc(hidden)]
@@ -599,6 +609,7 @@ pub use lockjaw_processor::private_root_epilogue;
 #[doc(hidden)]
 pub use lockjaw_processor::private_test_epilogue;
 pub use lockjaw_processor::provides;
+#[doc(hidden)]
 pub use lockjaw_processor::test_mod_epilogue;
 
 /// Documentation for concepts that does not belong to individual items.
