@@ -30,6 +30,8 @@ edition = "2018"
 description = "Compile time dependency injection framework inspired by dagger"
 license = "Apache-2.0"
 repository = "https://github.com/azureblaze/lockjaw"
+homepage = "https://azureblaze.github.io/lockjaw"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
