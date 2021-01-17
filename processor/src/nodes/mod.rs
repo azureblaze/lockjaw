@@ -14,24 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#[macro_use]
-pub mod macros {
-    #[allow(unused_macros)]
-    macro_rules! log {
-    ($fmt:expr $(,$arg:expr)*) => {
-            crate::log::log_internal(format!($fmt $(,$arg)*));
-    };
-    }
-}
-
-#[cfg(nightly)]
-#[allow(unused)]
-pub fn log_internal(message: String) {
-    proc_macro::Diagnostic::new(proc_macro::Level::Note, message).emit();
-}
-
-#[cfg(not(nightly))]
-#[allow(unused)]
-pub fn log_internal(message: String) {
-    eprintln!("{}", message)
-}
+pub mod binds;
+pub mod injectable;
+pub mod maybe_scoped;
+pub mod node;
+pub mod provides;
+pub mod scoped;

@@ -15,8 +15,6 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
-#[allow(unused)]
-use crate::log;
 use crate::manifests::type_from_path;
 use crate::protos::manifest::Type;
 use proc_macro2::TokenStream;
