@@ -38,6 +38,7 @@ mod graph;
 mod injectables;
 mod manifests;
 mod modules;
+mod nodes;
 mod parsing;
 mod protos;
 

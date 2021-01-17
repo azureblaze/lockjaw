@@ -20,12 +20,11 @@ use crate::protos::manifest::{Dependency, Module, Provider, Type, Type_Root};
 use crate::{environment, manifests, parsing};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::Deref;
-use syn::export::ToTokens;
 use syn::spanned::Spanned;
 
 thread_local! {

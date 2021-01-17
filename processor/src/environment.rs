@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 use crate::error::CompileError;
-#[allow(unused)]
-use crate::log;
 use proc_macro2::TokenStream;
 use syn::spanned::Spanned;
 

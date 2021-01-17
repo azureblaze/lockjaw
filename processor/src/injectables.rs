@@ -15,8 +15,6 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
-#[allow(unused)]
-use crate::log;
 use crate::manifests::type_from_syn_type;
 use crate::protos::manifest::{Field, Injectable, Type, Type_Root};
 use crate::{environment, manifests, parsing};
