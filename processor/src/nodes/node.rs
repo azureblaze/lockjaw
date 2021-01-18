@@ -18,21 +18,35 @@ use crate::graph::{ComponentSections, Graph};
 use crate::nodes::maybe_scoped::MaybeScopedNode;
 use crate::nodes::scoped::ScopedNode;
 use crate::protos::manifest::{ComponentModuleManifest, Type, Type_Root};
-use proc_macro2::TokenStream;
+use proc_macro2::{Ident, TokenStream};
 use quote::format_ident;
 use std::fmt::Debug;
 
 pub trait Node: Debug {
     fn get_name(&self) -> String;
     fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream>;
-    fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream>;
+    fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
+        Node::duplicated_impl(
+            &self.get_type().canonical_string_path(),
+            &self.get_name(),
+            &new_node.get_name(),
+        )
+    }
     fn can_depend(
         &self,
         target_node: &dyn Node,
         ancestors: &Vec<String>,
-    ) -> Result<(), TokenStream>;
+    ) -> Result<(), TokenStream> {
+        if target_node.is_scoped() {
+            return Node::no_scope(target_node, ancestors);
+        }
+        Ok(())
+    }
 
     fn get_type(&self) -> &Type;
+    fn get_identifier(&self) -> Ident {
+        self.get_type().identifier()
+    }
     fn get_dependencies(&self) -> &Vec<Type>;
     fn is_scoped(&self) -> bool;
 
@@ -43,11 +57,17 @@ pub trait Node: Debug {
 
 impl dyn Node {
     pub fn duplicated<T>(node: &dyn Node, new_node: &dyn Node) -> Result<T, TokenStream> {
+        Node::duplicated_impl(
+            &node.get_type().canonical_string_path(),
+            &node.get_name(),
+            &new_node.get_name(),
+        )
+    }
+
+    fn duplicated_impl<T>(path: &str, name: &str, other_name: &str) -> Result<T, TokenStream> {
         return compile_error(&format!(
             "found duplicated bindings for {}, provided by:\n\t{}\n\t{}",
-            node.get_type().canonical_string_path(),
-            node.get_name(),
-            new_node.get_name()
+            path, name, other_name
         ));
     }
 

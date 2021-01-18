@@ -17,6 +17,7 @@ use crate::error::{compile_error, CompileError};
 use crate::nodes::injectable::InjectableNode;
 use crate::nodes::node::Node;
 use crate::nodes::provides::ProvidesNode;
+use crate::nodes::provision::ProvisionNode;
 use crate::protos::manifest::{Component, ComponentModuleManifest, Manifest, Type};
 use proc_macro2::{Ident, TokenStream};
 use quote::format_ident;
@@ -24,12 +25,14 @@ use quote::quote;
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
+use std::ops::Deref;
 
 /// Dependency graph and other related data
 #[derive(Default, Debug)]
 pub struct Graph {
     map: HashMap<Ident, Box<dyn Node>>,
     module_manifest: ComponentModuleManifest,
+    provisions: Vec<Box<ProvisionNode>>,
 }
 
 pub struct ComponentSections {
@@ -120,7 +123,6 @@ pub fn generate_component(
 
     component_sections.merge(graph.generate_modules());
     component_sections.merge(graph.generate_providers(component)?);
-    component_sections.merge(graph.generate_provisions(component)?);
 
     let fields = &component_sections.fields;
     let ctor_params = &component_sections.ctor_params;
@@ -220,48 +222,13 @@ impl Graph {
     fn generate_providers(&self, component: &Component) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         let mut generated_nodes = HashSet::<Ident>::new();
-        for provision in component.get_provisions() {
-            let mut ancestors = Vec::<String>::new();
-            ancestors.push(format!(
-                "{}.{}",
-                component.get_field_type().canonical_string_path(),
-                provision.get_name()
-            ));
-            let dependency_node = self.get_node(provision.get_field_type(), &ancestors)?;
-            if dependency_node.is_scoped() {
-                return compile_error(&format! {
-                    "unable to provide scoped binding as regular object {}\nrequested by:{}",
-                    dependency_node.get_name(),
-                    ancestors.join("\nrequested by:")
-                });
-            }
+        for provision in &self.provisions {
             result.merge(self.generate_provider(
-                dependency_node.borrow(),
+                provision.deref(),
                 component,
-                &ancestors,
+                &Vec::new(),
                 &mut generated_nodes,
             )?);
-        }
-        Ok(result)
-    }
-
-    fn generate_provisions(&self, component: &Component) -> Result<ComponentSections, TokenStream> {
-        let mut result = ComponentSections::new();
-        for dependency in component.get_provisions() {
-            let dependency_name = format_ident!("{}", dependency.get_name());
-            let dependency_path = dependency.get_field_type().syn_type();
-            let dependency_type;
-            if dependency.get_field_type().get_field_ref() {
-                dependency_type = quote! {& #dependency_path};
-            } else {
-                dependency_type = quote! {#dependency_path}
-            }
-            let provider_name = dependency.get_field_type().identifier();
-            result.add_trait_methods(quote! {
-               fn #dependency_name(&self) -> #dependency_type {
-                  self.#provider_name()
-               }
-            });
         }
         Ok(result)
     }
@@ -309,11 +276,11 @@ impl Graph {
             return compile_error(&format!("Cyclic dependency detected:\n{}", s));
         }
 
-        if generated_nodes.contains(&node.get_type().identifier()) {
+        if generated_nodes.contains(&node.get_identifier()) {
             return Ok(result);
         }
 
-        generated_nodes.insert(node.get_type().identifier());
+        generated_nodes.insert(node.get_identifier());
         result.merge(node.generate_provider(self)?);
 
         let mut new_ancestors = Vec::<String>::new();
@@ -399,5 +366,12 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
                 .collect::<Result<Vec<()>, TokenStream>>()?;
         }
     }
+    for provision in component.get_provisions() {
+        result.provisions.push(Box::new(ProvisionNode::new(
+            provision.clone(),
+            component.clone(),
+        )));
+    }
+
     Ok(result)
 }

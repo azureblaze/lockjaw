@@ -48,7 +48,7 @@ impl Node for BindsNode {
             .expect("binds must have one arg");
         let arg_provider_name = arg.get_field_type().identifier();
 
-        let name_ident = self.type_.identifier();
+        let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();
 
         let mut result = ComponentSections::new();
@@ -66,21 +66,6 @@ impl Node for BindsNode {
             });
         }
         Ok(result)
-    }
-
-    fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
-        Node::duplicated(self, new_node)
-    }
-
-    fn can_depend(
-        &self,
-        target_node: &dyn Node,
-        ancestors: &Vec<String>,
-    ) -> Result<(), TokenStream> {
-        if target_node.is_scoped() {
-            return Node::no_scope(target_node, ancestors);
-        }
-        Ok(())
     }
 
     fn get_type(&self) -> &Type {

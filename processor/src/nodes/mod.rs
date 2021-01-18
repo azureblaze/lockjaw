@@ -19,4 +19,5 @@ pub mod injectable;
 pub mod maybe_scoped;
 pub mod node;
 pub mod provides;
+pub mod provision;
 pub mod scoped;

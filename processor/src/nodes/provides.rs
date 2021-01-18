@@ -84,7 +84,7 @@ impl Node for ProvidesNode {
 
         let type_path = self.type_.syn_type();
 
-        let name_ident = self.type_.identifier();
+        let name_ident = self.get_identifier();
         let module_method = format_ident!("{}", self.provider.get_name());
         let invoke_module;
 
@@ -102,21 +102,6 @@ impl Node for ProvidesNode {
             }
         });
         Ok(result)
-    }
-
-    fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
-        Node::duplicated(self, new_node)
-    }
-
-    fn can_depend(
-        &self,
-        target_node: &dyn Node,
-        ancestors: &Vec<String>,
-    ) -> Result<(), TokenStream> {
-        if target_node.is_scoped() {
-            return Node::no_scope(target_node, ancestors);
-        }
-        Ok(())
     }
 
     fn get_type(&self) -> &Type {

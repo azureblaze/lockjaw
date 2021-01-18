@@ -46,7 +46,7 @@ impl Node for MaybeScopedNode {
 
     fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.node.get_type().identifier();
-        let name_ident = self.type_.identifier();
+        let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();
 
         let mut result = ComponentSections::new();
