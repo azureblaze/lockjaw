@@ -50,7 +50,7 @@ impl Node for ScopedNode {
         let once_name = format_ident!("once_{}", self.type_.identifier());
         let once_type = self.node.get_type().syn_type();
 
-        let name_ident = self.type_.identifier();
+        let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();
         let mut result = ComponentSections::new();
         result.add_fields(quote! {
@@ -63,10 +63,6 @@ impl Node for ScopedNode {
             }
         });
         Ok(result)
-    }
-
-    fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
-        Node::duplicated(self, new_node)
     }
 
     fn can_depend(

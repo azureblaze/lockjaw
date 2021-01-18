@@ -92,7 +92,7 @@ impl Node for InjectableNode {
             lifetime = quote! {};
         }
 
-        let name_ident = self.type_.identifier();
+        let name_ident = self.get_identifier();
         let injectable_path = self.type_.syn_type();
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
@@ -101,21 +101,6 @@ impl Node for InjectableNode {
             }
         });
         Ok(result)
-    }
-
-    fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
-        Node::duplicated(self, new_node)
-    }
-
-    fn can_depend(
-        &self,
-        target_node: &dyn Node,
-        ancestors: &Vec<String>,
-    ) -> Result<(), TokenStream> {
-        if target_node.is_scoped() {
-            return Node::no_scope(target_node, ancestors);
-        }
-        Ok(())
     }
 
     fn get_type(&self) -> &Type {
