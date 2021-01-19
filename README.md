@@ -49,11 +49,20 @@ Example:
 ```rust
 use lockjaw::*;
 use std::ops::Add;
+
+struct GreetCounter{
+    counter : ::std::cell::RefCell<i32>
+}
+
 // Allow GreetCounter to be created in the dependency graph. These bindings are available anywhere.
 #[injectable]
-struct GreetCounter{
-    // Auto initialize with Default::default()
-    counter : ::std::cell::RefCell<i32>
+impl GreetCounter {
+    // Marks a method as the inject constructor. Lockjaw will call this to create the object.
+    #[inject]
+    pub fn new() -> Self {
+        Self{counter : std::cell::RefCell::new(0) }
+    }
+    
 }
 
 impl GreetCounter{
@@ -68,14 +77,21 @@ pub trait Greeter {
     fn greet(&self) -> String;
 }
 
-#[injectable]
 struct GreeterImpl {
-    // Initialize with an instance of GreetCounter
-    #[inject]
     greet_counter : crate::GreetCounter,
-    // Initialize with an instance of String
-    #[inject]
     phrase : String
+}
+
+#[injectable]
+impl GreeterImpl {
+    // Lockjaw will call this with other injectable objects provided.
+    #[inject]
+    pub fn new(greet_counter : crate::GreetCounter, phrase : String) -> Self {
+        Self {
+            greet_counter,
+            phrase
+        }
+    }
 }
 
 impl Greeter for GreeterImpl{

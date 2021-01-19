@@ -123,6 +123,7 @@ impl Type {
                 .replace("<", "_L_")
                 .replace(">", "_R_")
                 .replace(" ", "_")
+                .replace("\'", "")
         )
     }
 

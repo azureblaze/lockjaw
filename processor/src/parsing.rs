@@ -40,6 +40,10 @@ pub fn is_attribute(syn_attr: &syn::Attribute, attr: &str) -> bool {
     }
 }
 
+pub fn has_attribute(attrs: &Vec<syn::Attribute>, attr: &str) -> bool {
+    attrs.iter().find(|a| is_attribute(a, attr)).is_some()
+}
+
 pub fn get_parenthesized_attribute_metadata(
     attr: TokenStream,
 ) -> Result<HashMap<String, String>, TokenStream> {

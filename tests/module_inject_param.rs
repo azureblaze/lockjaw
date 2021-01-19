@@ -22,8 +22,15 @@ pub struct Foo {
     bar: Bar,
 }
 
-#[injectable()]
 pub struct Bar {}
+
+#[injectable]
+impl Bar {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 #[module]
 pub struct MyModule {}

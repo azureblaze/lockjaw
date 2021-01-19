@@ -22,9 +22,18 @@ pub struct Foo {
     i: i32,
 }
 
-#[injectable(scope = "crate::MyComponent")]
 pub struct Bar {
     i: i32,
+}
+
+#[injectable(scope = "crate::MyComponent")]
+impl Bar {
+    #[inject]
+    pub fn new() -> Self {
+        Self {
+            i: Default::default(),
+        }
+    }
 }
 
 #[module]

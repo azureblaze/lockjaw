@@ -26,8 +26,15 @@ pub trait MyTrait {
     fn hello(&self) -> String;
 }
 
-#[injectable(scope = "crate::MyComponent")]
 pub struct MyTraitImpl {}
+
+#[injectable(scope = "crate::MyComponent")]
+impl MyTraitImpl {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 impl MyTrait for MyTraitImpl {
     fn hello(&self) -> String {

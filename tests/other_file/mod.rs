@@ -13,9 +13,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#[lockjaw::injectable]
 #[allow(dead_code)]
 pub struct InjectableFromOtherFile {}
+
+#[lockjaw::injectable]
+impl InjectableFromOtherFile {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 #[lockjaw::component]
 pub trait OtherComponent {

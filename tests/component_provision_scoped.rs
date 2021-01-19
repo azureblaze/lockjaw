@@ -18,8 +18,15 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable};
 
-#[injectable(scope = "crate::MyComponent")]
 pub struct Foo {}
+
+#[injectable(scope = "crate::MyComponent")]
+impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 #[component]
 pub trait MyComponent {

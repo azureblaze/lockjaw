@@ -18,8 +18,15 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, MaybeScoped};
 
-#[injectable]
 pub struct Foo {}
+
+#[injectable]
+impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 #[component]
 pub trait MyComponent {

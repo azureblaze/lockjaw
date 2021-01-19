@@ -106,25 +106,29 @@ satisfied separately.
 Lockjaw will create objects for you and satisfy their dependencies, but you need to let lockjaw know
 how to create an object and what their dependencies are.
 
-#### Field injection
-
-Lockjaw can create structs annotated with the `#[injectable]` attribute. Lockjaw will satisfy
-struct fields annotated with `#[inject]`, and use 
-[`Default::default()`](https://doc.rust-lang.org/std/default/trait.Default.html#tymethod.default)
-to initialize other fields (if it can't, compliation will fail).  
-
-```rust
-#[injectable]
-pub struct Foo{
-    #[inject]
-    bar : crate::Bar,
-    i : i32
-}
-```
-
 #### Constructor injection
 
-TBD
+Lockjaw can create structs by calling a static method in the struct marked with the `#[inject]`
+attribute. Lockjaw will satisfy the parameters with other injections. The impl block must be
+annotated with `#[injectable]`, as Rust proc_macro cannot be applied to methods.
+
+```rust
+pub struct Foo{
+    bar : Bar,
+    i : i32
+}
+
+#[injectable]
+impl Foo {
+    #[inject]
+    pub fn new(bar : crate::Bar) -> Foo {
+        Foo {
+            bar,
+            i : 123
+        }
+    } 
+}
+```
 
 ### More complicated object bindings
 
@@ -170,8 +174,15 @@ pub trait Foo {
     fn foo();
 }
 
-#[injectable]
 pub struct FooImpl {}
+
+#[injectable]
+impl FooImpl {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 impl Foo for FooImpl {
     fn foo() {
@@ -227,8 +238,15 @@ Injected objects are created through a `#[component]`, which annotates a trait w
 return the requested types.
 
 ```rust
-#[injectable]
 pub struct Foo {}
+
+#[injectable]
+impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 #[component]
 pub trait MyComponent {
@@ -290,12 +308,26 @@ are not global singletons, you can still have multiple instances if you have mul
 Other types can depend on a scoped type as a reference (`&T`) or `MaybeScoped<T>`
 
 ```rust
-#[injectable(scope="crate::MyComponent")]
 struct Foo {}
 
-#[injectable]
+#[injectable(scope="crate::MyComponent")]
+impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 struct Bar<'a> {
     foo: &'a Foo
+}
+
+#[injectable]
+impl Bar<'_> {
+    #[inject]
+    pub fn new(foo: &'_ Foo) -> Bar<'_> {
+        Bar { foo }
+    }
 }
 
 #[component]

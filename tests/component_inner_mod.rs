@@ -18,8 +18,15 @@ limitations under the License.
 
 use lockjaw::{epilogue, injectable};
 
-#[injectable]
 pub struct Foo {}
+
+#[injectable]
+impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 mod m {
     #[lockjaw::component(path = "m")]

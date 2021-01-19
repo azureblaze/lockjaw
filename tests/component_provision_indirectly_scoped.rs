@@ -18,12 +18,19 @@ use lockjaw::{
     component, component_module_manifest, epilogue, injectable, module, module_impl, MaybeScoped,
 };
 
-#[injectable(scope = "crate::MyComponent")]
 struct GreetCounter {
     counter: ::std::cell::RefCell<i32>,
 }
 
+#[injectable(scope = "crate::MyComponent")]
 impl GreetCounter {
+    #[inject]
+    pub fn new() -> Self {
+        Self {
+            counter: Default::default(),
+        }
+    }
+
     pub fn increment(&self) -> i32 {
         let mut value = self.counter.borrow_mut();
         *value = *value + 1;
@@ -35,12 +42,17 @@ pub trait Greeter {
     fn greet(&self) -> String;
 }
 
-#[injectable]
 struct GreeterImpl<'a> {
-    #[inject]
     counter: &'a crate::GreetCounter,
-    #[inject]
     phrase: String,
+}
+
+#[injectable]
+impl GreeterImpl<'_> {
+    #[inject]
+    pub fn new(counter: &'_ crate::GreetCounter, phrase: String) -> GreeterImpl<'_> {
+        GreeterImpl { counter, phrase }
+    }
 }
 
 impl Greeter for GreeterImpl<'_> {
