@@ -380,9 +380,9 @@ impl ::protobuf::reflect::ProtobufValue for Manifest {
 #[derive(PartialEq,Clone,Default)]
 pub struct Injectable {
     // message fields
-    field_crate: ::protobuf::SingularField<::std::string::String>,
     pub field_type: ::protobuf::SingularPtrField<Type>,
-    pub fields: ::protobuf::RepeatedField<Field>,
+    ctor_name: ::protobuf::SingularField<::std::string::String>,
+    pub dependencies: ::protobuf::RepeatedField<Dependency>,
     // special fields
     pub unknown_fields: ::protobuf::UnknownFields,
     pub cached_size: ::protobuf::CachedSize,
@@ -399,43 +399,7 @@ impl Injectable {
         ::std::default::Default::default()
     }
 
-    // optional string crate = 1;
-
-
-    pub fn get_field_crate(&self) -> &str {
-        match self.field_crate.as_ref() {
-            Some(v) => &v,
-            None => "",
-        }
-    }
-    pub fn clear_field_crate(&mut self) {
-        self.field_crate.clear();
-    }
-
-    pub fn has_field_crate(&self) -> bool {
-        self.field_crate.is_some()
-    }
-
-    // Param is passed by value, moved
-    pub fn set_field_crate(&mut self, v: ::std::string::String) {
-        self.field_crate = ::protobuf::SingularField::some(v);
-    }
-
-    // Mutable pointer to the field.
-    // If field is not initialized, it is initialized with default value first.
-    pub fn mut_field_crate(&mut self) -> &mut ::std::string::String {
-        if self.field_crate.is_none() {
-            self.field_crate.set_default();
-        }
-        self.field_crate.as_mut().unwrap()
-    }
-
-    // Take field
-    pub fn take_field_crate(&mut self) -> ::std::string::String {
-        self.field_crate.take().unwrap_or_else(|| ::std::string::String::new())
-    }
-
-    // optional .Type type = 2;
+    // optional .Type type = 1;
 
 
     pub fn get_field_type(&self) -> &Type {
@@ -468,29 +432,65 @@ impl Injectable {
         self.field_type.take().unwrap_or_else(|| Type::new())
     }
 
-    // repeated .Field fields = 3;
+    // optional string ctor_name = 2;
 
 
-    pub fn get_fields(&self) -> &[Field] {
-        &self.fields
+    pub fn get_ctor_name(&self) -> &str {
+        match self.ctor_name.as_ref() {
+            Some(v) => &v,
+            None => "",
+        }
     }
-    pub fn clear_fields(&mut self) {
-        self.fields.clear();
+    pub fn clear_ctor_name(&mut self) {
+        self.ctor_name.clear();
+    }
+
+    pub fn has_ctor_name(&self) -> bool {
+        self.ctor_name.is_some()
     }
 
     // Param is passed by value, moved
-    pub fn set_fields(&mut self, v: ::protobuf::RepeatedField<Field>) {
-        self.fields = v;
+    pub fn set_ctor_name(&mut self, v: ::std::string::String) {
+        self.ctor_name = ::protobuf::SingularField::some(v);
     }
 
     // Mutable pointer to the field.
-    pub fn mut_fields(&mut self) -> &mut ::protobuf::RepeatedField<Field> {
-        &mut self.fields
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_ctor_name(&mut self) -> &mut ::std::string::String {
+        if self.ctor_name.is_none() {
+            self.ctor_name.set_default();
+        }
+        self.ctor_name.as_mut().unwrap()
     }
 
     // Take field
-    pub fn take_fields(&mut self) -> ::protobuf::RepeatedField<Field> {
-        ::std::mem::replace(&mut self.fields, ::protobuf::RepeatedField::new())
+    pub fn take_ctor_name(&mut self) -> ::std::string::String {
+        self.ctor_name.take().unwrap_or_else(|| ::std::string::String::new())
+    }
+
+    // repeated .Dependency dependencies = 4;
+
+
+    pub fn get_dependencies(&self) -> &[Dependency] {
+        &self.dependencies
+    }
+    pub fn clear_dependencies(&mut self) {
+        self.dependencies.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_dependencies(&mut self, v: ::protobuf::RepeatedField<Dependency>) {
+        self.dependencies = v;
+    }
+
+    // Mutable pointer to the field.
+    pub fn mut_dependencies(&mut self) -> &mut ::protobuf::RepeatedField<Dependency> {
+        &mut self.dependencies
+    }
+
+    // Take field
+    pub fn take_dependencies(&mut self) -> ::protobuf::RepeatedField<Dependency> {
+        ::std::mem::replace(&mut self.dependencies, ::protobuf::RepeatedField::new())
     }
 }
 
@@ -501,7 +501,7 @@ impl ::protobuf::Message for Injectable {
                 return false;
             }
         };
-        for v in &self.fields {
+        for v in &self.dependencies {
             if !v.is_initialized() {
                 return false;
             }
@@ -514,13 +514,13 @@ impl ::protobuf::Message for Injectable {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
                 1 => {
-                    ::protobuf::rt::read_singular_string_into(wire_type, is, &mut self.field_crate)?;
-                },
-                2 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.field_type)?;
                 },
-                3 => {
-                    ::protobuf::rt::read_repeated_message_into(wire_type, is, &mut self.fields)?;
+                2 => {
+                    ::protobuf::rt::read_singular_string_into(wire_type, is, &mut self.ctor_name)?;
+                },
+                4 => {
+                    ::protobuf::rt::read_repeated_message_into(wire_type, is, &mut self.dependencies)?;
                 },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
@@ -534,14 +534,14 @@ impl ::protobuf::Message for Injectable {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
-        if let Some(ref v) = self.field_crate.as_ref() {
-            my_size += ::protobuf::rt::string_size(1, &v);
-        }
         if let Some(ref v) = self.field_type.as_ref() {
             let len = v.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         }
-        for value in &self.fields {
+        if let Some(ref v) = self.ctor_name.as_ref() {
+            my_size += ::protobuf::rt::string_size(2, &v);
+        }
+        for value in &self.dependencies {
             let len = value.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         };
@@ -551,16 +551,16 @@ impl ::protobuf::Message for Injectable {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        if let Some(ref v) = self.field_crate.as_ref() {
-            os.write_string(1, &v)?;
-        }
         if let Some(ref v) = self.field_type.as_ref() {
-            os.write_tag(2, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_tag(1, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         }
-        for v in &self.fields {
-            os.write_tag(3, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+        if let Some(ref v) = self.ctor_name.as_ref() {
+            os.write_string(2, &v)?;
+        }
+        for v in &self.dependencies {
+            os.write_tag(4, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         };
@@ -602,20 +602,20 @@ impl ::protobuf::Message for Injectable {
         static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::MessageDescriptor> = ::protobuf::rt::LazyV2::INIT;
         descriptor.get(|| {
             let mut fields = ::std::vec::Vec::new();
-            fields.push(::protobuf::reflect::accessor::make_singular_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                "crate",
-                |m: &Injectable| { &m.field_crate },
-                |m: &mut Injectable| { &mut m.field_crate },
-            ));
             fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<Type>>(
                 "type",
                 |m: &Injectable| { &m.field_type },
                 |m: &mut Injectable| { &mut m.field_type },
             ));
-            fields.push(::protobuf::reflect::accessor::make_repeated_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<Field>>(
-                "fields",
-                |m: &Injectable| { &m.fields },
-                |m: &mut Injectable| { &mut m.fields },
+            fields.push(::protobuf::reflect::accessor::make_singular_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                "ctor_name",
+                |m: &Injectable| { &m.ctor_name },
+                |m: &mut Injectable| { &mut m.ctor_name },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_repeated_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<Dependency>>(
+                "dependencies",
+                |m: &Injectable| { &m.dependencies },
+                |m: &mut Injectable| { &mut m.dependencies },
             ));
             ::protobuf::reflect::MessageDescriptor::new_pb_name::<Injectable>(
                 "Injectable",
@@ -633,9 +633,9 @@ impl ::protobuf::Message for Injectable {
 
 impl ::protobuf::Clear for Injectable {
     fn clear(&mut self) {
-        self.field_crate.clear();
         self.field_type.clear();
-        self.fields.clear();
+        self.ctor_name.clear();
+        self.dependencies.clear();
         self.unknown_fields.clear();
     }
 }
@@ -2765,35 +2765,35 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x02\x20\x03(\x0b2\n.ComponentR\ncomponents\x12#\n\rmerged_crates\x18\
     \x03\x20\x03(\tR\x0cmergedCrates\x12!\n\x07modules\x18\x04\x20\x03(\x0b2\
     \x07.ModuleR\x07modules\x12V\n\x1acomponent_module_manifests\x18\x05\x20\
-    \x03(\x0b2\x18.ComponentModuleManifestR\x18componentModuleManifests\"]\n\
-    \nInjectable\x12\x14\n\x05crate\x18\x01\x20\x01(\tR\x05crate\x12\x19\n\
-    \x04type\x18\x02\x20\x01(\x0b2\x05.TypeR\x04type\x12\x1e\n\x06fields\x18\
-    \x03\x20\x03(\x0b2\x06.FieldR\x06fields\"R\n\x05Field\x12\x12\n\x04name\
-    \x18\x01\x20\x01(\tR\x04name\x12\x19\n\x04type\x18\x02\x20\x01(\x0b2\x05\
-    .TypeR\x04type\x12\x1a\n\x08injected\x18\x03\x20\x01(\x08R\x08injected\"\
-    \x83\x01\n\tComponent\x12\x19\n\x04type\x18\x01\x20\x01(\x0b2\x05.TypeR\
-    \x04type\x12+\n\nprovisions\x18\x02\x20\x03(\x0b2\x0b.DependencyR\nprovi\
-    sions\x12.\n\x0fmodule_manifest\x18\x03\x20\x01(\x0b2\x05.TypeR\x0emodul\
-    eManifest\"\x8b\x01\n\x17ComponentModuleManifest\x12\x19\n\x04type\x18\
-    \x01\x20\x01(\x0b2\x05.TypeR\x04type\x124\n\x0fbuilder_modules\x18\x02\
-    \x20\x03(\x0b2\x0b.DependencyR\x0ebuilderModules\x12\x1f\n\x07modules\
-    \x18\x03\x20\x03(\x0b2\x05.TypeR\x07modules\";\n\nDependency\x12\x12\n\
-    \x04name\x18\x01\x20\x01(\tR\x04name\x12\x19\n\x04type\x18\x02\x20\x01(\
-    \x0b2\x05.TypeR\x04type\"\xfe\x01\n\x04Type\x12\x1e\n\x04root\x18\x01\
-    \x20\x01(\x0e2\n.Type.RootR\x04root\x12\x12\n\x04path\x18\x02\x20\x01(\t\
-    R\x04path\x12\x14\n\x05crate\x18\x03\x20\x01(\tR\x05crate\x12\x19\n\x04a\
-    rgs\x18\x04\x20\x03(\x0b2\x05.TypeR\x04args\x12!\n\x0ctrait_object\x18\
-    \x05\x20\x01(\x08R\x0btraitObject\x12\x10\n\x03ref\x18\x06\x20\x01(\x08R\
-    \x03ref\x12\x1d\n\x06scopes\x18\x07\x20\x03(\x0b2\x05.TypeR\x06scopes\"=\
-    \n\x04Root\x12\x0f\n\x0bUNSPECIFIED\x10\0\x12\n\n\x06GLOBAL\x10\x01\x12\
-    \t\n\x05CRATE\x10\x02\x12\r\n\tPRIMITIVE\x10\x03\"L\n\x06Module\x12\x19\
-    \n\x04type\x18\x01\x20\x01(\x0b2\x05.TypeR\x04type\x12'\n\tproviders\x18\
-    \x02\x20\x03(\x0b2\t.ProviderR\tproviders\"\x9e\x01\n\x08Provider\x12\
-    \x12\n\x04name\x18\x01\x20\x01(\tR\x04name\x12\x19\n\x04type\x18\x02\x20\
-    \x01(\x0b2\x05.TypeR\x04type\x12/\n\x0cdependencies\x18\x03\x20\x03(\x0b\
-    2\x0b.DependencyR\x0cdependencies\x12\x1c\n\x06static\x18\x04\x20\x01(\
-    \x08:\x04trueR\x06static\x12\x14\n\x05binds\x18\x05\x20\x01(\x08R\x05bin\
-    ds\
+    \x03(\x0b2\x18.ComponentModuleManifestR\x18componentModuleManifests\"u\n\
+    \nInjectable\x12\x19\n\x04type\x18\x01\x20\x01(\x0b2\x05.TypeR\x04type\
+    \x12\x1b\n\tctor_name\x18\x02\x20\x01(\tR\x08ctorName\x12/\n\x0cdependen\
+    cies\x18\x04\x20\x03(\x0b2\x0b.DependencyR\x0cdependencies\"R\n\x05Field\
+    \x12\x12\n\x04name\x18\x01\x20\x01(\tR\x04name\x12\x19\n\x04type\x18\x02\
+    \x20\x01(\x0b2\x05.TypeR\x04type\x12\x1a\n\x08injected\x18\x03\x20\x01(\
+    \x08R\x08injected\"\x83\x01\n\tComponent\x12\x19\n\x04type\x18\x01\x20\
+    \x01(\x0b2\x05.TypeR\x04type\x12+\n\nprovisions\x18\x02\x20\x03(\x0b2\
+    \x0b.DependencyR\nprovisions\x12.\n\x0fmodule_manifest\x18\x03\x20\x01(\
+    \x0b2\x05.TypeR\x0emoduleManifest\"\x8b\x01\n\x17ComponentModuleManifest\
+    \x12\x19\n\x04type\x18\x01\x20\x01(\x0b2\x05.TypeR\x04type\x124\n\x0fbui\
+    lder_modules\x18\x02\x20\x03(\x0b2\x0b.DependencyR\x0ebuilderModules\x12\
+    \x1f\n\x07modules\x18\x03\x20\x03(\x0b2\x05.TypeR\x07modules\";\n\nDepen\
+    dency\x12\x12\n\x04name\x18\x01\x20\x01(\tR\x04name\x12\x19\n\x04type\
+    \x18\x02\x20\x01(\x0b2\x05.TypeR\x04type\"\xfe\x01\n\x04Type\x12\x1e\n\
+    \x04root\x18\x01\x20\x01(\x0e2\n.Type.RootR\x04root\x12\x12\n\x04path\
+    \x18\x02\x20\x01(\tR\x04path\x12\x14\n\x05crate\x18\x03\x20\x01(\tR\x05c\
+    rate\x12\x19\n\x04args\x18\x04\x20\x03(\x0b2\x05.TypeR\x04args\x12!\n\
+    \x0ctrait_object\x18\x05\x20\x01(\x08R\x0btraitObject\x12\x10\n\x03ref\
+    \x18\x06\x20\x01(\x08R\x03ref\x12\x1d\n\x06scopes\x18\x07\x20\x03(\x0b2\
+    \x05.TypeR\x06scopes\"=\n\x04Root\x12\x0f\n\x0bUNSPECIFIED\x10\0\x12\n\n\
+    \x06GLOBAL\x10\x01\x12\t\n\x05CRATE\x10\x02\x12\r\n\tPRIMITIVE\x10\x03\"\
+    L\n\x06Module\x12\x19\n\x04type\x18\x01\x20\x01(\x0b2\x05.TypeR\x04type\
+    \x12'\n\tproviders\x18\x02\x20\x03(\x0b2\t.ProviderR\tproviders\"\x9e\
+    \x01\n\x08Provider\x12\x12\n\x04name\x18\x01\x20\x01(\tR\x04name\x12\x19\
+    \n\x04type\x18\x02\x20\x01(\x0b2\x05.TypeR\x04type\x12/\n\x0cdependencie\
+    s\x18\x03\x20\x03(\x0b2\x0b.DependencyR\x0cdependencies\x12\x1c\n\x06sta\
+    tic\x18\x04\x20\x01(\x08:\x04trueR\x06static\x12\x14\n\x05binds\x18\x05\
+    \x20\x01(\x08R\x05binds\
 ";
 
 static file_descriptor_proto_lazy: ::protobuf::rt::LazyV2<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::rt::LazyV2::INIT;

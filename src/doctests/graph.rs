@@ -32,16 +32,28 @@ mod graph_missing_binding {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 ///
-/// #[injectable]
 /// struct Foo{
-///     #[inject]
 ///     bar: Box<crate::Bar>
+/// }
+/// #[injectable]
+/// impl Foo{
+///     #[inject]
+///     pub fn new(bar: Box<crate::Bar>) -> Self {
+///         Self { bar }
+///     }
 /// }
 ///
 /// #[injectable]
 /// struct Bar{
-///     #[inject]
 ///     foo: Box<crate::Foo>
+/// }
+///
+/// #[injectable]
+/// impl Bar{
+///     #[inject]
+///     pub fn new(foo: Box<crate::Foo>) -> Self {
+///         Self {foo}
+///     }
 /// }
 ///
 /// #[component]
@@ -58,8 +70,14 @@ mod graph_cyclic_dependency {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 ///
-/// #[injectable]
 /// struct Foo {}
+///
+/// impl Foo{
+///     #[inject]
+///     pub fn new() -> Self {
+///         Self {}
+///     }
+/// }
 ///
 /// #[module]
 /// struct M{}

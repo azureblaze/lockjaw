@@ -17,8 +17,15 @@ limitations under the License.
 use lockjaw::{epilogue, injectable, module, module_impl};
 use printer::Printer;
 
-#[injectable]
 pub struct PrinterImpl {}
+
+#[injectable]
+impl PrinterImpl {
+    #[inject]
+    pub fn new() -> Self {
+        PrinterImpl {}
+    }
+}
 
 impl Printer for PrinterImpl {
     fn print(&self, message: &str) {

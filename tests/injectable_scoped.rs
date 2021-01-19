@@ -18,12 +18,19 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable};
 
-#[injectable(scope = "crate::MyComponent")]
 pub struct Foo {
     pub i: ::std::cell::RefCell<u32>,
 }
 
+#[injectable(scope = "crate::MyComponent")]
 impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {
+            i: Default::default(),
+        }
+    }
+
     pub fn count(&self) -> u32 {
         let v: u32 = self.i.borrow().clone();
         self.i.replace(v + 1);

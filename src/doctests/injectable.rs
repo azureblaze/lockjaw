@@ -34,22 +34,34 @@ mod injectable_tuple {}
 /// pub struct Foo {}
 ///
 /// #[injectable]
-/// pub struct Bar {
-///     foo: crate::Foo,
-/// }
-///
-/// #[component]
-/// pub trait MyComponent {
-///     fn bar(&self) -> crate::Bar;
-/// }
-///
-/// pub fn main() {
-///     let component: Box<dyn MyComponent> = MyComponent::new();
-///     component.bar();
+/// impl Foo {
+///     pub fn new() -> Self {
+///         Self {}
+///     }
 /// }
 /// epilogue!();
 ///```
-mod injectable_no_default {}
+mod injectable_no_inject {}
+
+///```compile_fail
+/// use lockjaw::{component, injectable, epilogue};
+///
+/// pub struct Foo {}
+///
+/// #[injectable]
+/// impl Foo {
+///     #[inject]
+///     pub fn new() -> Self {
+///         Self {}
+///     }
+///     #[inject]
+///     pub fn new2() -> Self {
+///         Self {}
+///     }
+/// }
+/// epilogue!();
+///```
+mod injectable_multiple_inject {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;

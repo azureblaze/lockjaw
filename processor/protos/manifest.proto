@@ -25,9 +25,9 @@ message Manifest {
 }
 
 message Injectable {
-  optional string crate = 1;
-  optional Type type = 2;
-  repeated Field fields = 3;
+  optional Type type = 1;
+  optional string ctor_name = 2;
+  repeated Dependency dependencies = 4;
 }
 
 message Field {

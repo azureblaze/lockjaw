@@ -16,22 +16,22 @@ limitations under the License.
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifests::type_from_syn_type;
-use crate::protos::manifest::{Field, Injectable, Type, Type_Root};
+use crate::protos::manifest::{Dependency, Injectable, Type, Type_Root};
 use crate::{environment, manifests, parsing};
 use lazy_static::lazy_static;
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
-use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashSet;
 use syn::spanned::Spanned;
+use syn::{FnArg, ImplItem, ImplItemMethod, Pat};
 
 struct LocalInjectable {
     identifier: String,
-    //span: proc_macro2::Span,
     additional_path: Option<String>,
     scopes: Vec<Type>,
-    fields: Vec<Field>,
+    ctor_name: String,
+    dependencies: Vec<Dependency>,
 }
 
 thread_local! {
@@ -52,53 +52,82 @@ pub fn handle_injectable_attribute(
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
-    let mut item: syn::ItemStruct =
-        syn::parse2(input).map_spanned_compile_error(span, "struct expected")?;
+    let mut item: syn::ItemImpl =
+        syn::parse2(input).map_spanned_compile_error(span, "impl block expected")?;
 
     let attributes = parsing::get_attribute_metadata(attr.clone())?;
-
     for key in attributes.keys() {
         if !INJECTABLE_METADATA_KEYS.contains(key) {
             return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
         }
     }
 
-    let scopes = parsing::get_types(attributes.get("scope").map(Clone::clone))?;
-    let mut injectable = LocalInjectable {
-        identifier: item.ident.to_string(),
-        //span: item.ident.span().clone(),
-        additional_path: attributes.get("path").cloned(),
-        scopes,
-        fields: Vec::new(),
-    };
-
-    for mut field in item.fields.iter_mut() {
-        let mut proto_field = Field::new();
-        proto_field.set_name(
-            field
-                .ident
-                .as_ref()
-                .map_spanned_compile_error(field.span(), "tuple injectable not supported")?
-                .to_string(),
-        );
-        proto_field.set_field_type(type_from_syn_type(field.ty.borrow())?);
-
-        let mut new_attrs: Vec<syn::Attribute> = Vec::new();
-        for attr in &field.attrs {
-            if parsing::is_attribute(attr, "inject") {
-                proto_field.set_injected(true);
+    let ctor = get_ctor(item.span(), &mut item.items)?;
+    let mut dependencies = Vec::<Dependency>::new();
+    for arg in ctor.sig.inputs.iter() {
+        if let FnArg::Receiver(ref receiver) = arg {
+            return spanned_compile_error(receiver.span(), &format!("self not allowed"));
+        }
+        if let FnArg::Typed(ref type_) = arg {
+            if let Pat::Ident(ref ident) = *type_.pat {
+                let mut dependency = Dependency::new();
+                dependency.set_field_type(type_from_syn_type(&type_.ty)?);
+                dependency.set_name(ident.ident.to_string());
+                dependencies.push(dependency);
             } else {
-                new_attrs.push(attr.clone());
+                return spanned_compile_error(type_.span(), &format!("identifier expected"));
             }
         }
-        field.attrs = new_attrs;
-        injectable.fields.push(proto_field);
+    }
+    let type_name;
+    if let syn::Type::Path(ref path) = *item.self_ty {
+        let segments: Vec<String> = path
+            .path
+            .segments
+            .iter()
+            .map(|segment| segment.ident.to_string())
+            .collect();
+        type_name = segments.join("::");
+    } else {
+        return spanned_compile_error(item.self_ty.span(), &format!("path expected"));
     }
 
+    let injectable = LocalInjectable {
+        identifier: type_name,
+        additional_path: attributes.get("path").cloned(),
+        scopes: parsing::get_types(attributes.get("scope").map(Clone::clone))?,
+        ctor_name: ctor.sig.ident.to_string(),
+        dependencies,
+    };
     INJECTABLES.with(|injectables| {
         injectables.borrow_mut().push(injectable);
     });
+
     Ok(item.to_token_stream())
+}
+
+fn get_ctor(span: Span, items: &mut Vec<ImplItem>) -> Result<ImplItemMethod, TokenStream> {
+    let mut ctors = Vec::<ImplItemMethod>::new();
+    for item in items {
+        if let ImplItem::Method(ref mut method) = item {
+            if parsing::has_attribute(&method.attrs, "inject") {
+                ctors.push(method.clone());
+                let index = method
+                    .attrs
+                    .iter()
+                    .position(|a| parsing::is_attribute(a, "inject"))
+                    .unwrap();
+                method.attrs.remove(index);
+            }
+        }
+    }
+    if ctors.len() > 1 {
+        return spanned_compile_error(span, "only one method can be marked with #[inject]");
+    }
+    if ctors.len() == 0 {
+        return spanned_compile_error(span, "must have one method marked with #[inject]");
+    }
+    return Ok(ctors[0].clone());
 }
 
 pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
@@ -123,10 +152,11 @@ pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
 
             type_.set_path(path);
             injectable.set_field_type(type_);
-            injectable.set_field_crate(environment::current_crate());
-            for local_field in &local_injectable.fields {
-                injectable.mut_fields().push(local_field.clone());
-            }
+            injectable.set_ctor_name(local_injectable.ctor_name.clone());
+            manifests::extend(
+                injectable.mut_dependencies(),
+                local_injectable.dependencies.clone(),
+            );
 
             result.push(injectable);
         }

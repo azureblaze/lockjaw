@@ -19,8 +19,16 @@ limitations under the License.
 use lockjaw::{component, epilogue};
 
 mod baz {
-    #[lockjaw::injectable(path = "baz")]
+
     pub struct Foo {}
+
+    #[lockjaw::injectable(path = "baz")]
+    impl Foo {
+        #[inject]
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
 }
 #[component]
 pub trait MyComponent {

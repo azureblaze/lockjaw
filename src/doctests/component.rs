@@ -89,8 +89,15 @@ mod component_trait_object_provision_no_lifetime {}
 ///
 /// use lockjaw::{component, injectable, epilogue};
 ///
-/// #[injectable(scope = "crate::MyComponent")]
 /// pub struct Foo {}
+///
+/// #[injectable(scope = "crate::MyComponent")]
+/// impl Foo{
+///     #[inject]
+///     pub fn new() -> Self {
+///         Self {}
+///     }
+/// }
 ///
 /// #[component]
 /// pub trait MyComponent {

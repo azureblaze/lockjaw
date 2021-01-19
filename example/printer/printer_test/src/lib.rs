@@ -16,14 +16,20 @@ limitations under the License.
 
 use lockjaw::{epilogue, injectable, module, module_impl};
 use printer::Printer;
-use std::cell::Ref;
+use std::cell::{Ref, RefCell};
 
-#[injectable(scope = "::example::TestComponent")]
 pub struct TestPrinter {
     pub messages: ::std::cell::RefCell<Vec<String>>,
 }
-
+#[injectable(scope = "::example::TestComponent")]
 impl TestPrinter {
+    #[inject]
+    pub fn new() -> TestPrinter {
+        TestPrinter {
+            messages: RefCell::default(),
+        }
+    }
+
     pub fn get_messages(&self) -> Ref<Vec<String>> {
         self.messages.borrow()
     }

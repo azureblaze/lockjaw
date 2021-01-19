@@ -16,10 +16,15 @@ limitations under the License.
 use lockjaw::{component, epilogue, injectable};
 
 #[allow(dead_code)]
-#[injectable]
 pub struct Bar {
-    #[inject]
     dep: ::test_dep::DepInjectable,
+}
+#[injectable]
+impl Bar {
+    #[inject]
+    pub fn new(dep: ::test_dep::DepInjectable) -> Self {
+        Self { dep }
+    }
 }
 
 #[component]

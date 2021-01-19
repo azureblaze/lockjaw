@@ -15,8 +15,15 @@ limitations under the License.
 */
 use lockjaw;
 
-#[lockjaw::injectable]
 pub struct DepInjectable {}
+
+#[lockjaw::injectable]
+impl DepInjectable {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 #[lockjaw::component]
 pub trait DepComponent {

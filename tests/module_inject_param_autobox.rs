@@ -24,8 +24,15 @@ pub struct Foo<'a> {
     bar: MaybeScoped<'a, Bar>,
 }
 
-#[injectable()]
 pub struct Bar {}
+
+#[injectable]
+impl Bar {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 #[module]
 pub struct MyModule {}

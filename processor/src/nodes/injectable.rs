@@ -33,10 +33,9 @@ impl InjectableNode {
         let node = Box::new(InjectableNode {
             type_: injectable.get_field_type().clone(),
             dependencies: injectable
-                .fields
+                .get_dependencies()
                 .iter()
-                .filter(|field| field.get_injected())
-                .map(|field| field.get_field_type().clone())
+                .map(|dep| dep.get_field_type().clone())
                 .collect(),
             scoped: false,
             injectable: injectable.clone(),
@@ -52,39 +51,15 @@ impl Node for InjectableNode {
 
     fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let has_ref = graph.has_scoped_deps(self)?;
-        let mut params = quote! {};
-        for field in self.injectable.get_fields() {
-            if field.get_injected() {
-                let param_name = format_ident!("{}", field.get_name());
-                let param_type = field.get_field_type().syn_type();
-                if field.get_field_type().get_field_ref() {
-                    params = quote! {
-                       #params #param_name : &'a #param_type,
-                    };
-                } else {
-                    params = quote! {
-                       #params #param_name : #param_type,
-                    }
-                }
-            }
-        }
         let mut ctor_params = quote! {};
-        for field in &self.injectable.fields {
-            let param_name = format_ident!("{}", field.get_name());
-            if field.get_injected() {
-                let param_provider_name = field.get_field_type().identifier();
-                ctor_params = quote! {
-                   #ctor_params
-                   #param_name : self.#param_provider_name(),
-                }
-            } else {
-                let param_type = field.get_field_type().syn_type();
-                ctor_params = quote! {
-                   #ctor_params
-                   #param_name : <#param_type>::default(),
-                }
+        for dependency in self.injectable.get_dependencies() {
+            let param_provider_name = dependency.get_field_type().identifier();
+            ctor_params = quote! {
+               #ctor_params
+               self.#param_provider_name(),
             }
         }
+
         let lifetime;
         if has_ref {
             lifetime = quote! {<'_>};
@@ -94,10 +69,11 @@ impl Node for InjectableNode {
 
         let name_ident = self.get_identifier();
         let injectable_path = self.type_.syn_type();
+        let ctor_name = format_ident!("{}", self.injectable.get_ctor_name());
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
             fn #name_ident(&'_ self) -> #injectable_path #lifetime{
-                #injectable_path{#ctor_params}
+                #injectable_path::#ctor_name(#ctor_params)
             }
         });
         Ok(result)

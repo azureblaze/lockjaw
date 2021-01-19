@@ -18,13 +18,26 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, MaybeScoped};
 
-#[injectable]
 pub struct Foo {}
 
 #[injectable]
-pub struct Bar<'a> {
+impl Foo {
     #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+pub struct Bar<'a> {
     foo: MaybeScoped<'a, crate::Foo>,
+}
+
+#[injectable]
+impl Bar<'_> {
+    #[inject]
+    pub fn new(foo: MaybeScoped<'_, crate::Foo>) -> Bar<'_> {
+        Bar { foo }
+    }
 }
 
 #[component]

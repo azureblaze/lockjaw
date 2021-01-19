@@ -18,13 +18,26 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable};
 
-#[injectable]
 pub struct Foo {}
 
 #[injectable]
-pub struct Bar {
+impl Foo {
     #[inject]
-    foo: crate::Foo,
+    pub fn new() -> Foo {
+        Foo {}
+    }
+}
+
+pub struct Bar {
+    foo: Foo,
+}
+
+#[injectable]
+impl Bar {
+    #[inject]
+    pub fn new(foo: crate::Foo) -> Bar {
+        Bar { foo }
+    }
 }
 
 #[component]

@@ -20,17 +20,30 @@ use lockjaw::{
     component, component_module_manifest, epilogue, injectable, module, module_impl, MaybeScoped,
 };
 
-#[injectable(scope = "crate::MyComponent")]
 pub struct Foo {}
+
+#[injectable(scope = "crate::MyComponent")]
+impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 pub trait MyTrait {
     fn hello(&self) -> String;
 }
 
-#[injectable]
 pub struct MyTraitImpl<'a> {
-    #[inject]
     foo: &'a crate::Foo,
+}
+
+#[injectable]
+impl MyTraitImpl<'_> {
+    #[inject]
+    pub fn new(foo: &'_ crate::Foo) -> MyTraitImpl<'_> {
+        MyTraitImpl { foo }
+    }
 }
 
 impl MyTrait for MyTraitImpl<'_> {

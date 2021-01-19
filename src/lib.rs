@@ -25,8 +25,16 @@ use std::ops::Deref;
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
-/// # #[injectable]
+/// #
 /// # struct Foo{}
+/// #
+/// # #[injectable]
+/// # impl Foo {
+/// #     #[inject]
+/// #     pub fn new() -> Self {
+/// #         Self {}
+/// #     }
+/// # }
 /// #
 /// #[component]
 /// trait MyComponent {
@@ -119,8 +127,15 @@ use std::ops::Deref;
 ///
 /// ```
 /// # use lockjaw::{epilogue, injectable};
-/// # #[injectable]
 /// # pub struct Foo {}
+/// #
+/// # #[injectable]
+/// # impl Foo {
+/// #     #[inject]
+/// #     pub fn new() -> Self {
+/// #         Self {}
+/// #     }
+/// # }
 ///
 /// mod nested {
 ///     #[lockjaw::component(path = "nested")]
@@ -241,19 +256,32 @@ pub use lockjaw_processor::component_module_manifest;
 /// token stream. This allows easier debugging of code generation issues.
 pub use lockjaw_processor::epilogue;
 
-/// Annotates a struct that can be provided to the dependency graph.
+/// Annotates a struct impl that can be provided to the dependency graph.
 ///
 /// ```
 /// # use lockjaw::{epilogue, injectable};
 /// # #[macro_use] extern crate lockjaw_processor;
-/// #[injectable]
 /// struct Bar{}
 ///
 /// #[injectable]
-/// struct Foo{
+/// impl Bar {
 ///     #[inject]
+///     pub fn new() -> Self {
+///         Self {}
+///     }
+/// }
+///
+/// struct Foo{
 ///     bar : crate::Bar,
 ///     s : String,
+/// }
+///
+/// #[injectable]
+/// impl Foo {
+///     #[inject]
+///     pub fn new(bar : crate::Bar,) -> Self {
+///         Self {bar, s: "foo".to_owned()}
+///     }
 /// }
 ///
 /// #[component]
@@ -268,14 +296,17 @@ pub use lockjaw_processor::epilogue;
 /// epilogue!();
 /// ```
 ///
-/// # Fields
+/// # Methods
 ///
-/// ## `#[inject]` fields
-/// Fields annotated with `#[inject]` are automatically injected from the dependency graph.
+/// ## `#[inject]` methods
+/// Denotes the method as "injection constructor", which is the method lockjaw will call to create
+/// the object.
 ///
-/// ## Unannotated fields
-/// Fields without annotations are initialized with the default value, and must implement
-/// [`Default`](https://doc.rust-lang.org/std/default/trait.Default.html) or compilation will fail.
+/// One and only one method must be annotated with `#[inject]` in an `#[injectable]` struct. The
+/// method must be static, and must return an instance of the struct.
+///
+/// The method can request other injectable objects with its parameters. Lockjaw will fulfil those
+/// objects before calling the injection constructor.
 ///
 /// # Metadata
 ///
@@ -295,8 +326,14 @@ pub use lockjaw_processor::epilogue;
 /// # use lockjaw::{epilogue, injectable};
 ///
 /// mod nested {
-///     #[lockjaw::injectable(path = "nested")]
 ///     pub struct Foo {}
+///     #[lockjaw::injectable(path = "nested")]
+///     impl Foo {
+///         #[inject]
+///         pub fn new()-> Self {
+///             Self {}
+///         }
+///     }
 /// }
 /// #[lockjaw::component]
 /// pub trait MyComponent {
@@ -322,13 +359,26 @@ pub use lockjaw_processor::epilogue;
 ///
 /// ```
 /// # use lockjaw::{epilogue, injectable};
-/// #[injectable(scope = "crate::MyComponent")]
 /// pub struct Foo {}
 ///
-/// #[injectable]
-/// pub struct Bar<'a>{
+/// #[injectable(scope = "crate::MyComponent")]
+/// impl Foo {
 ///     #[inject]
+///     pub fn new()-> Self {
+///         Self {}
+///     }
+/// }
+///
+/// pub struct Bar<'a>{
 ///     foo : &'a crate::Foo
+/// }
+///
+/// #[injectable]
+/// impl Bar<'_> {
+///     #[inject]
+///     pub fn new(foo : &'_ crate::Foo) -> Bar<'_> {
+///         Bar {foo}
+///     }
 /// }
 ///
 /// #[lockjaw::component]
@@ -508,8 +558,14 @@ pub use lockjaw_processor::module;
 ///
 /// ```
 /// # use lockjaw::*;
-/// #[injectable]
 /// pub struct Bar {}
+/// #[injectable]
+/// impl Bar {
+///     #[inject]
+///     pub fn new()-> Self {
+///         Self {}
+///     }
+/// }
 ///
 /// impl Bar {
 ///     pub fn get_string(&self) -> String {
@@ -592,10 +648,16 @@ pub use lockjaw_processor::module;
 ///     foo : crate::FooModule,
 /// }
 ///
-/// #[injectable]
 /// pub struct Bar<'a>{
-///     #[inject]
 ///     foo : &'a crate::Foo
+/// }
+///
+/// #[injectable]
+/// impl Bar<'_> {
+///     #[inject]
+///     pub fn new(foo : &'_ crate::Foo) -> Bar<'_> {
+///         Bar { foo }
+///     }
 /// }
 ///
 /// #[component(modules = "crate::MyModuleManifest")]
@@ -641,8 +703,15 @@ pub use lockjaw_processor::module;
 ///     fn hello(&self) -> String;
 /// }
 ///
-/// #[injectable]
 /// pub struct MyTraitImpl {}
+///
+/// #[injectable]
+/// impl MyTraitImpl {
+///     #[inject]
+///     pub fn new() -> Self {
+///         Self {}
+///     }
+/// }
 ///
 /// impl MyTrait for MyTraitImpl {
 ///     fn hello(&self) -> String {
@@ -695,8 +764,14 @@ pub use lockjaw_processor::module;
 /// # use std::ops::Deref;
 /// pub trait Foo {}
 ///
-/// #[injectable]
 /// pub struct FooImpl{}
+/// #[injectable]
+/// impl FooImpl {
+///     #[inject]
+///     pub fn new() -> Self {
+///         Self {}
+///     }
+/// }
 ///
 /// impl Foo for FooImpl {}
 ///
@@ -714,10 +789,15 @@ pub use lockjaw_processor::module;
 ///     foo : crate::FooModule,
 /// }
 ///
-/// #[injectable]
 /// pub struct Bar<'a>{
-///     #[inject]
 ///     foo : MaybeScoped<'a, dyn crate::Foo>
+/// }
+/// #[injectable]
+/// impl Bar<'_> {
+///     #[inject]
+///     pub fn new(foo : MaybeScoped<'_, dyn crate::Foo>) -> Bar<'_> {
+///         Bar { foo }
+///     }
 /// }
 ///
 /// #[component(modules = "crate::MyModuleManifest")]

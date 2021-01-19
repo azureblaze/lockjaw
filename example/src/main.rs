@@ -16,15 +16,20 @@ limitations under the License.
 
 use lockjaw::{component, component_module_manifest, injectable, module, module_impl, MaybeScoped};
 
-#[injectable]
 pub struct Greeter<'a> {
-    #[inject]
     phrase: String,
-    #[inject]
     printer: MaybeScoped<'a, dyn ::printer::Printer>,
 }
 
+#[injectable]
 impl Greeter<'_> {
+    #[inject]
+    pub fn new<'a>(
+        phrase: String,
+        printer: MaybeScoped<'a, dyn ::printer::Printer>,
+    ) -> Greeter<'a> {
+        Greeter { phrase, printer }
+    }
     pub fn greet(&self) {
         self.printer.print(&self.phrase);
     }

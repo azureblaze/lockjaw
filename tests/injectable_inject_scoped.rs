@@ -18,9 +18,18 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable};
 
-#[injectable(scope = "crate::MyComponent")]
 pub struct Foo {
     pub i: ::std::cell::RefCell<u32>,
+}
+
+#[injectable(scope = "crate::MyComponent")]
+impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {
+            i: Default::default(),
+        }
+    }
 }
 
 impl Foo {
@@ -30,10 +39,17 @@ impl Foo {
         v
     }
 }
-#[injectable]
+
 pub struct Bar<'a> {
-    #[inject]
     foo: &'a crate::Foo,
+}
+
+#[injectable]
+impl Bar<'_> {
+    #[inject]
+    pub fn new(foo: &'_ crate::Foo) -> Bar<'_> {
+        Bar { foo }
+    }
 }
 
 #[component]
