@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue, injectable, module, module_impl};
+use lockjaw::{component, component_module_manifest, epilogue, injectable, module};
 
 pub struct Foo {
     i: i32,
@@ -36,9 +36,8 @@ impl Bar {
     }
 }
 
-#[module]
 pub struct MyModule {}
-#[module_impl]
+#[module]
 impl MyModule {
     #[provides]
     pub fn provide_foo(bar: &crate::Bar) -> crate::Foo {

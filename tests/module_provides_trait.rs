@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue, module, module_impl};
+use lockjaw::{component, component_module_manifest, epilogue, module};
 
 pub struct Foo {}
 
@@ -16,9 +16,8 @@ impl MyTrait for MyTraitImpl {
     }
 }
 
-#[module]
 pub struct MyModule {}
-#[module_impl]
+#[module]
 impl MyModule {
     #[provides]
     pub fn provide_my_trait() -> Box<dyn crate::MyTrait> {

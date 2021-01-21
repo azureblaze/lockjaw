@@ -16,18 +16,15 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue, module_impl};
+use lockjaw::{component, component_module_manifest, epilogue, module};
 
 pub struct Foo {}
 
 mod m {
-    use lockjaw::module;
-
-    #[module(path = "m")]
     pub struct MyModule {}
 }
 
-#[module_impl]
+#[module]
 impl m::MyModule {
     #[provides]
     pub fn provide_foo() -> crate::Foo {

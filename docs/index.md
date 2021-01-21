@@ -212,14 +212,12 @@ Since `#[provides]` and `#[binds]` are less coupled with the type they provide, 
 want to swap out implementations (like use a `FakeClient` for test that emulates talking to a 
 server without actual network operations), these bindings should not be global. They are grouped
 into a `#[module]` so they can be incorporated later into a specific dependency graph. `#[module]`
-annotates a struct to declare the module's existence, and `#[module_impl]` should annotate the 
-[impl block](https://doc.rust-lang.org/std/keyword.impl.html) to define the bindings.
+annotates a [impl block](https://doc.rust-lang.org/std/keyword.impl.html) of a struct to define the
+bindings.
 
 ```rust
-#[module]
 struct MyModule {}
-
-#[module_impl]
+#[module]
 impl MyModule {
     #[binds]
     pub fn bind_foo_impl(impl_ : FooImpl) -> impl Foo {}

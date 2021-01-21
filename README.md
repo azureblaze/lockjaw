@@ -102,10 +102,8 @@ impl Greeter for GreeterImpl{
 
 // Declare a module so we can do special bindings. These bindings are only available if the
 // component installs the module, so different bindings can be used based on the situation.
-#[module]
 struct MyModule {}
-
-#[module_impl]
+#[module]
 impl MyModule {
     // When ever someone needs a Greeter, use GreeterImpl as the actual implementation 
     #[binds]

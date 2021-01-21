@@ -16,9 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{
-    component, component_module_manifest, epilogue, injectable, module, module_impl, MaybeScoped,
-};
+use lockjaw::{component, component_module_manifest, epilogue, injectable, module, MaybeScoped};
 
 pub struct Foo {}
 
@@ -42,9 +40,8 @@ impl MyTrait for MyTraitImpl {
     }
 }
 
-#[module]
 pub struct MyModule {}
-#[module_impl]
+#[module]
 impl MyModule {
     #[binds]
     pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> impl crate::MyTrait {}
