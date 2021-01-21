@@ -39,14 +39,6 @@ lazy_static! {
     };
 }
 
-lazy_static! {
-    static ref MODULE_IMPL_METADATA_KEYS: HashSet<String> = {
-        let mut set = HashSet::<String>::new();
-        set.insert("path".to_owned());
-        set
-    };
-}
-
 struct LocalModule {
     name: String,
     providers: Vec<Provider>,
@@ -57,64 +49,35 @@ pub fn handle_module_attribute(
     attr: TokenStream,
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
-    let span = input.span();
-    let item_struct: syn::ItemStruct =
-        syn::parse2(input.clone()).map_spanned_compile_error(span, "struct expected")?;
-    let attributes = parsing::get_attribute_metadata(attr.clone())?;
-
-    for key in attributes.keys() {
-        if !MODULE_METADATA_KEYS.contains(key) {
-            return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
-        }
-    }
-
-    let module = LocalModule {
-        name: item_struct.ident.to_string(),
-        additional_path: attributes.get("path").cloned(),
-        providers: Vec::new(),
-    };
-
-    MODULES.with(|module_map| {
-        module_map.borrow_mut().insert(
-            with_additional_path(&item_struct.ident.to_string(), attributes.get("path")),
-            module,
-        )
-    });
-
-    Ok(input)
-}
-
-pub fn handle_module_impl_attribute(
-    attr: TokenStream,
-    input: TokenStream,
-) -> Result<TokenStream, TokenStream> {
     MODULES.with(|mm| {
         let span = input.span();
         let attributes = parsing::get_attribute_metadata(attr.clone())?;
 
         for key in attributes.keys() {
-            if !MODULE_IMPL_METADATA_KEYS.contains(key) {
+            if !MODULE_METADATA_KEYS.contains(key) {
                 return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
             }
         }
 
+        let module_path;
         let mut module_map = mm.borrow_mut();
         let mut item_impl: syn::ItemImpl =
             syn::parse2(input.clone()).map_spanned_compile_error(span, "impl expected")?;
-        let module: &mut LocalModule;
         if let syn::Type::Path(path) = item_impl.self_ty.deref() {
-            module = module_map
-                .get_mut(&with_additional_path(
-                    &path.path.to_token_stream().to_string().replace(" ", ""),
-                    attributes.get("path"),
-                ))
-                .map_spanned_compile_error(
-                    path.path.span(),
-                    "module not registered. add #[module] to the struct first",
-                )?;
+            module_path = path.path.to_token_stream().to_string().replace(" ", "");
+            if module_map.contains_key(&module_path) {
+                return spanned_compile_error(span, "module was already declared");
+            }
         } else {
             return spanned_compile_error(item_impl.span(), "path expected");
         }
+
+        let mut module = LocalModule {
+            name: module_path.to_owned(),
+            additional_path: attributes.get("path").cloned(),
+            providers: Vec::new(),
+        };
+
         let mut removed_item_indices = Vec::<usize>::new();
 
         for i in 0..item_impl.items.len() {
@@ -226,17 +189,10 @@ pub fn handle_module_impl_attribute(
             item_impl.items.remove(i);
         }
 
+        module_map.insert(module_path, module);
+
         Ok(quote! {#item_impl})
     })
-}
-
-fn with_additional_path(path: &str, additional_path: Option<&String>) -> String {
-    format!(
-        "{}{}{}",
-        additional_path.unwrap_or(&"".to_owned()),
-        if additional_path.is_some() { "::" } else { "" },
-        path
-    )
 }
 
 pub fn generate_manifest(base_path: &str) -> Vec<Module> {

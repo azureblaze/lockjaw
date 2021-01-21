@@ -79,10 +79,9 @@ mod graph_cyclic_dependency {}
 ///     }
 /// }
 ///
-/// #[module]
 /// struct M{}
 ///
-/// #[module_impl]
+/// #[module]
 /// impl M {
 ///     #[provides]
 ///     pub fn provide_foo() -> crate::Foo {

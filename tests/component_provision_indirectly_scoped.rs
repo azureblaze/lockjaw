@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{
-    component, component_module_manifest, epilogue, injectable, module, module_impl, MaybeScoped,
-};
+use lockjaw::{component, component_module_manifest, epilogue, injectable, module, MaybeScoped};
 
 struct GreetCounter {
     counter: ::std::cell::RefCell<i32>,
@@ -61,10 +59,9 @@ impl Greeter for GreeterImpl<'_> {
     }
 }
 
-#[module]
 struct MyModule {}
 
-#[module_impl]
+#[module]
 impl MyModule {
     #[binds]
     pub fn bind_greeter(_impl: crate::GreeterImpl) -> impl crate::Greeter {}

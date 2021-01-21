@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, component_module_manifest, injectable, module, module_impl, MaybeScoped};
+use lockjaw::{component, component_module_manifest, injectable, module, MaybeScoped};
 
 pub struct Greeter<'a> {
     phrase: String,
@@ -35,10 +35,9 @@ impl Greeter<'_> {
     }
 }
 
-#[module]
 struct MyModule {}
 
-#[module_impl]
+#[module]
 impl MyModule {
     #[provides]
     pub fn provide_string() -> String {

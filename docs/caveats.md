@@ -16,8 +16,8 @@ compiled to a dependency graph and used to generate the component codes.
 Rust does not have any guarantee when proc_macros are executed, the order they are executed, the
 threads they are executed on, or even the process they are executed on. This can easily break if the
 compilation mode changes, such as incremental compilation (some proc_marco are not re-invoked) and
-multi-threaded compilation (lockjaw macros has strict order dependency. `#[module]`
-must appear before `#[module_impl]`, and `epilogue!()` must be the last invoked lockjaw macro).
+multi-threaded compilation (lockjaw macros has strict order dependency. For example `epilogue!()`
+must be the last invoked lockjaw macro).
 
 It would be nice if rust somehow allows proc_macro to generate pieces of serializable metadata that
 can be read by other proc_macros.

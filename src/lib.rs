@@ -80,9 +80,8 @@ use std::ops::Deref;
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
-/// # #[module]
 /// # struct StringModule {}
-/// # #[module_impl]
+/// # #[module]
 /// # impl StringModule {
 /// #     #[provides]
 /// #     pub fn provide_string() -> String {
@@ -90,9 +89,8 @@ use std::ops::Deref;
 /// #     }
 /// # }
 /// #
-/// # #[module]
 /// # struct UnsignedModule {}
-/// # #[module_impl]
+/// # #[module]
 /// # impl UnsignedModule {
 /// #     #[provides]
 /// #     pub fn provide_unsigned() -> u32 {
@@ -162,9 +160,8 @@ pub use lockjaw_processor::component;
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
-/// # #[module]
 /// # struct StringModule {}
-/// # #[module_impl]
+/// # #[module]
 /// # impl StringModule {
 /// #     #[provides]
 /// #     pub fn provide_string() -> String {
@@ -172,9 +169,8 @@ pub use lockjaw_processor::component;
 /// #     }
 /// # }
 /// #
-/// # #[module]
 /// # struct UnsignedModule {}
-/// # #[module_impl]
+/// # #[module]
 /// # impl UnsignedModule {
 /// #     #[provides]
 /// #     pub fn provide_unsigned() -> u32 {
@@ -207,11 +203,10 @@ pub use lockjaw_processor::component;
 ///
 /// ```
 /// # #[macro_use] extern crate lockjaw_processor;
-/// #[module]
 /// struct StringModule {
 ///     string : String
 /// }
-/// #[module_impl]
+/// #[module]
 /// impl StringModule {
 ///     #[provides]
 ///     pub fn provide_string(&self) -> String {
@@ -414,21 +409,17 @@ pub use lockjaw_processor::injectable;
 /// Lockjaw requires this information to resolve the path of the bindings in the current file.
 pub use lockjaw_processor::mod_epilogue;
 
-/// Annotates a struct that provide bindings to the dependency graph.
-///
-/// Should be accompanied by [`#[module_impl]`](module_impl) where the actual bindings are defined.
-/// `#[module]` must be defined before `#[module_impl]`.
+/// Annotates a impl block that defines the bindings.
 ///
 /// To incorporate a module to the dependency graph, it should be included as a field in a
 /// [`#[component_module_manifest]`](component_module_manifest), and added to the compoenet.
 ///
 /// ```
 /// # use lockjaw::{epilogue, injectable, component_module_manifest, component};
-/// use lockjaw::{module,module_impl};
-/// #[module]
+/// use lockjaw::{module};
 /// pub struct FooModule {}
 ///
-/// #[module_impl]
+/// #[module]
 /// impl FooModule {
 ///     #[provides]
 ///     pub fn provide_string() -> String {
@@ -453,18 +444,17 @@ pub use lockjaw_processor::mod_epilogue;
 /// epilogue!();
 /// ```
 ///
-/// If the module contains fields, it must be marked as
+/// If the module struct contains fields, it must be marked as
 /// [`#[builder]`](component_module_manifest#buiilder) in the `#[component_module_manifest]`, and
 /// provided to `COMPONENT.build()`
 ///
 /// ```
 /// # use lockjaw::*;
-/// #[module]
 /// pub struct FooModule {
 ///     value : String
 /// }
 ///
-/// #[module_impl]
+/// #[module]
 /// impl FooModule {
 ///     #[provides]
 ///     pub fn provide_string(&self) -> String {
@@ -494,57 +484,6 @@ pub use lockjaw_processor::mod_epilogue;
 /// epilogue!();
 /// ```
 ///
-/// # Metadata
-///
-/// Modules accept addtional metadata in the form of
-/// `#[module(key="value", key2="value2")]`. Currently all values are string literals.
-///
-/// ## `path`
-/// **Optional** [path](https://doc.rust-lang.org/reference/paths.html) relative to the path of the
-/// current file.
-///
-/// Lockjaw retrieves the path of the current file from [`epilogue!()`](epilogue) and
-/// [`mod_epilogue!()`](mod_epilogue), but if the `module` is nested under a
-/// [`mod`](https://doc.rust-lang.org/reference/items/modules.html) then the extra path must be
-/// specified.
-///
-/// ```
-/// # use lockjaw::{epilogue, injectable, component_module_manifest, component};
-///
-/// mod nested {
-///     use lockjaw::{module,module_impl};
-///     #[module(path = "nested")]
-///     pub struct FooModule {}
-///
-///     #[module_impl(path = "nested")]
-///     impl FooModule {
-///         #[provides]
-///         pub fn provide_string() -> String {
-///             "foo".to_owned()
-///         }
-///     }
-/// }
-///
-/// #[component_module_manifest]
-/// pub struct MyModuleManifest {
-///     foo : crate::nested::FooModule,
-/// }
-///
-/// #[component(modules = "crate::MyModuleManifest")]
-/// pub trait MyComponent {
-///     fn string(&self) -> String;
-/// }
-///
-/// pub fn main() {
-///     let component = MyComponent::new();
-///     assert_eq!(component.string(), "foo");
-/// }
-/// epilogue!();
-/// ```
-pub use lockjaw_processor::module;
-
-/// Annotates a impl block that defines the actual bindings for a [`#[module]`](module)
-///
 /// # Method annotations
 ///
 /// ## `#[provides]`
@@ -573,12 +512,11 @@ pub use lockjaw_processor::module;
 ///     }
 /// }
 ///
-/// #[module]
 /// pub struct FooModule {
 ///     value : String
 /// }
 ///
-/// #[module_impl]
+/// #[module]
 /// impl FooModule {
 ///     #[provides]
 ///     pub fn provide_string(&self, bar : crate::Bar) -> String {
@@ -632,10 +570,9 @@ pub use lockjaw_processor::module;
 ///
 /// pub struct Foo {}
 ///
-/// #[module]
 /// pub struct FooModule {}
 ///
-/// #[module_impl]
+/// #[module]
 /// impl FooModule {
 ///     #[provides(scope="crate::MyComponent")]
 ///     pub fn provide_foo() -> crate::Foo {
@@ -719,9 +656,8 @@ pub use lockjaw_processor::module;
 ///     }
 /// }
 ///
-/// #[module]
 /// pub struct MyModule {}
-/// #[module_impl]
+/// #[module]
 /// impl MyModule {
 ///     #[binds]
 ///     pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> impl crate::MyTrait {}
@@ -775,10 +711,9 @@ pub use lockjaw_processor::module;
 ///
 /// impl Foo for FooImpl {}
 ///
-/// #[module]
 /// pub struct FooModule {}
 ///
-/// #[module_impl]
+/// #[module]
 /// impl FooModule {
 ///     #[binds(scope="crate::MyComponent")]
 ///     pub fn binds_foo(_impl: crate::FooImpl) -> impl crate::Foo {}
@@ -824,8 +759,8 @@ pub use lockjaw_processor::module;
 ///
 /// # Metadata
 ///
-/// Module impls accept addtional metadata in the form of
-/// `#[module_impl(key="value", key2="value2")]`. Currently all values are string literals.
+/// Module accept addtional metadata in the form of
+/// `#[module(key="value", key2="value2")]`. Currently all values are string literals.
 ///
 /// ## `path`
 /// **Optional** [path](https://doc.rust-lang.org/reference/paths.html) relative to the path of the
@@ -839,11 +774,10 @@ pub use lockjaw_processor::module;
 /// ```
 /// # use lockjaw::{epilogue, injectable, component_module_manifest, component};
 /// mod nested {
-///     use lockjaw::{module,module_impl};
-///     #[module(path = "nested")]
+///     use lockjaw::module;
 ///     pub struct FooModule {}
 ///
-///     #[module_impl(path = "nested")]
+///     #[module(path = "nested")]
 ///     impl FooModule {
 ///         #[provides]
 ///         pub fn provide_string() -> String {
@@ -868,7 +802,7 @@ pub use lockjaw_processor::module;
 /// }
 /// epilogue!();
 /// ```
-pub use lockjaw_processor::module_impl;
+pub use lockjaw_processor::module;
 #[doc(hidden)]
 pub use lockjaw_processor::private_root_epilogue;
 #[doc(hidden)]

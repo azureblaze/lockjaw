@@ -16,9 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{
-    component, component_module_manifest, epilogue, injectable, module, module_impl, MaybeScoped,
-};
+use lockjaw::{component, component_module_manifest, epilogue, injectable, module, MaybeScoped};
 
 pub struct Foo<'a> {
     bar: MaybeScoped<'a, Bar>,
@@ -34,9 +32,8 @@ impl Bar {
     }
 }
 
-#[module]
 pub struct MyModule {}
-#[module_impl]
+#[module]
 impl MyModule {
     #[provides]
     pub fn provide_foo(bar: MaybeScoped<'_, crate::Bar>) -> crate::Foo<'_> {

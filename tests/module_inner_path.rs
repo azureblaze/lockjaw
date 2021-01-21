@@ -21,12 +21,11 @@ use lockjaw::{component, component_module_manifest, epilogue};
 pub struct Foo {}
 
 mod m {
-    use lockjaw::{module, module_impl};
+    use lockjaw::module;
 
-    #[module(path = "m")]
     pub struct MyModule {}
 
-    #[module_impl(path = "m")]
+    #[module(path = "m")]
     impl MyModule {
         #[provides]
         pub fn provide_foo() -> crate::Foo {
