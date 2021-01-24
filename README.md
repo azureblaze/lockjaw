@@ -107,7 +107,7 @@ struct MyModule {}
 impl MyModule {
     // When ever someone needs a Greeter, use GreeterImpl as the actual implementation 
     #[binds]
-    pub fn bind_greeter(_impl : crate::GreeterImpl) -> impl crate::Greeter {}
+    pub fn bind_greeter(_impl : crate::GreeterImpl) -> MaybeScoped<dyn crate::Greeter> {}
 
     // Called when a String is requested
     #[provides]

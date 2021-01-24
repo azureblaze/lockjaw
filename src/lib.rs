@@ -624,8 +624,8 @@ pub use lockjaw_processor::mod_epilogue;
 /// Annotates a method that binds an implementation to a trait. Whenever the trait is depended on,
 /// this implementation will be provided.
 ///
-/// Must take the implementation as the one and only one parameter, and return a trait with the
-/// `impl` keyword.
+/// Must take the implementation as the one and only one parameter, and return
+/// [`MaybeScoped<dyn T>`](#MaybeScoped).
 ///
 /// The method implementation must be empty. Lockjaw will generate the actual implementation.
 ///
@@ -660,7 +660,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// #[module]
 /// impl MyModule {
 ///     #[binds]
-///     pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> impl crate::MyTrait {}
+///     pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> MaybeScoped<dyn crate::MyTrait> {}
 /// }
 ///
 /// #[component_module_manifest]
@@ -716,7 +716,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// #[module]
 /// impl FooModule {
 ///     #[binds(scope="crate::MyComponent")]
-///     pub fn binds_foo(_impl: crate::FooImpl) -> impl crate::Foo {}
+///     pub fn binds_foo(_impl: crate::FooImpl) -> MaybeScoped<dyn crate::Foo> {}
 /// }
 ///
 /// #[component_module_manifest]

@@ -44,7 +44,7 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> impl crate::MyTrait {}
+    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> MaybeScoped<dyn crate::MyTrait> {}
 }
 
 #[component_module_manifest]

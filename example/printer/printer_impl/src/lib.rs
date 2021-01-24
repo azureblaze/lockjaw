@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{epilogue, injectable, module};
+use lockjaw::{epilogue, injectable, module, MaybeScoped};
 use printer::Printer;
 
 pub struct PrinterImpl {}
@@ -38,7 +38,7 @@ pub struct Module {}
 #[module]
 impl Module {
     #[binds]
-    pub fn bind_printer(impl_: crate::PrinterImpl) -> impl ::printer::Printer {}
+    pub fn bind_printer(_impl: crate::PrinterImpl) -> MaybeScoped<dyn ::printer::Printer> {}
 }
 
 epilogue!();
