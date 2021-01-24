@@ -80,10 +80,14 @@ mod provides_param_not_identifier {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// pub struct S {}
+///
+/// pub trait ST{}
+///
+/// impl ST for S {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string() {}
+///     pub fn bind_s() -> MaybeScoped<dyn crate::ST>{}
 /// }
 ///
 /// ```
@@ -92,10 +96,31 @@ mod binds_no_return_type {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// pub struct S {}
+///
+/// pub trait ST{}
+///
+/// impl ST for S {}
+///
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string() -> String {"foo".to_owned()}
+///     pub fn bind_s() -> impl crate::ST{}
+/// }
+///
+/// ```
+mod binds_return_type_not_maybe_scoped {}
+
+/// ```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// pub struct S {}
+///
+/// pub trait ST{}
+///
+/// impl ST for S {}
+/// #[module]
+/// impl S {
+///     #[binds]
+///     pub fn bind_string() ->  MaybeScoped<dyn crate::ST> {}
 /// }
 ///
 /// ```
@@ -104,10 +129,12 @@ mod binds_no_param {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// pub struct S {}
+/// pub trait ST{}
+/// impl ST for S {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string(a :i32, b:i32) -> String {"foo".to_owned()}
+///     pub fn bind_string(a :i32, b:i32) -> MaybeScoped<dyn crate::ST> {}
 /// }
 ///
 /// ```
@@ -116,10 +143,12 @@ mod binds_more_param {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// pub struct S {}
+/// pub trait ST{}
+/// impl ST for S {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string(self) -> String {"foo".to_owned()}
+///     pub fn bind_string(self) -> MaybeScoped<dyn crate::ST> {}
 /// }
 ///
 /// ```
@@ -128,11 +157,30 @@ mod binds_self {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// pub struct S {}
+/// pub trait ST{}
+/// impl ST for S {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string(_: i32) -> String {"foo".to_owned()}
+///     pub fn bind_string(_: i32) -> MaybeScoped<dyn crate::ST> {}
 /// }
 ///
 /// ```
 mod binds_no_identifier {}
+
+/// ```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// use lockjaw::MaybeScoped;
+/// pub struct S {}
+/// pub trait ST{}
+/// impl ST for S {}
+/// #[module]
+/// impl S {
+///     #[binds]
+///     pub fn bind_s(&self) -> MaybeScoped<dyn crate::ST> {
+///         MaybeScoped::Val(Box::new(S{}))
+///     }
+/// }
+///
+/// ```
+mod binds_has_method_body {}

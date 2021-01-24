@@ -64,7 +64,7 @@ struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_greeter(_impl: crate::GreeterImpl) -> impl crate::Greeter {}
+    pub fn bind_greeter(_impl: crate::GreeterImpl) -> MaybeScoped<dyn crate::Greeter> {}
 
     #[provides]
     pub fn provide_string() -> String {
