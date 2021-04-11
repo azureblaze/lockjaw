@@ -43,7 +43,7 @@ pub trait MyComponent {
 }
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = MyComponent::build(MyModuleManifest {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::build(MyModuleManifest {
         my_module: MyModule {
             string: "foo".to_owned(),
         },

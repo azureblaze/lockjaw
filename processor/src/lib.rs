@@ -16,18 +16,23 @@ limitations under the License.
 
 #![cfg_attr(nightly, feature(proc_macro_span, proc_macro_diagnostic))]
 
-use crate::protos::manifest::Manifest;
 use proc_macro;
 use proc_macro::TokenStream;
-use protobuf::{Clear, CodedInputStream, Message};
-use quote::quote;
-use regex::Regex;
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
+
+use quote::quote;
+use regex::Regex;
+use syn::spanned::Spanned;
+
+use crate::manifest::Manifest;
+use error::handle_error;
+
+use crate::error::CompileError;
 
 #[macro_use]
 mod log;
@@ -36,16 +41,11 @@ mod environment;
 mod error;
 mod graph;
 mod injectables;
+mod manifest;
 mod manifests;
 mod modules;
 mod nodes;
 mod parsing;
-mod protos;
-
-use crate::error::CompileError;
-use error::handle_error;
-use syn::spanned::Spanned;
-
 thread_local! {
     static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
 }
@@ -110,19 +110,16 @@ pub fn test_mod_epilogue(input: TokenStream) -> TokenStream {
 fn extend_local_manifest(path: &str) -> Result<(), TokenStream> {
     MANIFEST.with(|m| {
         let mut manifest = m.borrow_mut();
-        manifests::extend(
-            manifest.mut_injectables(),
-            injectables::generate_manifest(path),
-        );
-        manifests::extend(
-            manifest.mut_components(),
-            components::generate_component_manifest(path),
-        );
-        manifests::extend(
-            manifest.mut_component_module_manifests(),
-            components::generate_component_module_manifest(path),
-        );
-        manifests::extend(manifest.mut_modules(), modules::generate_manifest(path));
+        manifest
+            .injectables
+            .extend(injectables::generate_manifest(path));
+        manifest
+            .components
+            .extend(components::generate_component_manifest(path));
+        manifest
+            .component_module_manifests
+            .extend(components::generate_component_module_manifest(path));
+        manifest.modules.extend(modules::generate_manifest(path));
         Ok(())
     })
 }
@@ -190,11 +187,10 @@ fn internal_epilogue(
             std::fs::create_dir_all(Path::new(&environment::proc_artifact_dir()))
                 .expect("cannot create common artifact dir");
             std::fs::create_dir_all(Path::new(&out_dir)).expect("cannot create output dir");
+
             std::fs::write(
                 &manifest_path,
-                merged_manifest
-                    .write_to_bytes()
-                    .expect("cannot serialize manifest"),
+                serde_json::to_string_pretty(&merged_manifest).expect("cannot serialize manifest"),
             )
             .expect("cannot write manifest");
 
@@ -303,10 +299,10 @@ fn merge_manifest(manifest: &Manifest, for_test: bool) -> Manifest {
     let mut result = manifest.clone();
 
     for dep in &deps {
-        if result.get_merged_crates().contains(dep) {
+        if result.merged_crates.contains(dep) {
             continue;
         }
-        result.mut_merged_crates().push(dep.clone());
+        result.merged_crates.push(dep.clone());
         let manifest_path_file_string =
             format!("{}/{}.manifest_path", environment::proc_artifact_dir(), dep);
         let manifest_path_file = Path::new(&manifest_path_file_string);
@@ -316,11 +312,8 @@ fn merge_manifest(manifest: &Manifest, for_test: bool) -> Manifest {
         let manifest_path =
             std::fs::read_to_string(manifest_path_file).expect("unable to read manifest path");
 
-        let mut reader =
-            BufReader::new(File::open(manifest_path).expect("cannot find manifest file"));
-        result
-            .merge_from(&mut CodedInputStream::from_buffered_reader(&mut reader))
-            .expect("cannot merge manifest");
+        let reader = BufReader::new(File::open(manifest_path).expect("cannot find manifest file"));
+        result.merge_from(&mut serde_json::from_reader(reader).expect("cannot read manifest"));
     }
     result
 }

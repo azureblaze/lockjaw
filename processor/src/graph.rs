@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 use crate::error::{compile_error, CompileError};
+use crate::manifest::{Component, ComponentModuleManifest, Manifest, Type};
 use crate::nodes::injectable::InjectableNode;
 use crate::nodes::node::Node;
 use crate::nodes::provides::ProvidesNode;
 use crate::nodes::provision::ProvisionNode;
-use crate::protos::manifest::{Component, ComponentModuleManifest, Manifest, Type};
 use proc_macro2::{Ident, TokenStream};
 use quote::format_ident;
 use quote::quote;
@@ -109,11 +109,11 @@ pub fn generate_component(
     manifest: &Manifest,
 ) -> Result<(TokenStream, String), TokenStream> {
     let graph = crate::graph::build_graph(manifest, component)?;
-    let component_name = component.get_field_type().syn_type();
+    let component_name = component.field_type.syn_type();
     let component_impl_name = format_ident!(
         "{}Impl",
         component
-            .get_field_type()
+            .field_type
             .local_string_path()
             .replace(" ", "")
             .replace("::", "_")
@@ -144,8 +144,8 @@ pub fn generate_component(
         }
     };
     let mut builder = quote! {};
-    if graph.module_manifest.has_field_type() {
-        let module_manifest_name = graph.module_manifest.get_field_type().syn_type();
+    if graph.module_manifest.field_type.is_some() {
+        let module_manifest_name = graph.module_manifest.field_type.unwrap().syn_type();
         builder = quote! {
             impl dyn #component_name {
                 #[allow(unused)]
@@ -155,7 +155,7 @@ pub fn generate_component(
             }
         };
     }
-    if graph.module_manifest.get_builder_modules().is_empty() {
+    if graph.module_manifest.builder_modules.is_empty() {
         builder = quote! {
             #builder
             impl dyn #component_name {
@@ -194,7 +194,7 @@ impl Graph {
     fn generate_modules(&self) -> ComponentSections {
         let mut result = ComponentSections::new();
 
-        for module in self.module_manifest.get_modules() {
+        for module in &self.module_manifest.modules {
             let name = module.identifier();
             let path = module.syn_type();
             result.add_fields(quote! {
@@ -205,9 +205,9 @@ impl Graph {
             });
         }
 
-        for module in self.module_manifest.get_builder_modules() {
-            let name = format_ident!("{}", module.get_name());
-            let path = module.get_field_type().syn_type();
+        for module in &self.module_manifest.builder_modules {
+            let name = format_ident!("{}", module.name);
+            let path = module.field_type.syn_type();
             result.add_fields(quote! {
                 #name : #path,
             });
@@ -317,28 +317,34 @@ fn get_module_manifest(
     manifest: &Manifest,
     component: &Component,
 ) -> Result<ComponentModuleManifest, TokenStream> {
-    if !component.has_module_manifest() {
+    if component.module_manifest.is_none() {
         return Ok(ComponentModuleManifest::new());
     }
-    for module_manifest in manifest.get_component_module_manifests() {
+    for module_manifest in &manifest.component_module_manifests {
         if module_manifest
-            .get_field_type()
+            .field_type
+            .as_ref()
+            .unwrap()
             .identifier()
-            .eq(&component.get_module_manifest().identifier())
+            .eq(&component.module_manifest.as_ref().unwrap().identifier())
         {
             return Ok(module_manifest.clone());
         }
     }
     compile_error(&format!(
         "cannot find module manifest {}, used by {}",
-        component.get_module_manifest().canonical_string_path(),
-        component.get_field_type().canonical_string_path()
+        component
+            .module_manifest
+            .as_ref()
+            .unwrap()
+            .canonical_string_path(),
+        component.field_type.canonical_string_path()
     ))
 }
 
 fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, TokenStream> {
     let mut result = Graph::default();
-    for injectable in manifest.get_injectables() {
+    for injectable in &manifest.injectables {
         let _: Vec<()> = InjectableNode::new(injectable)
             .iter()
             .map(|node| result.add_node(node))
@@ -351,22 +357,22 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
         installed_modules.insert(module.identifier());
     }
 
-    for module in result.module_manifest.get_builder_modules() {
-        installed_modules.insert(module.get_field_type().identifier());
+    for module in &result.module_manifest.builder_modules {
+        installed_modules.insert(module.field_type.identifier());
     }
 
-    for module in manifest.get_modules() {
-        if !installed_modules.contains(&module.get_field_type().identifier()) {
+    for module in &manifest.modules {
+        if !installed_modules.contains(&module.field_type.identifier()) {
             continue;
         }
-        for provider in module.get_providers() {
-            let _ = ProvidesNode::new(&result.module_manifest, &module.get_field_type(), provider)
+        for provider in &module.providers {
+            let _ = ProvidesNode::new(&result.module_manifest, &module.field_type, provider)
                 .iter()
                 .map(|node| result.add_node(node))
                 .collect::<Result<Vec<()>, TokenStream>>()?;
         }
     }
-    for provision in component.get_provisions() {
+    for provision in &component.provisions {
         result.provisions.push(Box::new(ProvisionNode::new(
             provision.clone(),
             component.clone(),

@@ -54,7 +54,7 @@ pub trait MyComponent {
 }
 
 pub fn main() {
-    let component = MyComponent::new();
+    let component = <dyn MyComponent>::new();
 
     component.greeter().greet();
 }

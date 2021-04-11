@@ -16,8 +16,8 @@ limitations under the License.
 
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
+use crate::manifest::{Provider, Type};
 use crate::nodes::node::{ModuleInstance, Node};
-use crate::protos::manifest::{Provider, Type};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -36,23 +36,23 @@ impl Node for BindsNode {
         format!(
             "{}.{} (module binds)",
             self.module_instance.type_.canonical_string_path(),
-            self.provider.get_name()
+            self.provider.name
         )
     }
 
     fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg = self
             .provider
-            .get_dependencies()
+            .dependencies
             .first()
             .expect("binds must have one arg");
-        let arg_provider_name = arg.get_field_type().identifier();
+        let arg_provider_name = arg.field_type.identifier();
 
         let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();
 
         let mut result = ComponentSections::new();
-        if arg.get_field_type().get_field_ref() {
+        if arg.field_type.field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
                     lockjaw::MaybeScoped::Ref(self.#arg_provider_name())

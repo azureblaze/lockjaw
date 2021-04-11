@@ -20,7 +20,7 @@ mod other_file;
 
 #[test]
 pub fn main() {
-    let component: Box<dyn other_file::OtherComponent> = other_file::OtherComponent::new();
+    let component: Box<dyn other_file::OtherComponent> = <dyn other_file::OtherComponent>::new();
     component.other_file();
 }
 lockjaw::epilogue!();

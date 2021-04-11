@@ -15,32 +15,33 @@ limitations under the License.
 */
 
 use crate::graph::{ComponentSections, Graph};
+use crate::manifest::Type;
 use crate::nodes::node::Node;
-use crate::protos::manifest::Type;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+
 #[derive(Debug, Clone)]
 pub struct InjectableNode {
     pub type_: Type,
     pub dependencies: Vec<Type>,
     pub scoped: bool,
 
-    pub injectable: crate::protos::manifest::Injectable,
+    pub injectable: crate::manifest::Injectable,
 }
 
 impl InjectableNode {
-    pub fn new(injectable: &crate::protos::manifest::Injectable) -> Vec<Box<dyn Node>> {
+    pub fn new(injectable: &crate::manifest::Injectable) -> Vec<Box<dyn Node>> {
         let node = Box::new(InjectableNode {
-            type_: injectable.get_field_type().clone(),
+            type_: injectable.field_type.clone(),
             dependencies: injectable
-                .get_dependencies()
+                .dependencies
                 .iter()
-                .map(|dep| dep.get_field_type().clone())
+                .map(|dep| dep.field_type.clone())
                 .collect(),
             scoped: false,
             injectable: injectable.clone(),
         });
-        Node::generate_node_variants(node)
+        <dyn Node>::generate_node_variants(node)
     }
 }
 
@@ -52,8 +53,8 @@ impl Node for InjectableNode {
     fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let has_ref = graph.has_scoped_deps(self)?;
         let mut ctor_params = quote! {};
-        for dependency in self.injectable.get_dependencies() {
-            let param_provider_name = dependency.get_field_type().identifier();
+        for dependency in &self.injectable.dependencies {
+            let param_provider_name = dependency.field_type.identifier();
             ctor_params = quote! {
                #ctor_params
                self.#param_provider_name(),
@@ -69,7 +70,7 @@ impl Node for InjectableNode {
 
         let name_ident = self.get_identifier();
         let injectable_path = self.type_.syn_type();
-        let ctor_name = format_ident!("{}", self.injectable.get_ctor_name());
+        let ctor_name = format_ident!("{}", self.injectable.ctor_name);
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
             fn #name_ident(&'_ self) -> #injectable_path #lifetime{

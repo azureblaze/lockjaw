@@ -42,7 +42,7 @@ use std::ops::Deref;
 /// }
 ///
 /// pub fn main() {
-///     let component: Box<dyn MyComponent> = MyComponent::new();
+///     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 ///     let foo : Foo = component.foo();
 /// }
 /// epilogue!();
@@ -142,7 +142,7 @@ use std::ops::Deref;
 ///     }
 /// }
 /// pub fn main() {
-///     let component = nested::MyComponent::new();
+///     let component = <dyn nested::MyComponent>::new();
 ///     component.foo();
 /// }
 /// epilogue!();
@@ -285,7 +285,7 @@ pub use lockjaw_processor::epilogue;
 /// }
 ///
 /// pub fn main() {
-///     let component = MyComponent::new();
+///     let component = <dyn MyComponent>::new();
 ///     let foo = component.foo();
 /// }
 /// epilogue!();
@@ -336,7 +336,7 @@ pub use lockjaw_processor::epilogue;
 /// }
 ///
 /// pub fn main() {
-///     let component = MyComponent::new();
+///     let component = <dyn MyComponent>::new();
 ///     component.foo();
 /// }
 /// epilogue!();
@@ -382,7 +382,7 @@ pub use lockjaw_processor::epilogue;
 /// }
 ///
 /// pub fn main() {
-///     let component = MyComponent::new();
+///     let component = <dyn MyComponent>::new();
 ///     let bar1 = component.bar();
 ///     let bar2 = component.bar();
 ///     let bar1_ptr: *const Bar = &bar1;
@@ -438,7 +438,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// }
 ///
 /// pub fn main() {
-///     let component = MyComponent::new();
+///     let component = <dyn MyComponent>::new();
 ///     assert_eq!(component.string(), "foo");
 /// }
 /// epilogue!();
@@ -603,7 +603,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// }
 ///
 /// pub fn main() {
-///     let component = MyComponent::new();
+///     let component = <dyn MyComponent>::new();
 ///     let bar1 = component.bar();
 ///     let bar2 = component.bar();
 ///     let bar1_ptr: *const Bar = &bar1;
@@ -674,7 +674,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// }
 ///
 /// pub fn main() {
-///     let component: Box<dyn MyComponent> = MyComponent::new();
+///     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 ///     assert_eq!(component.my_trait().hello(), "hello");
 /// }
 /// epilogue!();
@@ -741,7 +741,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// }
 ///
 /// pub fn main() {
-///     let component = MyComponent::new();
+///     let component = <dyn MyComponent>::new();
 ///     let bar1 = component.bar();
 ///     let bar2 = component.bar();
 ///     let bar1_ptr: *const Bar = &bar1;
@@ -797,7 +797,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// }
 ///
 /// pub fn main() {
-///     let component = MyComponent::new();
+///     let component = <dyn MyComponent>::new();
 ///     assert_eq!(component.string(), "foo");
 /// }
 /// epilogue!();

@@ -15,8 +15,8 @@ limitations under the License.
 */
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
+use crate::manifest::Type;
 use crate::nodes::node::Node;
-use crate::protos::manifest::Type;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -50,7 +50,7 @@ impl Node for MaybeScopedNode {
         let type_path = self.type_.syn_type();
 
         let mut result = ComponentSections::new();
-        if self.node.get_type().get_field_ref() {
+        if self.node.get_type().field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
                     lockjaw::MaybeScoped::Ref(self.#arg_provider_name())
@@ -74,7 +74,7 @@ impl Node for MaybeScopedNode {
         {
             return Ok(self.clone_box());
         }
-        Node::duplicated(self, new_node)
+        <dyn Node>::duplicated(self, new_node)
     }
 
     fn can_depend(

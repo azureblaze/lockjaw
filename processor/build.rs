@@ -25,15 +25,6 @@ fn main() {
         println!("cargo:rustc-cfg=stable");
     }
 
-    #[cfg(feature = "proto_generation")]
-    protoc_rust::Codegen::new()
-        .protoc_path(protoc_bin_vendored::protoc_bin_path().unwrap())
-        .out_dir("src/protos")
-        .inputs(&["protos/manifest.proto"])
-        .include("protos")
-        .run()
-        .expect("protoc");
-
     println!(
         "cargo:rustc-env=PROC_ARTIFACT_DIR={}",
         std::env::var("OUT_DIR").expect("cannot find out dir")
