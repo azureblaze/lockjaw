@@ -28,22 +28,17 @@ documentation = "https://docs.rs/lockjaw/"
 [lib]
 proc-macro = true
 
-[features]
-default = []
-proto_generation = ["protoc-rust", "protoc-bin-vendored"]
-
 [dependencies]
 quote = "1.0"
-protobuf = "2.18.1"
 proc-macro2 = "1.0.24"
 regex = "1"
 lazy_static = "1"
 backtrace = "0.3.55"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 [dependencies.syn]
 version = "1.0"
 features = ["full","extra-traits"]
 
 [build-dependencies]
-protoc-rust = {version = "2.0", optional=true}
 rustc_version = "0.3"
-protoc-bin-vendored = {version = "2.*.*", optional = true}

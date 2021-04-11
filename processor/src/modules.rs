@@ -15,12 +15,13 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
+use crate::manifest::{Dependency, Module, Provider, Type, TypeRoot};
 use crate::manifests::type_from_syn_type;
-use crate::protos::manifest::{Dependency, Module, Provider, Type, Type_Root};
-use crate::{environment, manifests, parsing};
+use crate::{environment, parsing};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
+use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -113,10 +114,10 @@ fn handle_provides(
     module: &mut LocalModule,
     signature: &mut syn::Signature,
 ) -> Result<(), TokenStream2> {
-    let mut proto_provider = Provider::new();
-    proto_provider.set_name(signature.ident.to_string());
+    let mut provider = Provider::new();
+    provider.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref ty) = signature.output {
-        proto_provider.set_field_type(type_from_syn_type(ty.deref())?);
+        provider.field_type = type_from_syn_type(ty.deref())?;
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -126,24 +127,24 @@ fn handle_provides(
                 if receiver.reference.is_none() {
                     return spanned_compile_error(args.span(), "modules should not consume self");
                 }
-                proto_provider.set_field_static(false);
+                provider.field_static = false;
             }
             syn::FnArg::Typed(ref type_) => {
                 let mut dependency = Dependency::new();
                 if let syn::Pat::Ident(ref ident) = type_.pat.deref() {
-                    dependency.set_name(ident.ident.to_string())
+                    dependency.name = ident.ident.to_string()
                 } else {
                     return spanned_compile_error(args.span(), "identifier expected");
                 }
-                dependency.set_field_type(type_from_syn_type(type_.ty.deref())?);
-                proto_provider.mut_dependencies().push(dependency);
+                dependency.field_type = type_from_syn_type(type_.ty.deref())?;
+                provider.dependencies.push(dependency);
             }
         }
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
-    manifests::extend(proto_provider.mut_field_type().mut_scopes(), scopes);
-    module.providers.push(proto_provider);
+    provider.field_type.scopes.extend(scopes);
+    module.providers.push(provider);
     Ok(())
 }
 
@@ -159,12 +160,12 @@ fn handle_binds(
     let body: syn::Stmt = syn::parse2(quote! { unimplemented!(); }).unwrap();
     block.stmts.push(body);
 
-    let mut proto_provider = Provider::new();
-    proto_provider.set_binds(true);
-    proto_provider.set_name(signature.ident.to_string());
+    let mut provider = Provider::new();
+    provider.binds = true;
+    provider.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
         let return_type = type_from_syn_type(ty.deref())?;
-        match return_type.get_path() {
+        match return_type.path.borrow() {
             "lockjaw::MaybeScoped" => {}
             "MaybeScoped" => {}
             _ => {
@@ -184,7 +185,7 @@ fn handle_binds(
                 }
             }
         }
-        proto_provider.set_field_type(return_type.args[0].clone());
+        provider.field_type = return_type.args[0].clone();
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -205,18 +206,18 @@ fn handle_binds(
         syn::FnArg::Typed(ref type_) => {
             let mut dependency = Dependency::new();
             if let syn::Pat::Ident(ref ident) = type_.pat.deref() {
-                dependency.set_name(ident.ident.to_string());
+                dependency.name = ident.ident.to_string();
             } else {
                 return spanned_compile_error(args.span(), "identifier expected");
             }
-            dependency.set_field_type(type_from_syn_type(type_.ty.deref())?);
-            proto_provider.mut_dependencies().push(dependency);
+            dependency.field_type = type_from_syn_type(type_.ty.deref())?;
+            provider.dependencies.push(dependency);
         }
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
-    manifests::extend(proto_provider.mut_field_type().mut_scopes(), scopes);
-    module.providers.push(proto_provider);
+    provider.field_type.scopes.extend(scopes);
+    module.providers.push(provider);
     Ok(())
 }
 
@@ -236,8 +237,8 @@ pub fn generate_manifest(base_path: &str) -> Vec<Module> {
         for local_module in modules.values() {
             let mut module = Module::new();
             let mut type_ = Type::new();
-            type_.set_field_crate(environment::current_crate());
-            type_.set_root(Type_Root::CRATE);
+            type_.field_crate = environment::current_crate();
+            type_.root = TypeRoot::CRATE;
             let mut path = String::new();
             if !base_path.is_empty() {
                 path.push_str(base_path);
@@ -249,9 +250,9 @@ pub fn generate_manifest(base_path: &str) -> Vec<Module> {
             }
             path.push_str(&local_module.name);
 
-            type_.set_path(path);
-            module.set_field_type(type_);
-            manifests::extend(module.mut_providers(), local_module.providers.clone());
+            type_.path = path;
+            module.field_type = type_;
+            module.providers.extend(local_module.providers.clone());
             result.push(module);
         }
         modules.clear();

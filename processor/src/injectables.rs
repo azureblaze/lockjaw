@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
+use crate::manifest::{Dependency, Injectable, Type, TypeRoot};
 use crate::manifests::type_from_syn_type;
-use crate::protos::manifest::{Dependency, Injectable, Type, Type_Root};
-use crate::{environment, manifests, parsing};
+use crate::{environment, parsing};
 use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
@@ -71,8 +71,8 @@ pub fn handle_injectable_attribute(
         if let FnArg::Typed(ref type_) = arg {
             if let Pat::Ident(ref ident) = *type_.pat {
                 let mut dependency = Dependency::new();
-                dependency.set_field_type(type_from_syn_type(&type_.ty)?);
-                dependency.set_name(ident.ident.to_string());
+                dependency.field_type = type_from_syn_type(&type_.ty)?;
+                dependency.name = ident.ident.to_string();
                 dependencies.push(dependency);
             } else {
                 return spanned_compile_error(type_.span(), &format!("identifier expected"));
@@ -136,9 +136,9 @@ pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
         for local_injectable in injectables.borrow().iter() {
             let mut injectable = Injectable::new();
             let mut type_ = Type::new();
-            type_.set_field_crate(environment::current_crate());
-            type_.set_root(Type_Root::CRATE);
-            manifests::extend(type_.mut_scopes(), local_injectable.scopes.clone());
+            type_.field_crate = environment::current_crate();
+            type_.root = TypeRoot::CRATE;
+            type_.scopes.extend(local_injectable.scopes.clone());
             let mut path = String::new();
             if !base_path.is_empty() {
                 path.push_str(base_path);
@@ -150,13 +150,12 @@ pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
             }
             path.push_str(&local_injectable.identifier);
 
-            type_.set_path(path);
-            injectable.set_field_type(type_);
-            injectable.set_ctor_name(local_injectable.ctor_name.clone());
-            manifests::extend(
-                injectable.mut_dependencies(),
-                local_injectable.dependencies.clone(),
-            );
+            type_.path = path;
+            injectable.field_type = type_;
+            injectable.ctor_name = local_injectable.ctor_name.clone();
+            injectable
+                .dependencies
+                .extend(local_injectable.dependencies.clone());
 
             result.push(injectable);
         }

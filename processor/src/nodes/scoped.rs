@@ -15,8 +15,8 @@ limitations under the License.
 */
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
+use crate::manifest::Type;
 use crate::nodes::node::Node;
-use crate::protos::manifest::Type;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 

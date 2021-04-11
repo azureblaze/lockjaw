@@ -18,6 +18,6 @@ limitations under the License.
 
 #[test]
 fn main() {
-    let dep_component: Box<dyn test_dep::DepComponent> = test_dep::DepComponent::new();
+    let dep_component: Box<dyn test_dep::DepComponent> = <dyn test_dep::DepComponent>::new();
     dep_component.dep();
 }

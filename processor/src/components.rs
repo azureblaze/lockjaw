@@ -15,12 +15,10 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
+use crate::graph;
+use crate::manifest::{Component, ComponentModuleManifest, Dependency, Manifest, Type, TypeRoot};
 use crate::manifests::{type_from_path, type_from_syn_type};
-use crate::protos::manifest::{
-    Component, ComponentModuleManifest, Dependency, Manifest, Type, Type_Root,
-};
 use crate::{environment, parsing};
-use crate::{graph, manifests};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::quote_spanned;
@@ -75,12 +73,12 @@ pub fn handle_component_attribute(
     for item in &item_trait.items {
         if let syn::TraitItem::Method(ref method) = item {
             let mut provision = Dependency::new();
-            provision.set_name(method.sig.ident.to_string());
+            provision.name = method.sig.ident.to_string();
             if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
                 if is_trait_object_without_lifetime(ty.deref()) {
                     return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
                 }
-                provision.set_field_type(type_from_syn_type(ty.deref())?);
+                provision.field_type = type_from_syn_type(ty.deref())?;
             } else {
                 return spanned_compile_error(
                     method.sig.span(),
@@ -140,8 +138,8 @@ pub fn generate_component_manifest(base_path: &str) -> Vec<Component> {
         for local_component in components.iter() {
             let mut component = Component::new();
             let mut type_ = Type::new();
-            type_.set_field_crate(environment::current_crate());
-            type_.set_root(Type_Root::CRATE);
+            type_.field_crate = environment::current_crate();
+            type_.root = TypeRoot::CRATE;
             let mut path = String::new();
             if !base_path.is_empty() {
                 path.push_str(base_path);
@@ -153,14 +151,13 @@ pub fn generate_component_manifest(base_path: &str) -> Vec<Component> {
             }
             path.push_str(&local_component.name);
 
-            type_.set_path(path);
-            component.set_field_type(type_);
-            manifests::extend(
-                component.mut_provisions(),
-                local_component.provisions.clone(),
-            );
+            type_.path = path;
+            component.field_type = type_;
+            component
+                .provisions
+                .extend(local_component.provisions.clone());
             if let Some(ref m) = local_component.module_manifest {
-                component.set_module_manifest(m.clone());
+                component.module_manifest = Some(m.clone());
             }
             result.push(component);
         }
@@ -197,8 +194,8 @@ pub fn handle_component_module_manifest_attribute(
             let name = field
                 .ident
                 .map_spanned_compile_error(span, "tuples module manifests cannot have builders")?;
-            dep.set_name(name.to_string());
-            dep.set_field_type(type_from_syn_type(field.ty.borrow())?);
+            dep.name = name.to_string();
+            dep.field_type = type_from_syn_type(field.ty.borrow())?;
             builder_modules.push(dep);
 
             let ty = field.ty;
@@ -235,8 +232,8 @@ pub fn generate_component_module_manifest(base_path: &str) -> Vec<ComponentModul
         for local_component_module_manifest in components_module_manifests.iter() {
             let mut component_module_manifest = ComponentModuleManifest::new();
             let mut type_ = Type::new();
-            type_.set_field_crate(environment::current_crate());
-            type_.set_root(Type_Root::CRATE);
+            type_.field_crate = environment::current_crate();
+            type_.root = TypeRoot::CRATE;
             let mut path = String::new();
             if !base_path.is_empty() {
                 path.push_str(base_path);
@@ -248,16 +245,14 @@ pub fn generate_component_module_manifest(base_path: &str) -> Vec<ComponentModul
             }
             path.push_str(&local_component_module_manifest.name);
 
-            type_.set_path(path);
-            component_module_manifest.set_field_type(type_);
-            manifests::extend(
-                component_module_manifest.mut_modules(),
-                local_component_module_manifest.modules.clone(),
-            );
-            manifests::extend(
-                component_module_manifest.mut_builder_modules(),
-                local_component_module_manifest.builder_modules.clone(),
-            );
+            type_.path = path;
+            component_module_manifest.field_type = Some(type_);
+            component_module_manifest
+                .modules
+                .extend(local_component_module_manifest.modules.clone());
+            component_module_manifest
+                .builder_modules
+                .extend(local_component_module_manifest.builder_modules.clone());
             result.push(component_module_manifest);
         }
         components_module_manifests.clear();
@@ -268,15 +263,15 @@ pub fn generate_component_module_manifest(base_path: &str) -> Vec<ComponentModul
 pub fn generate_components(manifest: &Manifest) -> Result<(TokenStream, Vec<String>), TokenStream> {
     let mut result = quote! {};
     let mut messages = Vec::<String>::new();
-    for component in manifest.get_components() {
+    for component in &manifest.components {
         if component
-            .get_field_type()
-            .get_field_crate()
+            .field_type
+            .field_crate
             .ne(&environment::current_crate())
         {
             continue;
         }
-        let (tokens, message) = graph::generate_component(component, manifest)?;
+        let (tokens, message) = graph::generate_component(&component, manifest)?;
         result = quote! {
             #result
             #tokens

@@ -15,9 +15,9 @@ limitations under the License.
 */
 use crate::error::compile_error;
 use crate::graph::{ComponentSections, Graph};
+use crate::manifest::{ComponentModuleManifest, Type, TypeRoot};
 use crate::nodes::maybe_scoped::MaybeScopedNode;
 use crate::nodes::scoped::ScopedNode;
-use crate::protos::manifest::{ComponentModuleManifest, Type, Type_Root};
 use proc_macro2::{Ident, TokenStream};
 use quote::format_ident;
 use std::fmt::Debug;
@@ -26,7 +26,7 @@ pub trait Node: Debug {
     fn get_name(&self) -> String;
     fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream>;
     fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
-        Node::duplicated_impl(
+        <dyn Node>::duplicated_impl(
             &self.get_type().canonical_string_path(),
             &self.get_name(),
             &new_node.get_name(),
@@ -38,7 +38,7 @@ pub trait Node: Debug {
         ancestors: &Vec<String>,
     ) -> Result<(), TokenStream> {
         if target_node.is_scoped() {
-            return Node::no_scope(target_node, ancestors);
+            return <dyn Node>::no_scope(target_node, ancestors);
         }
         Ok(())
     }
@@ -57,7 +57,7 @@ pub trait Node: Debug {
 
 impl dyn Node {
     pub fn duplicated<T>(node: &dyn Node, new_node: &dyn Node) -> Result<T, TokenStream> {
-        Node::duplicated_impl(
+        <dyn Node>::duplicated_impl(
             &node.get_type().canonical_string_path(),
             &node.get_name(),
             &new_node.get_name(),
@@ -80,19 +80,19 @@ impl dyn Node {
     }
 
     pub fn generate_node_variants(node: Box<dyn Node>) -> Vec<Box<dyn Node>> {
-        if !node.get_type().get_scopes().is_empty() {
+        if !node.get_type().scopes.is_empty() {
             let mut private_node = node.clone_box();
             private_node.set_scoped(true);
 
             let scoped_node = Box::new(ScopedNode {
-                type_: Node::ref_type(&node.get_type()),
+                type_: <dyn Node>::ref_type(&node.get_type()),
                 dependencies: vec![private_node.get_type().clone()],
                 scoped: false,
                 node: private_node.clone_box(),
             });
 
             let maybe_scoped_node = Box::new(MaybeScopedNode {
-                type_: Node::maybe_scoped_type(&private_node.get_type()),
+                type_: <dyn Node>::maybe_scoped_type(&private_node.get_type()),
                 dependencies: vec![private_node.get_type().clone()],
                 scoped: false,
 
@@ -103,9 +103,9 @@ impl dyn Node {
         }
 
         if node.get_type().scopes.is_empty() {
-            if node.get_type().get_path().ne("lockjaw::MaybeScoped") {
+            if node.get_type().path.ne("lockjaw::MaybeScoped") {
                 let boxed_node = Box::new(MaybeScopedNode {
-                    type_: Node::maybe_scoped_type(&node.get_type()),
+                    type_: <dyn Node>::maybe_scoped_type(&node.get_type()),
                     dependencies: vec![node.get_type().clone()],
                     scoped: false,
                     node: node.clone_box(),
@@ -122,7 +122,7 @@ impl dyn Node {
         module_type: &Type,
     ) -> ModuleInstance {
         let ident = module_type.identifier();
-        for module in manifest.get_modules() {
+        for module in &manifest.modules {
             if module.identifier().eq(&ident) {
                 return ModuleInstance {
                     type_: module_type.clone(),
@@ -131,11 +131,11 @@ impl dyn Node {
             }
         }
 
-        for module in manifest.get_builder_modules() {
-            if module.get_field_type().identifier().eq(&ident) {
+        for module in &manifest.builder_modules {
+            if module.field_type.identifier().eq(&ident) {
                 return ModuleInstance {
                     type_: module_type.clone(),
-                    name: format_ident!("{}", module.get_name().to_owned()),
+                    name: format_ident!("{}", module.name.to_owned()),
                 };
             }
         }
@@ -145,15 +145,15 @@ impl dyn Node {
 
     pub fn maybe_scoped_type(type_: &Type) -> Type {
         let mut boxed_type = Type::new();
-        boxed_type.set_root(Type_Root::GLOBAL);
-        boxed_type.set_path("lockjaw::MaybeScoped".to_string());
-        boxed_type.mut_args().push(type_.clone());
+        boxed_type.root = TypeRoot::GLOBAL;
+        boxed_type.path = "lockjaw::MaybeScoped".to_string();
+        boxed_type.args.push(type_.clone());
         boxed_type
     }
 
     pub fn ref_type(type_: &Type) -> Type {
         let mut ref_type = type_.clone();
-        ref_type.set_field_ref(true);
+        ref_type.field_ref = true;
         ref_type
     }
 }

@@ -15,14 +15,13 @@ limitations under the License.
 */
 
 use crate::environment;
-use crate::protos::manifest::{Type, Type_Root};
 use lazy_static::lazy_static;
-use protobuf::RepeatedField;
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::ops::{AddAssign, Deref};
 
 use crate::error::{spanned_compile_error, CompileError};
+use crate::manifest::{Type, TypeRoot};
 use proc_macro2::TokenStream;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
@@ -66,91 +65,6 @@ lazy_static! {
     };
 }
 
-impl Type {
-    /// Full path of the type in universal from ($CRATE always resolved)
-    ///
-    /// Modifiers like & are omitted
-    pub fn canonical_string_path(&self) -> String {
-        match self.get_root() {
-            Type_Root::GLOBAL => format!("::{}", self.path_with_args()),
-            Type_Root::CRATE => {
-                format!("::{}::{}", self.get_field_crate(), self.path_with_args())
-            }
-            Type_Root::PRIMITIVE => format!("{}", self.get_path()),
-            Type_Root::UNSPECIFIED => panic!("canonical_string_path: root unspecified"),
-        }
-    }
-
-    /// Full path of the type in local from (use crate:: within the same crate).
-    ///
-    /// Modifiers like & are omitted
-    pub fn local_string_path(&self) -> String {
-        match self.get_root() {
-            Type_Root::GLOBAL => format!("::{}", self.path_with_args()),
-            Type_Root::CRATE => {
-                if environment::current_crate().eq(self.get_field_crate()) {
-                    format!("crate::{}", self.path_with_args())
-                } else {
-                    format!("{}::{}", self.get_field_crate(), self.path_with_args())
-                }
-            }
-            Type_Root::PRIMITIVE => format!("{}", self.get_path()),
-            Type_Root::UNSPECIFIED => panic!("local_string_path: root unspecified"),
-        }
-    }
-
-    /// Full path of the type in local from (use crate:: within the same crate), which can be
-    /// converted to tokens.
-    ///
-    /// Modifiers like & are omitted
-    pub fn syn_type(&self) -> syn::Type {
-        syn::parse_str(&self.local_string_path()).expect("cannot parse type path")
-    }
-
-    /// Unique identifier token representing the type.
-    ///
-    /// Modifiers like & are included.
-    pub fn identifier(&self) -> syn::Ident {
-        let mut prefix = String::new();
-        if self.get_field_ref() {
-            prefix.push_str("ref_");
-        }
-        quote::format_ident!(
-            "{}{}",
-            prefix,
-            self.canonical_string_path()
-                .replace("::", "_")
-                .replace("<", "_L_")
-                .replace(">", "_R_")
-                .replace(" ", "_")
-                .replace("\'", "")
-        )
-    }
-
-    /// Human readable form.
-    pub fn readable(&self) -> String {
-        let mut prefix = String::new();
-        if self.get_field_ref() {
-            prefix.push_str("ref ");
-        }
-        format!("{}{}", prefix, self.canonical_string_path())
-    }
-
-    fn path_with_args(&self) -> String {
-        let prefix = if self.get_trait_object() { "dyn " } else { "" };
-        if self.args.is_empty() {
-            return format!("{}{}", prefix, self.get_path());
-        }
-        let args = self
-            .args
-            .iter()
-            .map(|t| t.path_with_args())
-            .collect::<Vec<String>>()
-            .join(",");
-        format!("{}{}<{}>", prefix, self.get_path(), args)
-    }
-}
-
 pub fn type_from_syn_type(syn_type: &syn::Type) -> Result<Type, TokenStream> {
     match syn_type {
         syn::Type::Path(ref type_path) => {
@@ -158,17 +72,17 @@ pub fn type_from_syn_type(syn_type: &syn::Type) -> Result<Type, TokenStream> {
         }
         syn::Type::TraitObject(ref trait_object) => {
             let mut t: Type = type_from_type_param_bound(trait_object.bounds.borrow())?;
-            t.set_trait_object(true);
+            t.trait_object = true;
             return Ok(t);
         }
         syn::Type::ImplTrait(ref impl_trait) => {
             let mut t: Type = type_from_type_param_bound(impl_trait.bounds.borrow())?;
-            t.set_trait_object(true);
+            t.trait_object = true;
             return Ok(t);
         }
         syn::Type::Reference(ref reference) => {
             let mut t: Type = type_from_syn_type(reference.elem.deref())?;
-            t.set_field_ref(true);
+            t.field_ref = true;
             return Ok(t);
         }
         _ => {
@@ -203,7 +117,7 @@ pub fn type_from_path(syn_path: &syn::Path) -> Result<Type, TokenStream> {
     let mut result = Type::new();
     let mut segment_iter = syn_path.segments.iter().peekable();
     if syn_path.leading_colon.is_some() {
-        result.set_root(Type_Root::GLOBAL);
+        result.root = TypeRoot::GLOBAL;
     } else if segment_iter
         .peek()
         .map_spanned_compile_error(syn_path.span(), "empty segments")?
@@ -212,23 +126,23 @@ pub fn type_from_path(syn_path: &syn::Path) -> Result<Type, TokenStream> {
         .eq("crate")
     {
         segment_iter.next();
-        result.set_root(Type_Root::CRATE);
-        result.set_field_crate(environment::current_crate())
+        result.root = TypeRoot::CRATE;
+        result.field_crate = environment::current_crate()
     } else {
         let first = segment_iter
             .next()
             .map_spanned_compile_error(syn_path.span(), "path segment expected")?;
         if segment_iter.next().is_none() {
             if let Some(prelude) = PRELUDE_V1.get(&first.ident.to_string()) {
-                result.set_path(prelude.clone());
-                result.set_root(Type_Root::GLOBAL);
-                extend(result.mut_args(), get_args(first)?);
+                result.path = prelude.clone();
+                result.root = TypeRoot::GLOBAL;
+                result.args.extend(get_args(first)?);
                 return Ok(result);
             }
             if PRIMITIVES.contains(&first.ident.to_string()) {
-                result.set_path(first.ident.to_string());
-                result.set_root(Type_Root::PRIMITIVE);
-                extend(result.mut_args(), get_args(first)?);
+                result.path = first.ident.to_string();
+                result.root = TypeRoot::PRIMITIVE;
+                result.args.extend(get_args(first)?);
                 return Ok(result);
             }
         }
@@ -249,10 +163,10 @@ pub fn type_from_path(syn_path: &syn::Path) -> Result<Type, TokenStream> {
                 );
             }
         } else {
-            extend(result.mut_args(), get_args(&segment)?);
+            result.args.extend(get_args(&segment)?);
         }
     }
-    result.set_path(path);
+    result.path = path;
     Ok(result)
 }
 
@@ -275,10 +189,4 @@ fn get_args(segment: &syn::PathSegment) -> Result<Vec<Type>, TokenStream> {
         }
     }
     Ok(result)
-}
-
-pub fn extend<T>(r: &mut RepeatedField<T>, vec: Vec<T>) {
-    for v in vec {
-        r.push(v);
-    }
 }

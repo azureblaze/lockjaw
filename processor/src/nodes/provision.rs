@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 use crate::graph::{ComponentSections, Graph};
+use crate::manifest::{Component, Dependency, Type};
 use crate::nodes::node::Node;
-use crate::protos::manifest::{Component, Dependency, Type};
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 
@@ -30,7 +30,7 @@ pub struct ProvisionNode {
 impl ProvisionNode {
     pub fn new(dependency: Dependency, component: Component) -> Self {
         ProvisionNode {
-            dependencies: vec![dependency.get_field_type().clone()],
+            dependencies: vec![dependency.field_type.clone()],
             dependency,
             component,
         }
@@ -41,22 +41,22 @@ impl Node for ProvisionNode {
     fn get_name(&self) -> String {
         format!(
             "{}.{}",
-            self.component.get_field_type().canonical_string_path(),
-            self.dependency.get_name()
+            self.component.field_type.canonical_string_path(),
+            self.dependency.name
         )
     }
 
     fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         let dependency_name = self.get_identifier();
-        let dependency_path = self.dependency.get_field_type().syn_type();
+        let dependency_path = self.dependency.field_type.syn_type();
         let dependency_type;
-        if self.dependency.get_field_type().get_field_ref() {
+        if self.dependency.field_type.field_ref {
             dependency_type = quote! {& #dependency_path};
         } else {
             dependency_type = quote! {#dependency_path}
         }
-        let provider_name = self.dependency.get_field_type().identifier();
+        let provider_name = self.dependency.field_type.identifier();
         result.add_trait_methods(quote! {
            fn #dependency_name(&self) -> #dependency_type {
               self.#provider_name()
@@ -70,7 +70,7 @@ impl Node for ProvisionNode {
     }
 
     fn get_identifier(&self) -> Ident {
-        format_ident!("{}", self.dependency.get_name())
+        format_ident!("{}", self.dependency.name)
     }
 
     fn get_dependencies(&self) -> &Vec<Type> {
