@@ -14,24 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::{Dependency, Module, Provider, Type, TypeRoot};
-use crate::manifests::type_from_syn_type;
-use crate::{environment, parsing};
-use lazy_static::lazy_static;
-use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
-use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
+
+use lazy_static::lazy_static;
+use proc_macro2::TokenStream;
+use quote::{quote, ToTokens};
+use syn::__private::TokenStream2;
+use syn::parse_quote;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::Token;
-use syn::__private::TokenStream2;
-use syn::parse_quote;
 use syn::{Attribute, GenericArgument};
+
+use crate::error::{spanned_compile_error, CompileError};
+use crate::manifest::{Dependency, Module, Provider, TypeRoot};
+use crate::type_data::TypeData;
+use crate::{environment, parsing};
 
 thread_local! {
     static MODULES :RefCell<HashMap<String, LocalModule>> = RefCell::new(HashMap::new());
@@ -117,7 +118,7 @@ fn handle_provides(
     let mut provider = Provider::new();
     provider.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref ty) = signature.output {
-        provider.field_type = type_from_syn_type(ty.deref())?;
+        provider.type_data = TypeData::from_syn_type(ty.deref())?;
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -136,14 +137,14 @@ fn handle_provides(
                 } else {
                     return spanned_compile_error(args.span(), "identifier expected");
                 }
-                dependency.field_type = type_from_syn_type(type_.ty.deref())?;
+                dependency.type_data = TypeData::from_syn_type(type_.ty.deref())?;
                 provider.dependencies.push(dependency);
             }
         }
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
-    provider.field_type.scopes.extend(scopes);
+    provider.type_data.scopes.extend(scopes);
     module.providers.push(provider);
     Ok(())
 }
@@ -164,8 +165,8 @@ fn handle_binds(
     provider.binds = true;
     provider.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
-        let return_type = type_from_syn_type(ty.deref())?;
-        match return_type.path.borrow() {
+        let return_type = TypeData::from_syn_type(ty.deref())?;
+        match return_type.path.as_str() {
             "lockjaw::MaybeScoped" => {}
             "MaybeScoped" => {}
             _ => {
@@ -185,7 +186,7 @@ fn handle_binds(
                 }
             }
         }
-        provider.field_type = return_type.args[0].clone();
+        provider.type_data = return_type.args[0].clone();
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -210,13 +211,13 @@ fn handle_binds(
             } else {
                 return spanned_compile_error(args.span(), "identifier expected");
             }
-            dependency.field_type = type_from_syn_type(type_.ty.deref())?;
+            dependency.type_data = TypeData::from_syn_type(type_.ty.deref())?;
             provider.dependencies.push(dependency);
         }
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
-    provider.field_type.scopes.extend(scopes);
+    provider.type_data.scopes.extend(scopes);
     module.providers.push(provider);
     Ok(())
 }
@@ -236,7 +237,7 @@ pub fn generate_manifest(base_path: &str) -> Vec<Module> {
         let mut result = Vec::<Module>::new();
         for local_module in modules.values() {
             let mut module = Module::new();
-            let mut type_ = Type::new();
+            let mut type_ = TypeData::new();
             type_.field_crate = environment::current_crate();
             type_.root = TypeRoot::CRATE;
             let mut path = String::new();
@@ -251,7 +252,7 @@ pub fn generate_manifest(base_path: &str) -> Vec<Module> {
             path.push_str(&local_module.name);
 
             type_.path = path;
-            module.field_type = type_;
+            module.type_data = type_;
             module.providers.extend(local_module.providers.clone());
             result.push(module);
         }

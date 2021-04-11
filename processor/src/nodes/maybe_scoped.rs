@@ -15,15 +15,15 @@ limitations under the License.
 */
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::Type;
 use crate::nodes::node::Node;
+use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::quote;
 
 #[derive(Debug)]
 pub struct MaybeScopedNode {
-    pub type_: Type,
-    pub dependencies: Vec<Type>,
+    pub type_: TypeData,
+    pub dependencies: Vec<TypeData>,
     pub scoped: bool,
 
     pub node: Box<dyn Node>,
@@ -85,11 +85,11 @@ impl Node for MaybeScopedNode {
         Ok(())
     }
 
-    fn get_type(&self) -> &Type {
+    fn get_type(&self) -> &TypeData {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> &Vec<Type> {
+    fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
     }
 

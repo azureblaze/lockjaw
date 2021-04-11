@@ -15,15 +15,15 @@ limitations under the License.
 */
 
 use crate::graph::{ComponentSections, Graph};
-use crate::manifest::Type;
 use crate::nodes::node::Node;
+use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
 #[derive(Debug, Clone)]
 pub struct InjectableNode {
-    pub type_: Type,
-    pub dependencies: Vec<Type>,
+    pub type_: TypeData,
+    pub dependencies: Vec<TypeData>,
     pub scoped: bool,
 
     pub injectable: crate::manifest::Injectable,
@@ -32,11 +32,11 @@ pub struct InjectableNode {
 impl InjectableNode {
     pub fn new(injectable: &crate::manifest::Injectable) -> Vec<Box<dyn Node>> {
         let node = Box::new(InjectableNode {
-            type_: injectable.field_type.clone(),
+            type_: injectable.type_data.clone(),
             dependencies: injectable
                 .dependencies
                 .iter()
-                .map(|dep| dep.field_type.clone())
+                .map(|dep| dep.type_data.clone())
                 .collect(),
             scoped: false,
             injectable: injectable.clone(),
@@ -54,7 +54,7 @@ impl Node for InjectableNode {
         let has_ref = graph.has_scoped_deps(self)?;
         let mut ctor_params = quote! {};
         for dependency in &self.injectable.dependencies {
-            let param_provider_name = dependency.field_type.identifier();
+            let param_provider_name = dependency.type_data.identifier();
             ctor_params = quote! {
                #ctor_params
                self.#param_provider_name(),
@@ -80,11 +80,11 @@ impl Node for InjectableNode {
         Ok(result)
     }
 
-    fn get_type(&self) -> &Type {
+    fn get_type(&self) -> &TypeData {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> &Vec<Type> {
+    fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
     }
 

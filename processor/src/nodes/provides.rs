@@ -13,18 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use crate::graph::ComponentSections;
-use crate::graph::Graph;
-use crate::manifest::{ComponentModuleManifest, Provider, Type};
-use crate::nodes::binds::BindsNode;
-use crate::nodes::node::{ModuleInstance, Node};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
+use crate::graph::ComponentSections;
+use crate::graph::Graph;
+use crate::manifest::{ComponentModuleManifest, Provider};
+use crate::nodes::binds::BindsNode;
+use crate::nodes::node::{ModuleInstance, Node};
+use crate::type_data::TypeData;
+
 #[derive(Debug, Clone)]
 pub struct ProvidesNode {
-    pub type_: Type,
-    pub dependencies: Vec<Type>,
+    pub type_: TypeData,
+    pub dependencies: Vec<TypeData>,
     pub scoped: bool,
 
     pub module_instance: ModuleInstance,
@@ -34,18 +36,18 @@ pub struct ProvidesNode {
 impl ProvidesNode {
     pub fn new(
         module_manifest: &ComponentModuleManifest,
-        module_type: &Type,
+        module_type: &TypeData,
         provider: &Provider,
     ) -> Vec<Box<dyn Node>> {
         let dependencies = provider
             .dependencies
             .iter()
-            .map(|dependency| dependency.field_type.clone())
+            .map(|dependency| dependency.type_data.clone())
             .collect();
         let node: Box<dyn Node>;
         if provider.binds {
             node = Box::new(BindsNode {
-                type_: <dyn Node>::maybe_scoped_type(&provider.field_type),
+                type_: <dyn Node>::maybe_scoped_type(&provider.type_data),
                 dependencies,
                 scoped: false,
                 module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
@@ -53,7 +55,7 @@ impl ProvidesNode {
             });
         } else {
             node = Box::new(ProvidesNode {
-                type_: provider.field_type.clone(),
+                type_: provider.type_data.clone(),
                 dependencies,
                 scoped: false,
                 module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
@@ -76,7 +78,7 @@ impl Node for ProvidesNode {
     fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut args = quote! {};
         for arg in &self.provider.dependencies {
-            let arg_provider_name = arg.field_type.identifier();
+            let arg_provider_name = arg.type_data.identifier();
             args = quote! {
                 #args  self.#arg_provider_name(),
             }
@@ -104,11 +106,11 @@ impl Node for ProvidesNode {
         Ok(result)
     }
 
-    fn get_type(&self) -> &Type {
+    fn get_type(&self) -> &TypeData {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> &Vec<Type> {
+    fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
     }
 

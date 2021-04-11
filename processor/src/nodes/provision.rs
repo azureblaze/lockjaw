@@ -14,23 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::graph::{ComponentSections, Graph};
-use crate::manifest::{Component, Dependency, Type};
-use crate::nodes::node::Node;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
+
+use crate::graph::{ComponentSections, Graph};
+use crate::manifest::{Component, Dependency};
+use crate::nodes::node::Node;
+use crate::type_data::TypeData;
 
 #[derive(Debug, Clone)]
 pub struct ProvisionNode {
     dependency: Dependency,
     component: Component,
-    dependencies: Vec<Type>,
+    dependencies: Vec<TypeData>,
 }
 
 impl ProvisionNode {
     pub fn new(dependency: Dependency, component: Component) -> Self {
         ProvisionNode {
-            dependencies: vec![dependency.field_type.clone()],
+            dependencies: vec![dependency.type_data.clone()],
             dependency,
             component,
         }
@@ -41,7 +43,7 @@ impl Node for ProvisionNode {
     fn get_name(&self) -> String {
         format!(
             "{}.{}",
-            self.component.field_type.canonical_string_path(),
+            self.component.type_data.canonical_string_path(),
             self.dependency.name
         )
     }
@@ -49,14 +51,14 @@ impl Node for ProvisionNode {
     fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         let dependency_name = self.get_identifier();
-        let dependency_path = self.dependency.field_type.syn_type();
+        let dependency_path = self.dependency.type_data.syn_type();
         let dependency_type;
-        if self.dependency.field_type.field_ref {
+        if self.dependency.type_data.field_ref {
             dependency_type = quote! {& #dependency_path};
         } else {
             dependency_type = quote! {#dependency_path}
         }
-        let provider_name = self.dependency.field_type.identifier();
+        let provider_name = self.dependency.type_data.identifier();
         result.add_trait_methods(quote! {
            fn #dependency_name(&self) -> #dependency_type {
               self.#provider_name()
@@ -65,7 +67,7 @@ impl Node for ProvisionNode {
         Ok(result)
     }
 
-    fn get_type(&self) -> &Type {
+    fn get_type(&self) -> &TypeData {
         unimplemented!()
     }
 
@@ -73,7 +75,7 @@ impl Node for ProvisionNode {
         format_ident!("{}", self.dependency.name)
     }
 
-    fn get_dependencies(&self) -> &Vec<Type> {
+    fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
     }
 
