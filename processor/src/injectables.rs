@@ -14,22 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::{Dependency, Injectable, Type, TypeRoot};
-use crate::manifests::type_from_syn_type;
-use crate::{environment, parsing};
+use std::cell::RefCell;
+use std::collections::HashSet;
+
 use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
-use std::cell::RefCell;
-use std::collections::HashSet;
 use syn::spanned::Spanned;
 use syn::{FnArg, ImplItem, ImplItemMethod, Pat};
+
+use crate::error::{spanned_compile_error, CompileError};
+use crate::manifest::{Dependency, Injectable, TypeRoot};
+use crate::type_data::TypeData;
+use crate::{environment, parsing};
 
 struct LocalInjectable {
     identifier: String,
     additional_path: Option<String>,
-    scopes: Vec<Type>,
+    scopes: Vec<TypeData>,
     ctor_name: String,
     dependencies: Vec<Dependency>,
 }
@@ -71,7 +73,7 @@ pub fn handle_injectable_attribute(
         if let FnArg::Typed(ref type_) = arg {
             if let Pat::Ident(ref ident) = *type_.pat {
                 let mut dependency = Dependency::new();
-                dependency.field_type = type_from_syn_type(&type_.ty)?;
+                dependency.type_data = TypeData::from_syn_type(&type_.ty)?;
                 dependency.name = ident.ident.to_string();
                 dependencies.push(dependency);
             } else {
@@ -135,7 +137,7 @@ pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
         let mut result = Vec::new();
         for local_injectable in injectables.borrow().iter() {
             let mut injectable = Injectable::new();
-            let mut type_ = Type::new();
+            let mut type_ = TypeData::new();
             type_.field_crate = environment::current_crate();
             type_.root = TypeRoot::CRATE;
             type_.scopes.extend(local_injectable.scopes.clone());
@@ -151,7 +153,7 @@ pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
             path.push_str(&local_injectable.identifier);
 
             type_.path = path;
-            injectable.field_type = type_;
+            injectable.type_data = type_;
             injectable.ctor_name = local_injectable.ctor_name.clone();
             injectable
                 .dependencies

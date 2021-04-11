@@ -14,17 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::graph::ComponentSections;
-use crate::graph::Graph;
-use crate::manifest::{Provider, Type};
-use crate::nodes::node::{ModuleInstance, Node};
 use proc_macro2::TokenStream;
 use quote::quote;
 
+use crate::graph::ComponentSections;
+use crate::graph::Graph;
+use crate::manifest::Provider;
+use crate::nodes::node::{ModuleInstance, Node};
+use crate::type_data::TypeData;
+
 #[derive(Debug, Clone)]
 pub struct BindsNode {
-    pub type_: Type,
-    pub dependencies: Vec<Type>,
+    pub type_: TypeData,
+    pub dependencies: Vec<TypeData>,
     pub scoped: bool,
 
     pub module_instance: ModuleInstance,
@@ -46,13 +48,13 @@ impl Node for BindsNode {
             .dependencies
             .first()
             .expect("binds must have one arg");
-        let arg_provider_name = arg.field_type.identifier();
+        let arg_provider_name = arg.type_data.identifier();
 
         let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();
 
         let mut result = ComponentSections::new();
-        if arg.field_type.field_ref {
+        if arg.type_data.field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
                     lockjaw::MaybeScoped::Ref(self.#arg_provider_name())
@@ -68,11 +70,11 @@ impl Node for BindsNode {
         Ok(result)
     }
 
-    fn get_type(&self) -> &Type {
+    fn get_type(&self) -> &TypeData {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> &Vec<Type> {
+    fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
     }
 

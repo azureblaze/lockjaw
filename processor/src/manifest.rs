@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::environment;
-use crate::manifest::TypeRoot::UNSPECIFIED;
 use serde::{Deserialize, Serialize};
+
+use crate::manifest::TypeRoot::UNSPECIFIED;
+use crate::type_data::TypeData;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Manifest {
@@ -55,7 +56,7 @@ impl Manifest {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Injectable {
-    pub field_type: Type,
+    pub type_data: TypeData,
     pub ctor_name: String,
     pub dependencies: Vec<Dependency>,
 }
@@ -69,15 +70,15 @@ impl Injectable {
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Field {
     pub name: String,
-    pub field_type: Type,
+    pub type_data: TypeData,
     pub injected: bool,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Component {
-    pub field_type: Type,
+    pub type_data: TypeData,
     pub provisions: Vec<Dependency>,
-    pub module_manifest: Option<Type>,
+    pub module_manifest: Option<TypeData>,
 }
 
 impl Component {
@@ -88,9 +89,9 @@ impl Component {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct ComponentModuleManifest {
-    pub field_type: Option<Type>,
+    pub type_data: Option<TypeData>,
     pub builder_modules: Vec<Dependency>,
-    pub modules: Vec<Type>,
+    pub modules: Vec<TypeData>,
 }
 
 impl ComponentModuleManifest {
@@ -102,112 +103,12 @@ impl ComponentModuleManifest {
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Dependency {
     pub name: String,
-    pub field_type: Type,
+    pub type_data: TypeData,
 }
 
 impl Dependency {
     pub fn new() -> Self {
         Default::default()
-    }
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
-pub struct Type {
-    pub root: TypeRoot,
-    pub path: String,
-    pub field_crate: String,
-    pub args: Vec<Type>,
-    pub trait_object: bool,
-    pub field_ref: bool,
-    pub scopes: Vec<Type>,
-}
-
-impl Type {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    /// Full path of the type in universal from ($CRATE always resolved)
-    ///
-    /// Modifiers like & are omitted
-    pub fn canonical_string_path(&self) -> String {
-        match self.root {
-            TypeRoot::GLOBAL => format!("::{}", self.path_with_args()),
-            TypeRoot::CRATE => {
-                format!("::{}::{}", self.field_crate, self.path_with_args())
-            }
-            TypeRoot::PRIMITIVE => format!("{}", self.path),
-            TypeRoot::UNSPECIFIED => panic!("canonical_string_path: root unspecified"),
-        }
-    }
-
-    /// Full path of the type in local from (use crate:: within the same crate).
-    ///
-    /// Modifiers like & are omitted
-    pub fn local_string_path(&self) -> String {
-        match self.root {
-            TypeRoot::GLOBAL => format!("::{}", self.path_with_args()),
-            TypeRoot::CRATE => {
-                if environment::current_crate().eq(&self.field_crate) {
-                    format!("crate::{}", self.path_with_args())
-                } else {
-                    format!("{}::{}", self.field_crate, self.path_with_args())
-                }
-            }
-            TypeRoot::PRIMITIVE => format!("{}", self.path),
-            TypeRoot::UNSPECIFIED => panic!("local_string_path: root unspecified"),
-        }
-    }
-
-    /// Full path of the type in local from (use crate:: within the same crate), which can be
-    /// converted to tokens.
-    ///
-    /// Modifiers like & are omitted
-    pub fn syn_type(&self) -> syn::Type {
-        syn::parse_str(&self.local_string_path()).expect("cannot parse type path")
-    }
-
-    /// Unique identifier token representing the type.
-    ///
-    /// Modifiers like & are included.
-    pub fn identifier(&self) -> syn::Ident {
-        let mut prefix = String::new();
-        if self.field_ref {
-            prefix.push_str("ref_");
-        }
-        quote::format_ident!(
-            "{}{}",
-            prefix,
-            self.canonical_string_path()
-                .replace("::", "_")
-                .replace("<", "_L_")
-                .replace(">", "_R_")
-                .replace(" ", "_")
-                .replace("\'", "")
-        )
-    }
-
-    /// Human readable form.
-    pub fn readable(&self) -> String {
-        let mut prefix = String::new();
-        if self.field_ref {
-            prefix.push_str("ref ");
-        }
-        format!("{}{}", prefix, self.canonical_string_path())
-    }
-
-    fn path_with_args(&self) -> String {
-        let prefix = if self.trait_object { "dyn " } else { "" };
-        if self.args.is_empty() {
-            return format!("{}{}", prefix, self.path);
-        }
-        let args = self
-            .args
-            .iter()
-            .map(|t| t.path_with_args())
-            .collect::<Vec<String>>()
-            .join(",");
-        format!("{}{}<{}>", prefix, self.path, args)
     }
 }
 
@@ -227,7 +128,7 @@ impl Default for TypeRoot {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Module {
-    pub field_type: Type,
+    pub type_data: TypeData,
     pub providers: Vec<Provider>,
 }
 
@@ -241,7 +142,7 @@ impl Module {
 pub struct Provider {
     // message fields
     pub name: String,
-    pub field_type: Type,
+    pub type_data: TypeData,
     pub dependencies: Vec<Dependency>,
     pub field_static: bool,
     pub binds: bool,

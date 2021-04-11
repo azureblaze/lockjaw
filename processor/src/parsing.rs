@@ -15,8 +15,7 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::Type;
-use crate::manifests::type_from_path;
+use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use std::borrow::Borrow;
 use std::collections::HashMap;
@@ -89,7 +88,7 @@ pub fn get_attribute_metadata(attr: TokenStream) -> Result<HashMap<String, Strin
 }
 
 /// Parses "foo::Bar, foo::Baz" to a list of types.
-pub fn get_types(types: Option<String>) -> Result<Vec<Type>, TokenStream> {
+pub fn get_types(types: Option<String>) -> Result<Vec<TypeData>, TokenStream> {
     if types.is_none() {
         return Ok(Vec::new());
     }
@@ -97,7 +96,7 @@ pub fn get_types(types: Option<String>) -> Result<Vec<Type>, TokenStream> {
         .unwrap()
         .split(",")
         .map(|path| -> syn::Path { syn::parse_str(&path).expect("cannot parse type string") })
-        .map(|p| type_from_path(p.borrow()))
+        .map(|p| TypeData::from_path(p.borrow()))
         .collect()
 }
 

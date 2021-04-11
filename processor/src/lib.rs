@@ -42,10 +42,10 @@ mod error;
 mod graph;
 mod injectables;
 mod manifest;
-mod manifests;
 mod modules;
 mod nodes;
 mod parsing;
+mod type_data;
 thread_local! {
     static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
 }

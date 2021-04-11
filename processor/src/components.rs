@@ -14,20 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::error::{spanned_compile_error, CompileError};
-use crate::graph;
-use crate::manifest::{Component, ComponentModuleManifest, Dependency, Manifest, Type, TypeRoot};
-use crate::manifests::{type_from_path, type_from_syn_type};
-use crate::{environment, parsing};
-use lazy_static::lazy_static;
-use proc_macro2::TokenStream;
-use quote::quote_spanned;
-use quote::{quote, ToTokens};
 use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::ops::Deref;
+
+use lazy_static::lazy_static;
+use proc_macro2::TokenStream;
+use quote::quote_spanned;
+use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
+
+use crate::error::{spanned_compile_error, CompileError};
+use crate::graph;
+use crate::manifest::{Component, ComponentModuleManifest, Dependency, Manifest, TypeRoot};
+use crate::type_data::TypeData;
+use crate::{environment, parsing};
 
 thread_local! {
     static COMPONENTS :RefCell<Vec<LocalComponent>> = RefCell::new(Vec::new());
@@ -51,7 +53,7 @@ struct LocalComponent {
     name: String,
     provisions: Vec<Dependency>,
     additional_path: Option<String>,
-    module_manifest: Option<Type>,
+    module_manifest: Option<TypeData>,
 }
 
 /// Stores partial data until the true path can be resolved in the file epilogue.
@@ -59,7 +61,7 @@ struct LocalComponentModuleManifest {
     name: String,
     additional_path: Option<String>,
     builder_modules: Vec<Dependency>,
-    modules: Vec<Type>,
+    modules: Vec<TypeData>,
 }
 
 pub fn handle_component_attribute(
@@ -78,7 +80,7 @@ pub fn handle_component_attribute(
                 if is_trait_object_without_lifetime(ty.deref()) {
                     return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
                 }
-                provision.field_type = type_from_syn_type(ty.deref())?;
+                provision.type_data = TypeData::from_syn_type(ty.deref())?;
             } else {
                 return spanned_compile_error(
                     method.sig.span(),
@@ -100,7 +102,7 @@ pub fn handle_component_attribute(
     if let Some(value) = attributes.get("modules") {
         let path: syn::Path = syn::parse_str(value)
             .map_spanned_compile_error(attr.span(), "path expected for modules")?;
-        module_manifest = Some(type_from_path(path.borrow())?);
+        module_manifest = Some(TypeData::from_path(path.borrow())?);
     } else {
         module_manifest = Option::None;
     }
@@ -137,7 +139,7 @@ pub fn generate_component_manifest(base_path: &str) -> Vec<Component> {
         let mut result = Vec::<Component>::new();
         for local_component in components.iter() {
             let mut component = Component::new();
-            let mut type_ = Type::new();
+            let mut type_ = TypeData::new();
             type_.field_crate = environment::current_crate();
             type_.root = TypeRoot::CRATE;
             let mut path = String::new();
@@ -152,7 +154,7 @@ pub fn generate_component_manifest(base_path: &str) -> Vec<Component> {
             path.push_str(&local_component.name);
 
             type_.path = path;
-            component.field_type = type_;
+            component.type_data = type_;
             component
                 .provisions
                 .extend(local_component.provisions.clone());
@@ -175,7 +177,7 @@ pub fn handle_component_module_manifest_attribute(
         syn::parse2(input).map_spanned_compile_error(span, "struct expected")?;
     let attributes = parsing::get_attribute_metadata(attr.clone())?;
     let mut builder_modules = <Vec<Dependency>>::new();
-    let mut modules = <Vec<Type>>::new();
+    let mut modules = <Vec<TypeData>>::new();
     let mut fields = quote! {};
 
     for field in item_struct.fields {
@@ -195,7 +197,7 @@ pub fn handle_component_module_manifest_attribute(
                 .ident
                 .map_spanned_compile_error(span, "tuples module manifests cannot have builders")?;
             dep.name = name.to_string();
-            dep.field_type = type_from_syn_type(field.ty.borrow())?;
+            dep.type_data = TypeData::from_syn_type(field.ty.borrow())?;
             builder_modules.push(dep);
 
             let ty = field.ty;
@@ -204,7 +206,7 @@ pub fn handle_component_module_manifest_attribute(
                 #name : #ty,
             }
         } else {
-            modules.push(type_from_syn_type(field.ty.borrow())?)
+            modules.push(TypeData::from_syn_type(field.ty.borrow())?)
         }
     }
     let manifest = LocalComponentModuleManifest {
@@ -231,7 +233,7 @@ pub fn generate_component_module_manifest(base_path: &str) -> Vec<ComponentModul
         let mut result = Vec::<ComponentModuleManifest>::new();
         for local_component_module_manifest in components_module_manifests.iter() {
             let mut component_module_manifest = ComponentModuleManifest::new();
-            let mut type_ = Type::new();
+            let mut type_ = TypeData::new();
             type_.field_crate = environment::current_crate();
             type_.root = TypeRoot::CRATE;
             let mut path = String::new();
@@ -246,7 +248,7 @@ pub fn generate_component_module_manifest(base_path: &str) -> Vec<ComponentModul
             path.push_str(&local_component_module_manifest.name);
 
             type_.path = path;
-            component_module_manifest.field_type = Some(type_);
+            component_module_manifest.type_data = Some(type_);
             component_module_manifest
                 .modules
                 .extend(local_component_module_manifest.modules.clone());
@@ -265,7 +267,7 @@ pub fn generate_components(manifest: &Manifest) -> Result<(TokenStream, Vec<Stri
     let mut messages = Vec::<String>::new();
     for component in &manifest.components {
         if component
-            .field_type
+            .type_data
             .field_crate
             .ne(&environment::current_crate())
         {

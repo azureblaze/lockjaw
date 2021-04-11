@@ -13,14 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use crate::error::compile_error;
-use crate::graph::{ComponentSections, Graph};
-use crate::manifest::{ComponentModuleManifest, Type, TypeRoot};
-use crate::nodes::maybe_scoped::MaybeScopedNode;
-use crate::nodes::scoped::ScopedNode;
+use std::fmt::Debug;
+
 use proc_macro2::{Ident, TokenStream};
 use quote::format_ident;
-use std::fmt::Debug;
+
+use crate::error::compile_error;
+use crate::graph::{ComponentSections, Graph};
+use crate::manifest::{ComponentModuleManifest, TypeRoot};
+use crate::nodes::maybe_scoped::MaybeScopedNode;
+use crate::nodes::scoped::ScopedNode;
+use crate::type_data::TypeData;
 
 pub trait Node: Debug {
     fn get_name(&self) -> String;
@@ -43,11 +46,11 @@ pub trait Node: Debug {
         Ok(())
     }
 
-    fn get_type(&self) -> &Type;
+    fn get_type(&self) -> &TypeData;
     fn get_identifier(&self) -> Ident {
         self.get_type().identifier()
     }
-    fn get_dependencies(&self) -> &Vec<Type>;
+    fn get_dependencies(&self) -> &Vec<TypeData>;
     fn is_scoped(&self) -> bool;
 
     fn set_scoped(&mut self, scoped: bool);
@@ -119,7 +122,7 @@ impl dyn Node {
 
     pub fn get_module_instance(
         manifest: &ComponentModuleManifest,
-        module_type: &Type,
+        module_type: &TypeData,
     ) -> ModuleInstance {
         let ident = module_type.identifier();
         for module in &manifest.modules {
@@ -132,7 +135,7 @@ impl dyn Node {
         }
 
         for module in &manifest.builder_modules {
-            if module.field_type.identifier().eq(&ident) {
+            if module.type_data.identifier().eq(&ident) {
                 return ModuleInstance {
                     type_: module_type.clone(),
                     name: format_ident!("{}", module.name.to_owned()),
@@ -143,15 +146,15 @@ impl dyn Node {
         panic!("requested module not in manifest")
     }
 
-    pub fn maybe_scoped_type(type_: &Type) -> Type {
-        let mut boxed_type = Type::new();
+    pub fn maybe_scoped_type(type_: &TypeData) -> TypeData {
+        let mut boxed_type = TypeData::new();
         boxed_type.root = TypeRoot::GLOBAL;
         boxed_type.path = "lockjaw::MaybeScoped".to_string();
         boxed_type.args.push(type_.clone());
         boxed_type
     }
 
-    pub fn ref_type(type_: &Type) -> Type {
+    pub fn ref_type(type_: &TypeData) -> TypeData {
         let mut ref_type = type_.clone();
         ref_type.field_ref = true;
         ref_type
@@ -161,6 +164,6 @@ impl dyn Node {
 /// An item in a module
 #[derive(Debug, Clone)]
 pub struct ModuleInstance {
-    pub type_: Type,
+    pub type_: TypeData,
     pub name: syn::Ident,
 }

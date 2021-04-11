@@ -13,19 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use crate::error::{compile_error, CompileError};
-use crate::manifest::{Component, ComponentModuleManifest, Manifest, Type};
-use crate::nodes::injectable::InjectableNode;
-use crate::nodes::node::Node;
-use crate::nodes::provides::ProvidesNode;
-use crate::nodes::provision::ProvisionNode;
-use proc_macro2::{Ident, TokenStream};
-use quote::format_ident;
-use quote::quote;
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
+
+use proc_macro2::{Ident, TokenStream};
+use quote::format_ident;
+use quote::quote;
+
+use crate::error::{compile_error, CompileError};
+use crate::manifest::{Component, ComponentModuleManifest, Manifest};
+use crate::nodes::injectable::InjectableNode;
+use crate::nodes::node::Node;
+use crate::nodes::provides::ProvidesNode;
+use crate::nodes::provision::ProvisionNode;
+use crate::type_data::TypeData;
 
 /// Dependency graph and other related data
 #[derive(Default, Debug)]
@@ -109,11 +112,11 @@ pub fn generate_component(
     manifest: &Manifest,
 ) -> Result<(TokenStream, String), TokenStream> {
     let graph = crate::graph::build_graph(manifest, component)?;
-    let component_name = component.field_type.syn_type();
+    let component_name = component.type_data.syn_type();
     let component_impl_name = format_ident!(
         "{}Impl",
         component
-            .field_type
+            .type_data
             .local_string_path()
             .replace(" ", "")
             .replace("::", "_")
@@ -144,8 +147,8 @@ pub fn generate_component(
         }
     };
     let mut builder = quote! {};
-    if graph.module_manifest.field_type.is_some() {
-        let module_manifest_name = graph.module_manifest.field_type.unwrap().syn_type();
+    if graph.module_manifest.type_data.is_some() {
+        let module_manifest_name = graph.module_manifest.type_data.unwrap().syn_type();
         builder = quote! {
             impl dyn #component_name {
                 #[allow(unused)]
@@ -207,7 +210,7 @@ impl Graph {
 
         for module in &self.module_manifest.builder_modules {
             let name = format_ident!("{}", module.name);
-            let path = module.field_type.syn_type();
+            let path = module.type_data.syn_type();
             result.add_fields(quote! {
                 #name : #path,
             });
@@ -235,7 +238,7 @@ impl Graph {
 
     fn get_node(
         &self,
-        type_: &Type,
+        type_: &TypeData,
         ancestors: &Vec<String>,
     ) -> Result<&Box<dyn Node>, TokenStream> {
         self.map
@@ -322,7 +325,7 @@ fn get_module_manifest(
     }
     for module_manifest in &manifest.component_module_manifests {
         if module_manifest
-            .field_type
+            .type_data
             .as_ref()
             .unwrap()
             .identifier()
@@ -338,7 +341,7 @@ fn get_module_manifest(
             .as_ref()
             .unwrap()
             .canonical_string_path(),
-        component.field_type.canonical_string_path()
+        component.type_data.canonical_string_path()
     ))
 }
 
@@ -358,15 +361,15 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
     }
 
     for module in &result.module_manifest.builder_modules {
-        installed_modules.insert(module.field_type.identifier());
+        installed_modules.insert(module.type_data.identifier());
     }
 
     for module in &manifest.modules {
-        if !installed_modules.contains(&module.field_type.identifier()) {
+        if !installed_modules.contains(&module.type_data.identifier()) {
             continue;
         }
         for provider in &module.providers {
-            let _ = ProvidesNode::new(&result.module_manifest, &module.field_type, provider)
+            let _ = ProvidesNode::new(&result.module_manifest, &module.type_data, provider)
                 .iter()
                 .map(|node| result.add_node(node))
                 .collect::<Result<Vec<()>, TokenStream>>()?;
