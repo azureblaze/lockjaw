@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{epilogue, injectable, module, MaybeScoped};
+use lockjaw::{epilogue, injectable, module, ComponentLifetime};
 use printer::Printer;
 use std::cell::{Ref, RefCell};
 
@@ -46,7 +46,7 @@ pub struct Module {}
 #[module]
 impl Module {
     #[binds]
-    pub fn bind_printer(_impl: &crate::TestPrinter) -> MaybeScoped<dyn ::printer::Printer> {}
+    pub fn bind_printer(_impl: &crate::TestPrinter) -> ComponentLifetime<dyn ::printer::Printer> {}
 }
 
 epilogue!();

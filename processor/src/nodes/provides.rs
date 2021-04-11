@@ -47,7 +47,7 @@ impl ProvidesNode {
         let node: Box<dyn Node>;
         if provider.binds {
             node = Box::new(BindsNode {
-                type_: <dyn Node>::maybe_scoped_type(&provider.type_data),
+                type_: <dyn Node>::component_lifetime_type(&provider.type_data),
                 dependencies,
                 scoped: false,
                 module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),

@@ -21,7 +21,7 @@ use quote::format_ident;
 use crate::error::compile_error;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{ComponentModuleManifest, TypeRoot};
-use crate::nodes::maybe_scoped::MaybeScopedNode;
+use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::scoped::ScopedNode;
 use crate::type_data::TypeData;
 
@@ -94,21 +94,21 @@ impl dyn Node {
                 node: private_node.clone_box(),
             });
 
-            let maybe_scoped_node = Box::new(MaybeScopedNode {
-                type_: <dyn Node>::maybe_scoped_type(&private_node.get_type()),
+            let component_lifetime_node = Box::new(ComponentLifetimeNode {
+                type_: <dyn Node>::component_lifetime_type(&private_node.get_type()),
                 dependencies: vec![private_node.get_type().clone()],
                 scoped: false,
 
                 node: private_node.clone_box(),
             });
 
-            return vec![private_node, scoped_node, maybe_scoped_node];
+            return vec![private_node, scoped_node, component_lifetime_node];
         }
 
         if node.get_type().scopes.is_empty() {
-            if node.get_type().path.ne("lockjaw::MaybeScoped") {
-                let boxed_node = Box::new(MaybeScopedNode {
-                    type_: <dyn Node>::maybe_scoped_type(&node.get_type()),
+            if node.get_type().path.ne("lockjaw::ComponentLifetime") {
+                let boxed_node = Box::new(ComponentLifetimeNode {
+                    type_: <dyn Node>::component_lifetime_type(&node.get_type()),
                     dependencies: vec![node.get_type().clone()],
                     scoped: false,
                     node: node.clone_box(),
@@ -146,10 +146,10 @@ impl dyn Node {
         panic!("requested module not in manifest")
     }
 
-    pub fn maybe_scoped_type(type_: &TypeData) -> TypeData {
+    pub fn component_lifetime_type(type_: &TypeData) -> TypeData {
         let mut boxed_type = TypeData::new();
         boxed_type.root = TypeRoot::GLOBAL;
-        boxed_type.path = "lockjaw::MaybeScoped".to_string();
+        boxed_type.path = "lockjaw::ComponentLifetime".to_string();
         boxed_type.args.push(type_.clone());
         boxed_type
     }

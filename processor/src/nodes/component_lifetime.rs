@@ -21,16 +21,16 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 #[derive(Debug)]
-pub struct MaybeScopedNode {
+pub struct ComponentLifetimeNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
     pub scoped: bool,
 
     pub node: Box<dyn Node>,
 }
-impl Clone for MaybeScopedNode {
+impl Clone for ComponentLifetimeNode {
     fn clone(&self) -> Self {
-        MaybeScopedNode {
+        ComponentLifetimeNode {
             type_: self.type_.clone(),
             dependencies: self.dependencies.clone(),
             scoped: self.scoped.clone(),
@@ -39,7 +39,7 @@ impl Clone for MaybeScopedNode {
     }
 }
 
-impl Node for MaybeScopedNode {
+impl Node for ComponentLifetimeNode {
     fn get_name(&self) -> String {
         format!("{} (auto boxed)", self.type_.canonical_string_path())
     }
@@ -53,13 +53,13 @@ impl Node for MaybeScopedNode {
         if self.node.get_type().field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::MaybeScoped::Ref(self.#arg_provider_name())
+                    lockjaw::ComponentLifetime::Ref(self.#arg_provider_name())
                 }
             });
         } else {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::MaybeScoped::Val(Box::new(self.#arg_provider_name()))
+                    lockjaw::ComponentLifetime::Val(Box::new(self.#arg_provider_name()))
                 }
             });
         }

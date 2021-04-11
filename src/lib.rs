@@ -18,7 +18,6 @@ limitations under the License.
 
 use std::cell::RefCell;
 use std::mem::MaybeUninit;
-use std::ops::Deref;
 
 /// Annotates a trait that composes the dependency graph and provides items in
 /// the graph (An "injector").
@@ -348,7 +347,7 @@ pub use lockjaw_processor::epilogue;
 ///
 /// The `injectable` will only be provided in the `component`, and all objects generated from the
 /// same `component` instance will share the same scoped `injecetable` instance. Since it is shared,
-/// the scoped `injectable` can only be depended on as  `&T` or [`MaybeScoped<T>`](MaybeScoped), and
+/// the scoped `injectable` can only be depended on as  `&T` or [`ComponentLifetime<T>`](ComponentLifetime), and
 /// the scoped `injectable` or any objects that depends on it will share the lifetime of the
 /// `component`.
 ///
@@ -561,7 +560,7 @@ pub use lockjaw_processor::mod_epilogue;
 ///
 /// The return object will only be provided in the `component`, and all objects generated from the
 /// same `component` instance will share the same scoped returned object. Since it is shared,
-/// the scoped returned object can only be depended on as  `&T` or [`MaybeScoped<T>`](MaybeScoped),
+/// the scoped returned object can only be depended on as  `&T` or [`ComponentLifetime<T>`](ComponentLifetime),
 /// and the scoped returned object or any objects that depends on it will share the lifetime of the
 /// `component`.
 ///
@@ -625,11 +624,11 @@ pub use lockjaw_processor::mod_epilogue;
 /// this implementation will be provided.
 ///
 /// Must take the implementation as the one and only one parameter, and return
-/// [`MaybeScoped<dyn T>`](#MaybeScoped).
+/// [`ComponentLifetime<dyn T>`](#ComponentLifetime).
 ///
 /// The method implementation must be empty. Lockjaw will generate the actual implementation.
 ///
-/// The trait can only be depended on as `MaybeScoped<'_, dyn T>`, as there are no guaratee whether
+/// The trait can only be depended on as `ComponentLifetime<'_, dyn T>`, as there are no guaratee whether
 /// an implementation will depend on something that is scoped or not.
 ///
 /// Cannot annotate a method that is already annotated with [`#[provides]`](#provides)
@@ -660,7 +659,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// #[module]
 /// impl MyModule {
 ///     #[binds]
-///     pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> MaybeScoped<dyn crate::MyTrait> {}
+///     pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> ComponentLifetime<dyn crate::MyTrait> {}
 /// }
 ///
 /// #[component_module_manifest]
@@ -670,7 +669,7 @@ pub use lockjaw_processor::mod_epilogue;
 ///
 /// #[component(modules = "crate::MyModuleManifest")]
 /// pub trait MyComponent {
-///     fn my_trait(&'_ self) -> MaybeScoped<'_, dyn crate::MyTrait>;
+///     fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
 /// }
 ///
 /// pub fn main() {
@@ -691,7 +690,7 @@ pub use lockjaw_processor::mod_epilogue;
 ///
 /// The return trait will only be provided in the `component`, and all objects generated from the
 /// same `component` instance will share the same scoped returned trait. Since it is shared,
-/// the scoped returned trait can only be depended on as  [`MaybeScoped<T>`](MaybeScoped),
+/// the scoped returned trait can only be depended on as  [`ComponentLifetime<T>`](ComponentLifetime),
 /// and the scoped returned trait or any objects that depends on it will share the lifetime of the
 /// `component`.
 ///
@@ -716,7 +715,7 @@ pub use lockjaw_processor::mod_epilogue;
 /// #[module]
 /// impl FooModule {
 ///     #[binds(scope="crate::MyComponent")]
-///     pub fn binds_foo(_impl: crate::FooImpl) -> MaybeScoped<dyn crate::Foo> {}
+///     pub fn binds_foo(_impl: crate::FooImpl) -> ComponentLifetime<dyn crate::Foo> {}
 /// }
 ///
 /// #[component_module_manifest]
@@ -725,12 +724,12 @@ pub use lockjaw_processor::mod_epilogue;
 /// }
 ///
 /// pub struct Bar<'a>{
-///     foo : MaybeScoped<'a, dyn crate::Foo>
+///     foo : ComponentLifetime<'a, dyn crate::Foo>
 /// }
 /// #[injectable]
 /// impl Bar<'_> {
 ///     #[inject]
-///     pub fn new(foo : MaybeScoped<'_, dyn crate::Foo>) -> Bar<'_> {
+///     pub fn new(foo : ComponentLifetime<'_, dyn crate::Foo>) -> Bar<'_> {
 ///         Bar { foo }
 ///     }
 /// }
@@ -823,6 +822,9 @@ pub struct Once<T> {
 #[doc(include = "../README.md")]
 mod readme {}
 
+mod component_lifetime;
+pub use component_lifetime::ComponentLifetime;
+
 impl<T> Once<T> {
     pub fn new() -> Self {
         Once {
@@ -841,32 +843,6 @@ impl<T> Once<T> {
                 value.borrow_mut().as_mut_ptr().write(initializer());
             });
             &*value.borrow().as_ptr()
-        }
-    }
-}
-
-/// Wrapper around an injection that may be scoped(owned by the component) or free standing(owned by
-/// the item injecting it). Deref to access the content.
-///
-/// Typically this is used when the dependent does not care who owns the dependency, as it will
-/// not try to move it. Injecting scoped dependency as 'T' or injected free standing dependency as
-/// '&T' is a compile failure, but both can be injected as 'MaybeScoped<T>'
-///
-/// # Lifetime
-///
-/// 'MaybeScoped'\'s lifetime is bounded by the component providing it.
-pub enum MaybeScoped<'a, T: ?Sized + 'a> {
-    Val(Box<T>),
-    Ref(&'a T),
-}
-
-impl<T: ?Sized> Deref for MaybeScoped<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            MaybeScoped::Val(val) => val.deref(),
-            MaybeScoped::Ref(r) => r,
         }
     }
 }

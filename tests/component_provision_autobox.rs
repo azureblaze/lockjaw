@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, MaybeScoped};
+use lockjaw::{component, epilogue, injectable, ComponentLifetime};
 
 pub struct Foo {}
 
@@ -30,7 +30,7 @@ impl Foo {
 
 #[component]
 pub trait MyComponent {
-    fn foo(&self) -> MaybeScoped<crate::Foo>;
+    fn foo(&self) -> ComponentLifetime<crate::Foo>;
 }
 #[test]
 pub fn main() {
