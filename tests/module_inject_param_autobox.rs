@@ -16,10 +16,12 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue, injectable, module, MaybeScoped};
+use lockjaw::{
+    component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
+};
 
 pub struct Foo<'a> {
-    bar: MaybeScoped<'a, Bar>,
+    bar: ComponentLifetime<'a, Bar>,
 }
 
 pub struct Bar {}
@@ -36,7 +38,7 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[provides]
-    pub fn provide_foo(bar: MaybeScoped<'_, crate::Bar>) -> crate::Foo<'_> {
+    pub fn provide_foo(bar: ComponentLifetime<'_, crate::Bar>) -> crate::Foo<'_> {
         Foo { bar }
     }
 }

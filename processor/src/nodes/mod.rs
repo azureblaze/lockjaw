@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 pub mod binds;
+pub mod component_lifetime;
 pub mod injectable;
-pub mod maybe_scoped;
 pub mod node;
 pub mod provides;
 pub mod provision;

@@ -87,7 +87,7 @@ mod provides_param_not_identifier {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_s() -> MaybeScoped<dyn crate::ST>{}
+///     pub fn bind_s() -> ComponentLifetime<dyn crate::ST>{}
 /// }
 ///
 /// ```
@@ -108,7 +108,7 @@ mod binds_no_return_type {}
 /// }
 ///
 /// ```
-mod binds_return_type_not_maybe_scoped {}
+mod binds_return_type_not_component_lifetime {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
@@ -120,7 +120,7 @@ mod binds_return_type_not_maybe_scoped {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string() ->  MaybeScoped<dyn crate::ST> {}
+///     pub fn bind_string() ->  ComponentLifetime<dyn crate::ST> {}
 /// }
 ///
 /// ```
@@ -134,7 +134,7 @@ mod binds_no_param {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string(a :i32, b:i32) -> MaybeScoped<dyn crate::ST> {}
+///     pub fn bind_string(a :i32, b:i32) -> ComponentLifetime<dyn crate::ST> {}
 /// }
 ///
 /// ```
@@ -148,7 +148,7 @@ mod binds_more_param {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string(self) -> MaybeScoped<dyn crate::ST> {}
+///     pub fn bind_string(self) -> ComponentLifetime<dyn crate::ST> {}
 /// }
 ///
 /// ```
@@ -162,7 +162,7 @@ mod binds_self {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_string(_: i32) -> MaybeScoped<dyn crate::ST> {}
+///     pub fn bind_string(_: i32) -> ComponentLifetime<dyn crate::ST> {}
 /// }
 ///
 /// ```
@@ -170,15 +170,15 @@ mod binds_no_identifier {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
-/// use lockjaw::MaybeScoped;
+/// use lockjaw::ComponentLifetime;
 /// pub struct S {}
 /// pub trait ST{}
 /// impl ST for S {}
 /// #[module]
 /// impl S {
 ///     #[binds]
-///     pub fn bind_s(&self) -> MaybeScoped<dyn crate::ST> {
-///         MaybeScoped::Val(Box::new(S{}))
+///     pub fn bind_s(&self) -> ComponentLifetime<dyn crate::ST> {
+///         ComponentLifetime::Val(Box::new(S{}))
 ///     }
 /// }
 ///

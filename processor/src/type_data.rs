@@ -37,7 +37,7 @@ lazy_static! {
         m.insert("Result".into(), "std::result::Result".into());
         m.insert("String".into(), "std::string::String".into());
         m.insert("Vec".into(), "std::vec::Vec".into());
-        m.insert("MaybeScoped".into(),"lockjaw::MaybeScoped".into() );
+        m.insert("ComponentLifetime".into(),"lockjaw::ComponentLifetime".into() );
         m
     };
 }

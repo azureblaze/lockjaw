@@ -95,7 +95,7 @@ as they are expected to be commonly used. Internally they are automatically expa
 name.
 
 Lockjaw runtime library types also do not need to be qualified, which are:
-* `MaybeScoped<T>`
+* `ComponentLifetime<T>`
 
 Type aliases are interpreted as completely different types, and will need their dependencies
 satisfied separately.
@@ -203,10 +203,10 @@ We can also simplify trait provisions with a `#[binds]` method:
 pub fn bind_foo_impl(impl_ : FooImpl) -> impl Foo {}
 ```
 
-Note that while `#[binds]` returns `impl Foo`, the actual binding is `MaybeScoped<Foo>`,
+Note that while `#[binds]` returns `impl Foo`, the actual binding is `ComponentLifetime<Foo>`,
 since the implementation may contain a reference to a singleton (more on [scope](#scoped-bindings)
 later). Currently `#[binds]` must return `impl T`, but in the future this will be changed into
-`MaybeScoped<T>` to make it more intuitive.
+`ComponentLifetime<T>` to make it more intuitive.
 
 Since `#[provides]` and `#[binds]` are less coupled with the type they provide, and users might
 want to swap out implementations (like use a `FakeClient` for test that emulates talking to a 
@@ -303,7 +303,7 @@ To do this, the `scope` metadata can be specified on a `#[injecatable]`, `#[prov
 are only one instance of the type for objects created by the same instance of component (they
 are not global singletons, you can still have multiple instances if you have multiple components).
 
-Other types can depend on a scoped type as a reference (`&T`) or `MaybeScoped<T>`
+Other types can depend on a scoped type as a reference (`&T`) or `ComponentLifetime<T>`
 
 ```rust
 struct Foo {}
@@ -334,7 +334,7 @@ trait MyComponent {
 }
 ```
 
-`MaybeScoped<T>` allows a type to decouple itself from whether the type depended on is scoped or
+`ComponentLifetime<T>` allows a type to decouple itself from whether the type depended on is scoped or
 not. It may be an owned instance or a shared instance, but the type does not care as it will not
 try to move it.
 

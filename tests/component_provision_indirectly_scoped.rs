@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, component_module_manifest, epilogue, injectable, module, MaybeScoped};
+use lockjaw::{
+    component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
+};
 
 struct GreetCounter {
     counter: ::std::cell::RefCell<i32>,
@@ -64,7 +66,7 @@ struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_greeter(_impl: crate::GreeterImpl) -> MaybeScoped<dyn crate::Greeter> {}
+    pub fn bind_greeter(_impl: crate::GreeterImpl) -> ComponentLifetime<dyn crate::Greeter> {}
 
     #[provides]
     pub fn provide_string() -> String {
@@ -77,7 +79,7 @@ pub struct ModuleManifest(crate::MyModule);
 
 #[component(modules = "crate::ModuleManifest")]
 pub trait MyComponent {
-    fn greeter(&'_ self) -> MaybeScoped<'_, dyn crate::Greeter>;
+    fn greeter(&'_ self) -> ComponentLifetime<'_, dyn crate::Greeter>;
 }
 
 pub fn main() {

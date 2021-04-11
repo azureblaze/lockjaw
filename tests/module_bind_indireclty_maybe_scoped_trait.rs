@@ -16,7 +16,9 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue, injectable, module, MaybeScoped};
+use lockjaw::{
+    component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
+};
 
 pub struct Foo {}
 
@@ -33,13 +35,13 @@ pub trait MyTrait {
 }
 
 pub struct MyTraitImpl<'a> {
-    foo: MaybeScoped<'a, crate::Foo>,
+    foo: ComponentLifetime<'a, crate::Foo>,
 }
 
 #[injectable]
 impl MyTraitImpl<'_> {
     #[inject]
-    pub fn new(foo: MaybeScoped<'_, crate::Foo>) -> MyTraitImpl {
+    pub fn new(foo: ComponentLifetime<'_, crate::Foo>) -> MyTraitImpl {
         MyTraitImpl { foo }
     }
 }
@@ -54,7 +56,7 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> MaybeScoped<dyn crate::MyTrait> {}
+    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> ComponentLifetime<dyn crate::MyTrait> {}
 }
 
 #[component_module_manifest]
@@ -64,7 +66,7 @@ pub struct MyModuleManifest {
 
 #[component(modules = "crate::MyModuleManifest")]
 pub trait MyComponent {
-    fn my_trait(&'_ self) -> MaybeScoped<'_, dyn crate::MyTrait>;
+    fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
 }
 #[test]
 pub fn main() {

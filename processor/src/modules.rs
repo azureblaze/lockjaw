@@ -167,12 +167,12 @@ fn handle_binds(
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
         let return_type = TypeData::from_syn_type(ty.deref())?;
         match return_type.path.as_str() {
-            "lockjaw::MaybeScoped" => {}
-            "MaybeScoped" => {}
+            "lockjaw::ComponentLifetime" => {}
+            "ComponentLifetime" => {}
             _ => {
                 return spanned_compile_error(
                     signature.span(),
-                    "#[binds] methods must return MaybeScoped<T>",
+                    "#[binds] methods must return ComponentLifetime<T>",
                 )
             }
         }

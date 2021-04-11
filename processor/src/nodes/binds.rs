@@ -57,13 +57,13 @@ impl Node for BindsNode {
         if arg.type_data.field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::MaybeScoped::Ref(self.#arg_provider_name())
+                    lockjaw::ComponentLifetime::Ref(self.#arg_provider_name())
                 }
             });
         } else {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::MaybeScoped::Val(Box::new(self.#arg_provider_name()))
+                    lockjaw::ComponentLifetime::Val(Box::new(self.#arg_provider_name()))
                 }
             });
         }
