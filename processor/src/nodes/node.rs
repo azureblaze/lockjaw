@@ -22,8 +22,10 @@ use crate::error::compile_error;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{ComponentModuleManifest, TypeRoot};
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
+use crate::nodes::provider::ProviderNode;
 use crate::nodes::scoped::ScopedNode;
 use crate::type_data::TypeData;
+use std::borrow::Borrow;
 
 pub trait Node: Debug {
     fn get_name(&self) -> String;
@@ -94,30 +96,28 @@ impl dyn Node {
                 node: private_node.clone_box(),
             });
 
-            let component_lifetime_node = Box::new(ComponentLifetimeNode {
-                type_: <dyn Node>::component_lifetime_type(&private_node.get_type()),
-                dependencies: vec![private_node.get_type().clone()],
-                scoped: false,
+            let component_lifetime_node =
+                Box::new(ComponentLifetimeNode::new(private_node.borrow()));
 
-                node: private_node.clone_box(),
-            });
-
-            return vec![private_node, scoped_node, component_lifetime_node];
+            return vec![
+                private_node,
+                Box::new(ProviderNode::new(scoped_node.as_ref())),
+                scoped_node,
+                Box::new(ProviderNode::new(component_lifetime_node.as_ref())),
+                component_lifetime_node,
+            ];
         }
 
-        if node.get_type().scopes.is_empty() {
-            if node.get_type().path.ne("lockjaw::ComponentLifetime") {
-                let boxed_node = Box::new(ComponentLifetimeNode {
-                    type_: <dyn Node>::component_lifetime_type(&node.get_type()),
-                    dependencies: vec![node.get_type().clone()],
-                    scoped: false,
-                    node: node.clone_box(),
-                });
-                return vec![node, boxed_node];
-            }
-            return vec![node];
+        let mut result = Vec::new();
+
+        result.push(node.clone_box());
+        result.push(Box::new(ProviderNode::new(node.as_ref())));
+        if node.get_type().path.ne("lockjaw::ComponentLifetime") {
+            let boxed_node = Box::new(ComponentLifetimeNode::new(node.borrow()));
+            result.push(Box::new(ProviderNode::new(boxed_node.as_ref())));
+            result.push(boxed_node);
         }
-        return vec![];
+        return result;
     }
 
     pub fn get_module_instance(
@@ -158,6 +158,15 @@ impl dyn Node {
         let mut ref_type = type_.clone();
         ref_type.field_ref = true;
         ref_type
+    }
+
+    pub fn provider_type(type_: &TypeData) -> TypeData {
+        let mut provider_type = TypeData::new();
+        provider_type.root = TypeRoot::GLOBAL;
+        provider_type.path = "lockjaw::Provider".to_string();
+        provider_type.args.push(type_.clone());
+
+        provider_type
     }
 }
 

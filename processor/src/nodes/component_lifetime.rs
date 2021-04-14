@@ -24,16 +24,25 @@ use quote::quote;
 pub struct ComponentLifetimeNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
-    pub scoped: bool,
 
     pub node: Box<dyn Node>,
 }
+impl ComponentLifetimeNode {
+    pub fn new(node: &dyn Node) -> Self {
+        ComponentLifetimeNode {
+            type_: <dyn Node>::component_lifetime_type(&node.get_type()),
+            dependencies: vec![node.get_type().clone()],
+
+            node: node.clone_box(),
+        }
+    }
+}
+
 impl Clone for ComponentLifetimeNode {
     fn clone(&self) -> Self {
         ComponentLifetimeNode {
             type_: self.type_.clone(),
             dependencies: self.dependencies.clone(),
-            scoped: self.scoped.clone(),
             node: self.node.clone_box(),
         }
     }
@@ -94,11 +103,11 @@ impl Node for ComponentLifetimeNode {
     }
 
     fn is_scoped(&self) -> bool {
-        self.scoped
+        false
     }
 
-    fn set_scoped(&mut self, scoped: bool) {
-        self.scoped = scoped;
+    fn set_scoped(&mut self, _scoped: bool) {
+        panic!("should not set scope on ComponentLifetime<>")
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

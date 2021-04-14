@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Google LLC
+Copyright 2021 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,11 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-pub mod binds;
-pub mod component_lifetime;
-pub mod injectable;
-pub mod node;
-pub mod provider;
-pub mod provides;
-pub mod provision;
-pub mod scoped;
+pub struct Provider<'a, T> {
+    f: Box<dyn Fn() -> T + 'a>,
+}
+
+impl<'a, T> Provider<'a, T> {
+    pub fn new(f: impl Fn() -> T + 'a) -> Self {
+        Provider {
+            f: std::boxed::Box::new(f),
+        }
+    }
+
+    pub fn get(&self) -> T {
+        (self.f)()
+    }
+}
