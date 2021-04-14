@@ -67,3 +67,6 @@ pub use once::Once;
 pub fn build_script() {
     // Do nothing. just forcing env var OUT_DIR to be set.
 }
+
+mod provider;
+pub use provider::Provider;
