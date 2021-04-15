@@ -82,6 +82,7 @@ pub trait MyComponent {
     fn greeter(&'_ self) -> ComponentLifetime<'_, dyn crate::Greeter>;
 }
 
+#[test]
 pub fn main() {
     let component = <dyn MyComponent>::new();
 

@@ -13,29 +13,44 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, epilogue, injectable};
 
-#[allow(dead_code)]
-pub struct Bar {
-    dep: ::test_dep::DepInjectable,
+#![allow(dead_code)]
+
+use lockjaw::{component, injectable};
+
+pub struct Foo<'a> {
+    bar: &'a Bar,
 }
-#[injectable]
+
+#[injectable(scope = "crate::MyComponent")]
+impl<'a> Foo<'a> {
+    #[inject]
+    pub fn new(bar: &'a crate::Bar) -> Self {
+        Foo { bar }
+    }
+}
+
+pub struct Bar {}
+
+#[injectable(scope = "crate::MyComponent")]
 impl Bar {
     #[inject]
-    pub fn new(dep: ::test_dep::DepInjectable) -> Self {
-        Self { dep }
+    pub fn new() -> Self {
+        Bar {}
     }
 }
 
 #[component]
 pub trait MyComponent {
-    fn bar(&self) -> crate::Bar;
+    fn foo(&self) -> &crate::Foo;
+    fn bar(&self) -> &crate::Bar;
 }
 
 #[test]
-fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
-    let _bar = component.bar();
+pub fn main() {
+    let component = <dyn MyComponent>::new();
+    component.foo();
+    component.bar();
 }
 
-epilogue!();
+lockjaw::epilogue!(debug_output);

@@ -14,21 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::cell::RefCell;
-use std::mem::MaybeUninit;
+use std::cell::UnsafeCell;
 
 /// once
 #[doc(hidden)]
 pub struct Once<T> {
     once: std::sync::Once,
-    value: RefCell<MaybeUninit<T>>,
+    value: UnsafeCell<Option<T>>,
 }
 
 impl<T> Once<T> {
     pub fn new() -> Self {
         Once {
             once: std::sync::Once::new(),
-            value: RefCell::new(MaybeUninit::uninit()),
+            value: UnsafeCell::new(None),
         }
     }
 
@@ -37,11 +36,9 @@ impl<T> Once<T> {
         F: FnOnce() -> T,
     {
         unsafe {
-            let value = &self.value;
-            self.once.call_once(|| {
-                value.borrow_mut().as_mut_ptr().write(initializer());
-            });
-            &*value.borrow().as_ptr()
+            self.once
+                .call_once(|| *self.value.get() = Some(initializer()));
+            (&*self.value.get()).as_ref().unwrap()
         }
     }
 }
