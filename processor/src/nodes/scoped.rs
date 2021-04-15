@@ -45,21 +45,28 @@ impl Node for ScopedNode {
         format!("ref {}", self.type_.canonical_string_path())
     }
 
-    fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.node.get_type().identifier();
         let once_name = format_ident!("once_{}", self.type_.identifier());
         let once_type = self.node.get_type().syn_type();
-
         let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();
         let mut result = ComponentSections::new();
+        let has_ref = graph.has_scoped_deps(self.node.as_ref())?;
+        let lifetime = if has_ref {
+            quote! {<'static> /* effectively component lifetime */}
+        } else {
+            quote! {}
+        };
         result.add_fields(quote! {
-            #once_name : lockjaw::Once<#once_type>,
+            #once_name : lockjaw::Once<#once_type#lifetime>,
         });
         result.add_ctor_params(quote! {#once_name : lockjaw::Once::new(),});
         result.add_methods(quote! {
             fn #name_ident(&'_ self) -> #type_path{
-                self.#once_name.get(|| self.#arg_provider_name())
+                let this: *const Self = self;
+                // erases the 'static lifetime on Once, and reassign it to '_ (the component's lifetime)
+                self.#once_name.get(|| unsafe { &*this }.#arg_provider_name())
             }
         });
         Ok(result)
