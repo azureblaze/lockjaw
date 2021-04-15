@@ -58,7 +58,7 @@ impl Node for ScopedNode {
         });
         result.add_ctor_params(quote! {#once_name : lockjaw::Once::new(),});
         result.add_methods(quote! {
-            fn #name_ident(&'_ self) -> &#type_path{
+            fn #name_ident(&'_ self) -> #type_path{
                 self.#once_name.get(|| self.#arg_provider_name())
             }
         });

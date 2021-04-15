@@ -52,15 +52,9 @@ impl Node for ProvisionNode {
         let mut result = ComponentSections::new();
         let dependency_name = self.get_identifier();
         let dependency_path = self.dependency.type_data.syn_type();
-        let dependency_type;
-        if self.dependency.type_data.field_ref {
-            dependency_type = quote! {& #dependency_path};
-        } else {
-            dependency_type = quote! {#dependency_path}
-        }
         let provider_name = self.dependency.type_data.identifier();
         result.add_trait_methods(quote! {
-           fn #dependency_name(&self) -> #dependency_type {
+           fn #dependency_name(&self) -> #dependency_path {
               self.#provider_name()
            }
         });

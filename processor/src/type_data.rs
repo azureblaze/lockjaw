@@ -87,12 +87,18 @@ impl TypeData {
     ///
     /// Modifiers like & are omitted
     pub fn canonical_string_path(&self) -> String {
+        let prefix = self.get_prefix();
         match self.root {
-            TypeRoot::GLOBAL => format!("::{}", self.path_with_args()),
+            TypeRoot::GLOBAL => format!("{}::{}", prefix, self.path_with_args(false)),
             TypeRoot::CRATE => {
-                format!("::{}::{}", self.field_crate, self.path_with_args())
+                format!(
+                    "{}::{}::{}",
+                    prefix,
+                    self.field_crate,
+                    self.path_with_args(false)
+                )
             }
-            TypeRoot::PRIMITIVE => format!("{}", self.path),
+            TypeRoot::PRIMITIVE => format!("{}{}", prefix, self.path),
             TypeRoot::UNSPECIFIED => panic!("canonical_string_path: root unspecified"),
         }
     }
@@ -101,18 +107,35 @@ impl TypeData {
     ///
     /// Modifiers like & are omitted
     pub fn local_string_path(&self) -> String {
+        let prefix = self.get_prefix();
         match self.root {
-            TypeRoot::GLOBAL => format!("::{}", self.path_with_args()),
+            TypeRoot::GLOBAL => format!("{}::{}", prefix, self.path_with_args(true)),
             TypeRoot::CRATE => {
                 if environment::current_crate().eq(&self.field_crate) {
-                    format!("crate::{}", self.path_with_args())
+                    format!("{}crate::{}", prefix, self.path_with_args(true))
                 } else {
-                    format!("{}::{}", self.field_crate, self.path_with_args())
+                    format!(
+                        "{}{}::{}",
+                        prefix,
+                        self.field_crate,
+                        self.path_with_args(true)
+                    )
                 }
             }
-            TypeRoot::PRIMITIVE => format!("{}", self.path),
+            TypeRoot::PRIMITIVE => format!("{}{}", prefix, self.path),
             TypeRoot::UNSPECIFIED => panic!("local_string_path: root unspecified"),
         }
+    }
+
+    fn get_prefix(&self) -> String {
+        let mut prefix = String::new();
+        if self.field_ref {
+            prefix.push_str("& ");
+        }
+        if self.trait_object {
+            prefix.push_str("dyn ");
+        }
+        prefix
     }
 
     /// Full path of the type in local from (use crate:: within the same crate), which can be
@@ -120,26 +143,25 @@ impl TypeData {
     ///
     /// Modifiers like & are omitted
     pub fn syn_type(&self) -> syn::Type {
-        syn::parse_str(&self.local_string_path()).expect("cannot parse type path")
+        syn::parse_str(&self.local_string_path()).expect(&format!(
+            "cannot parse type path {}",
+            self.local_string_path()
+        ))
     }
 
     /// Unique identifier token representing the type.
     ///
     /// Modifiers like & are included.
     pub fn identifier(&self) -> syn::Ident {
-        let mut prefix = String::new();
-        if self.field_ref {
-            prefix.push_str("ref_");
-        }
         quote::format_ident!(
-            "{}{}",
-            prefix,
+            "{}",
             self.canonical_string_path()
                 .replace("::", "_")
                 .replace("<", "_L_")
                 .replace(">", "_R_")
                 .replace(" ", "_")
                 .replace("\'", "")
+                .replace("&", "ref_")
         )
     }
 
@@ -152,18 +174,23 @@ impl TypeData {
         format!("{}{}", prefix, self.canonical_string_path())
     }
 
-    fn path_with_args(&self) -> String {
-        let prefix = if self.trait_object { "dyn " } else { "" };
+    fn path_with_args(&self, local: bool) -> String {
         if self.args.is_empty() {
-            return format!("{}{}", prefix, self.path);
+            return self.path.clone();
         }
         let args = self
             .args
             .iter()
-            .map(|t| t.path_with_args())
+            .map(|t| {
+                if local {
+                    t.local_string_path()
+                } else {
+                    t.canonical_string_path()
+                }
+            })
             .collect::<Vec<String>>()
             .join(",");
-        format!("{}{}<{}>", prefix, self.path, args)
+        format!("{}<{}>", self.path, args)
     }
 
     pub fn from_syn_type(syn_type: &syn::Type) -> Result<TypeData, TokenStream> {
