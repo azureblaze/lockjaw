@@ -73,7 +73,7 @@ pub trait TestComponent {
 
 #[test]
 fn test_greeter() {
-    let component = TestComponent::new();
+    let component = <dyn TestComponent>::new();
     component.greeter().greet();
 
     assert_eq!(
