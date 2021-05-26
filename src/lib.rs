@@ -69,4 +69,9 @@ pub fn build_script() {
 }
 
 mod provider;
+
 pub use provider::Provider;
+
+mod lazy;
+
+pub use lazy::Lazy;
