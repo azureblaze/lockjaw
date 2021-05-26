@@ -22,6 +22,7 @@ use crate::error::compile_error;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{ComponentModuleManifest, TypeRoot};
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
+use crate::nodes::lazy::LazyNode;
 use crate::nodes::provider::ProviderNode;
 use crate::nodes::scoped::ScopedNode;
 use crate::type_data::TypeData;
@@ -102,8 +103,10 @@ impl dyn Node {
             return vec![
                 private_node,
                 Box::new(ProviderNode::new(scoped_node.as_ref())),
+                Box::new(LazyNode::new(scoped_node.as_ref())),
                 scoped_node,
                 Box::new(ProviderNode::new(component_lifetime_node.as_ref())),
+                Box::new(LazyNode::new(component_lifetime_node.as_ref())),
                 component_lifetime_node,
             ];
         }
@@ -112,9 +115,11 @@ impl dyn Node {
 
         result.push(node.clone_box());
         result.push(Box::new(ProviderNode::new(node.as_ref())));
+        result.push(Box::new(LazyNode::new(node.as_ref())));
         if node.get_type().path.ne("lockjaw::ComponentLifetime") {
             let boxed_node = Box::new(ComponentLifetimeNode::new(node.borrow()));
             result.push(Box::new(ProviderNode::new(boxed_node.as_ref())));
+            result.push(Box::new(LazyNode::new(boxed_node.as_ref())));
             result.push(boxed_node);
         }
         return result;
@@ -167,6 +172,15 @@ impl dyn Node {
         provider_type.args.push(type_.clone());
 
         provider_type
+    }
+
+    pub fn lazy_type(type_: &TypeData) -> TypeData {
+        let mut lazy_type = TypeData::new();
+        lazy_type.root = TypeRoot::GLOBAL;
+        lazy_type.path = "lockjaw::Lazy".to_string();
+        lazy_type.args.push(type_.clone());
+
+        lazy_type
     }
 }
 
