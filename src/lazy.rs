@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Google LLC
+Copyright 2021 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,12 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-pub mod binds;
-pub mod component_lifetime;
-pub mod injectable;
-pub mod lazy;
-pub mod node;
-pub mod provider;
-pub mod provides;
-pub mod provision;
-pub mod scoped;
+use crate::{Once, Provider};
+
+pub struct Lazy<'a, T> {
+    provider: Provider<'a, T>,
+    value: Once<T>,
+}
+
+impl<'a, T> Lazy<'a, T> {
+    pub fn new(provider: Provider<'a, T>) -> Self {
+        Lazy {
+            provider,
+            value: Once::new(),
+        }
+    }
+
+    pub fn get(&'a self) -> &'a T {
+        self.value.get(|| self.provider.get())
+    }
+}
