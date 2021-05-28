@@ -61,14 +61,23 @@ impl Foo<'_> {
 #[component]
 pub trait MyComponent {
     fn foo(&self) -> Provider<crate::Foo>;
+    fn foo2(&self) -> Provider<Provider<crate::Foo>>;
 
     fn counter(&self) -> &crate::Counter;
 }
+
 #[test]
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 
     assert_eq!(component.foo().get().i, 1);
+}
+
+#[test]
+pub fn nested_provider() {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+
+    assert_eq!(component.foo2().get().get().i, 1);
 }
 
 #[test]

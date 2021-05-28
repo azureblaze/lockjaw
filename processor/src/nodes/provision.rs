@@ -73,14 +73,6 @@ impl Node for ProvisionNode {
         &self.dependencies
     }
 
-    fn is_scoped(&self) -> bool {
-        unimplemented!()
-    }
-
-    fn set_scoped(&mut self, _scoped: bool) {
-        unimplemented!()
-    }
-
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }

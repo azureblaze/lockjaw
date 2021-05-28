@@ -53,4 +53,4 @@ pub fn main() {
     component.bar();
 }
 
-lockjaw::epilogue!(debug_output);
+lockjaw::epilogue!();

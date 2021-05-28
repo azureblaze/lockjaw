@@ -24,9 +24,20 @@ use quote::{format_ident, quote};
 pub struct ScopedNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
-    pub scoped: bool,
+    pub target: TypeData,
+}
 
-    pub node: Box<dyn Node>,
+impl ScopedNode {
+    pub fn for_type(type_: &TypeData) -> Option<Box<dyn Node>> {
+        let mut non_ref = type_.clone();
+
+        non_ref.field_ref = false;
+        return Some(Box::new(ScopedNode {
+            type_: type_.clone(),
+            dependencies: vec![non_ref.clone()],
+            target: non_ref.clone(),
+        }));
+    }
 }
 
 impl Clone for ScopedNode {
@@ -34,8 +45,7 @@ impl Clone for ScopedNode {
         return ScopedNode {
             type_: self.type_.clone(),
             dependencies: self.dependencies.clone(),
-            scoped: self.scoped.clone(),
-            node: self.node.clone_box(),
+            target: self.target.clone(),
         };
     }
 }
@@ -46,13 +56,13 @@ impl Node for ScopedNode {
     }
 
     fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
-        let arg_provider_name = self.node.get_type().identifier();
+        let arg_provider_name = self.target.identifier();
         let once_name = format_ident!("once_{}", self.type_.identifier());
-        let once_type = self.node.get_type().syn_type();
+        let once_type = self.target.syn_type();
         let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();
         let mut result = ComponentSections::new();
-        let has_ref = graph.has_scoped_deps(self.node.as_ref())?;
+        let has_ref = graph.has_scoped_deps(&self.target.identifier())?;
         let lifetime = if has_ref {
             quote! {<'static> /* effectively component lifetime */}
         } else {
@@ -86,14 +96,6 @@ impl Node for ScopedNode {
 
     fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
-    }
-
-    fn is_scoped(&self) -> bool {
-        self.scoped
-    }
-
-    fn set_scoped(&mut self, scoped: bool) {
-        self.scoped = scoped;
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

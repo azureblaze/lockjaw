@@ -1,5 +1,5 @@
 /*
-Copyright 2021 Google LLC
+Copyright 2020 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use crate::graph::{ComponentSections, Graph};
+use crate::graph::ComponentSections;
+use crate::graph::Graph;
 use crate::manifest::TypeRoot;
 use crate::nodes::node::Node;
 use crate::type_data::TypeData;
@@ -21,35 +22,36 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 #[derive(Debug)]
-pub struct ProviderNode {
+pub struct BoxedNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
+
     pub inner: TypeData,
 }
 
-impl ProviderNode {
+impl BoxedNode {
     pub fn for_type(type_: &TypeData) -> Option<Box<dyn Node>> {
         let inner = type_.args.get(0).unwrap();
-        Some(Box::new(ProviderNode {
-            type_: ProviderNode::provider_type(inner),
+        Some(Box::new(BoxedNode {
+            type_: BoxedNode::boxed_type(&inner),
             dependencies: vec![inner.clone()],
+
             inner: inner.clone(),
         }))
     }
 
-    pub fn provider_type(type_: &TypeData) -> TypeData {
-        let mut provider_type = TypeData::new();
-        provider_type.root = TypeRoot::GLOBAL;
-        provider_type.path = "lockjaw::Provider".to_string();
-        provider_type.args.push(type_.clone());
-
-        provider_type
+    fn boxed_type(type_: &TypeData) -> TypeData {
+        let mut boxed_type = TypeData::new();
+        boxed_type.root = TypeRoot::GLOBAL;
+        boxed_type.path = "std::boxed::Box".to_string();
+        boxed_type.args.push(type_.clone());
+        boxed_type
     }
 }
 
-impl Clone for ProviderNode {
+impl Clone for BoxedNode {
     fn clone(&self) -> Self {
-        ProviderNode {
+        BoxedNode {
             type_: self.type_.clone(),
             dependencies: self.dependencies.clone(),
             inner: self.inner.clone(),
@@ -57,25 +59,43 @@ impl Clone for ProviderNode {
     }
 }
 
-impl Node for ProviderNode {
+impl Node for BoxedNode {
     fn get_name(&self) -> String {
-        return format!("Provider<{}>", self.dependencies[0].readable());
+        format!("{} (auto boxed)", self.type_.canonical_string_path())
     }
 
     fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.inner.identifier();
         let name_ident = self.get_identifier();
-        let provides_type = self.inner.syn_type();
+        let type_path = self.type_.syn_type();
 
         let mut result = ComponentSections::new();
-
         result.add_methods(quote! {
-            fn #name_ident(&'_ self) -> lockjaw::Provider<'_, #provides_type>{
-                lockjaw::Provider::new(move || self.#arg_provider_name())
+            fn #name_ident(&self) -> #type_path{
+                std::boxed::Box::new(self.#arg_provider_name())
             }
         });
 
         Ok(result)
+    }
+
+    fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
+        if self
+            .type_
+            .canonical_string_path()
+            .eq(&new_node.get_type().canonical_string_path())
+        {
+            return Ok(self.clone_box());
+        }
+        <dyn Node>::duplicated(self, new_node)
+    }
+
+    fn can_depend(
+        &self,
+        _target_node: &dyn Node,
+        _ancestors: &Vec<String>,
+    ) -> Result<(), TokenStream> {
+        Ok(())
     }
 
     fn get_type(&self) -> &TypeData {
@@ -87,6 +107,6 @@ impl Node for ProviderNode {
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
-        return Box::new(self.clone());
+        Box::new(self.clone())
     }
 }

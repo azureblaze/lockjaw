@@ -28,7 +28,6 @@ use crate::nodes::injectable::InjectableNode;
 use crate::nodes::node::Node;
 use crate::nodes::provides::ProvidesNode;
 use crate::nodes::provision::ProvisionNode;
-use crate::type_data::TypeData;
 
 /// Dependency graph and other related data
 #[derive(Default, Debug)]
@@ -125,7 +124,7 @@ pub fn generate_component(
     let mut component_sections = ComponentSections::new();
 
     component_sections.merge(graph.generate_modules());
-    component_sections.merge(graph.generate_providers(component)?);
+    component_sections.merge(graph.generate_provisions(component)?);
 
     let fields = &component_sections.fields;
     let ctor_params = &component_sections.ctor_params;
@@ -179,7 +178,7 @@ pub fn generate_component(
 }
 
 impl Graph {
-    fn add_node(&mut self, node: &Box<dyn Node>) -> Result<(), TokenStream> {
+    fn add_node(&mut self, node: Box<dyn Node>) -> Result<(), TokenStream> {
         if self.map.contains_key(&node.get_type().identifier()) {
             let merged_node = self
                 .map
@@ -189,8 +188,7 @@ impl Graph {
             self.map
                 .insert(merged_node.get_type().identifier(), merged_node);
         }
-        self.map
-            .insert(node.get_type().identifier(), node.clone_box());
+        self.map.insert(node.get_type().identifier(), node);
         Ok(())
     }
 
@@ -222,11 +220,11 @@ impl Graph {
         result
     }
 
-    fn generate_providers(&self, component: &Component) -> Result<ComponentSections, TokenStream> {
+    fn generate_provisions(&self, component: &Component) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         let mut generated_nodes = HashSet::<Ident>::new();
         for provision in &self.provisions {
-            result.merge(self.generate_provider(
+            result.merge(self.generate_provision(
                 provision.deref(),
                 component,
                 &Vec::new(),
@@ -236,21 +234,7 @@ impl Graph {
         Ok(result)
     }
 
-    fn get_node(
-        &self,
-        type_: &TypeData,
-        ancestors: &Vec<String>,
-    ) -> Result<&Box<dyn Node>, TokenStream> {
-        self.map
-            .get(&type_.identifier())
-            .map_compile_error(&format!(
-                "missing bindings for {}\nrequested by: {} ",
-                type_.readable(),
-                ancestors.join("\nrequested by: ")
-            ))
-    }
-
-    fn generate_provider(
+    fn generate_provision(
         &self,
         node: &dyn Node,
         component: &Component,
@@ -258,26 +242,6 @@ impl Graph {
         generated_nodes: &mut HashSet<Ident>,
     ) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
-
-        if ancestors.contains(&node.get_name()) {
-            let l = ancestors
-                .iter()
-                .position(|s| s.eq(&node.get_name()))
-                .unwrap();
-            let mut s = String::new();
-            for i in 0..ancestors.len() {
-                if i == 0 {
-                    s.push_str(&format!("*-- {}\n", ancestors.get(i).unwrap()));
-                } else if i < l {
-                    s.push_str(&format!("|   {}\n", ancestors.get(i).unwrap()));
-                } else if i == l {
-                    s.push_str(&format!("*-> {}\n", ancestors.get(i).unwrap()));
-                } else {
-                    s.push_str(&format!("    {}\n", ancestors.get(i).unwrap()));
-                }
-            }
-            return compile_error(&format!("Cyclic dependency detected:\n{}", s));
-        }
 
         if generated_nodes.contains(&node.get_identifier()) {
             return Ok(result);
@@ -290,9 +254,11 @@ impl Graph {
         new_ancestors.push(node.get_name());
         new_ancestors.extend(ancestors.clone());
         for dependency in node.get_dependencies() {
-            let dependency_node = self.get_node(dependency, ancestors)?;
-            node.can_depend(dependency_node.borrow(), ancestors)?;
-            result.merge(self.generate_provider(
+            let dependency_node = self
+                .map
+                .get(&dependency.identifier())
+                .expect(&format!("missing node for {}", dependency.readable()));
+            result.merge(self.generate_provision(
                 dependency_node.borrow(),
                 component,
                 &new_ancestors,
@@ -302,13 +268,17 @@ impl Graph {
         Ok(result)
     }
 
-    pub fn has_scoped_deps(&self, node: &dyn Node) -> Result<bool, TokenStream> {
+    pub fn has_scoped_deps(&self, identifier: &Ident) -> Result<bool, TokenStream> {
+        let node = self.map.get(identifier).unwrap();
         for dep in node.get_dependencies() {
-            let dep_node = self.get_node(dep, &Vec::new())?;
-            if dep_node.is_scoped() {
+            let dep_node = self
+                .map
+                .get(&dep.identifier())
+                .expect(&format!("missing node for {}", dep.readable()));
+            if !dep_node.get_type().scopes.is_empty() {
                 return Ok(true);
             }
-            if self.has_scoped_deps(dep_node.borrow())? {
+            if self.has_scoped_deps(&dep.identifier())? {
                 return Ok(true);
             }
         }
@@ -348,10 +318,7 @@ fn get_module_manifest(
 fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, TokenStream> {
     let mut result = Graph::default();
     for injectable in &manifest.injectables {
-        let _: Vec<()> = InjectableNode::new(injectable)
-            .iter()
-            .map(|node| result.add_node(node))
-            .collect::<Result<Vec<()>, TokenStream>>()?;
+        result.add_node(InjectableNode::new(injectable))?;
     }
     let mut installed_modules = HashSet::<Ident>::new();
     result.module_manifest = get_module_manifest(manifest, component)?;
@@ -369,18 +336,88 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
             continue;
         }
         for provider in &module.providers {
-            let _ = ProvidesNode::new(&result.module_manifest, &module.type_data, provider)
-                .iter()
-                .map(|node| result.add_node(node))
-                .collect::<Result<Vec<()>, TokenStream>>()?;
+            result.add_node(ProvidesNode::new(
+                &result.module_manifest,
+                &module.type_data,
+                provider,
+            ))?;
         }
     }
+    let mut resolved_nodes = HashSet::<Ident>::new();
     for provision in &component.provisions {
-        result.provisions.push(Box::new(ProvisionNode::new(
-            provision.clone(),
-            component.clone(),
-        )));
+        let provision = Box::new(ProvisionNode::new(provision.clone(), component.clone()));
+        resolve_dependencies(
+            provision.as_ref(),
+            &mut result.map,
+            &mut vec![],
+            &mut resolved_nodes,
+        )?;
+        result.provisions.push(provision);
+    }
+    Ok(result)
+}
+
+fn resolve_dependencies(
+    node: &dyn Node,
+    map: &mut HashMap<Ident, Box<dyn Node>>,
+    ancestors: &mut Vec<String>,
+    resovled_nodes: &mut HashSet<Ident>,
+) -> Result<(), TokenStream> {
+    if ancestors.contains(&node.get_name()) {
+        return cyclic_dependency(node, ancestors);
     }
 
-    Ok(result)
+    if resovled_nodes.contains(&node.get_identifier()) {
+        return Ok(());
+    }
+
+    resovled_nodes.insert(node.get_identifier());
+
+    ancestors.push(node.get_name());
+    for dependency in node.get_dependencies() {
+        let mut dependency_node = map.get(&dependency.identifier());
+
+        if dependency_node.is_none() {
+            let generated_node =
+                <dyn Node>::generate_node(dependency).map_compile_error(&format!(
+                    "missing bindings for {}\nrequested by: {} ",
+                    dependency.readable(),
+                    ancestors
+                        .iter()
+                        .rev()
+                        .map(|s| s.clone())
+                        .collect::<Vec<String>>()
+                        .join("\nrequested by: ")
+                ))?;
+            let identifier = generated_node.get_identifier();
+            map.insert(identifier.clone(), generated_node);
+            dependency_node = map.get(&identifier);
+        }
+        let cloned_node = dependency_node.unwrap().clone_box();
+        node.can_depend(cloned_node.as_ref(), ancestors)?;
+        resolve_dependencies(cloned_node.as_ref(), map, ancestors, resovled_nodes)?;
+    }
+    ancestors.pop();
+    Ok(())
+}
+
+fn cyclic_dependency(node: &dyn Node, ancestors: &mut Vec<String>) -> Result<(), TokenStream> {
+    ancestors.push(node.get_name());
+    ancestors.reverse();
+    let mut iter = ancestors.iter();
+    iter.next();
+    let chain_start = iter.position(|s| s.eq(&node.get_name())).unwrap() + 1;
+    let mut s: Vec<String> = vec![];
+    for i in 0..ancestors.len() {
+        if i == 0 {
+            s.push(format!("*-- {}", ancestors.get(i).unwrap()));
+        } else if i < chain_start {
+            s.push(format!("|   {}", ancestors.get(i).unwrap()));
+        } else if i == chain_start {
+            s.push(format!("*-> {}", ancestors.get(i).unwrap()));
+        } else {
+            s.push(format!("    {}", ancestors.get(i).unwrap()));
+        }
+    }
+    return compile_error(&format!("Cyclic dependency detected:\n{}", s.join("\n")));
 }

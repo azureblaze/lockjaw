@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable};
+use lockjaw::{component, epilogue, injectable, ComponentLifetime};
 
 pub struct Foo {}
 
@@ -28,13 +28,26 @@ impl Foo {
     }
 }
 
+pub struct Bar<'a> {
+    foo: ComponentLifetime<'a, crate::Foo>,
+}
+
+#[injectable]
+impl Bar<'_> {
+    #[inject]
+    pub fn new(foo: ComponentLifetime<'_, crate::Foo>) -> Bar<'_> {
+        Bar { foo }
+    }
+}
+
 #[component]
 pub trait MyComponent {
-    fn foo(&self) -> Box<crate::Foo>;
+    fn bar(&'_ self) -> crate::Bar<'_>;
 }
+
 #[test]
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
-    component.foo();
+    component.bar();
 }
 epilogue!();
