@@ -30,8 +30,8 @@ pub struct InjectableNode {
 }
 
 impl InjectableNode {
-    pub fn new(injectable: &crate::manifest::Injectable) -> Vec<Box<dyn Node>> {
-        let node = Box::new(InjectableNode {
+    pub fn new(injectable: &crate::manifest::Injectable) -> Box<dyn Node> {
+        Box::new(InjectableNode {
             type_: injectable.type_data.clone(),
             dependencies: injectable
                 .dependencies
@@ -40,8 +40,7 @@ impl InjectableNode {
                 .collect(),
             scoped: false,
             injectable: injectable.clone(),
-        });
-        <dyn Node>::generate_node_variants(node)
+        })
     }
 }
 
@@ -51,7 +50,7 @@ impl Node for InjectableNode {
     }
 
     fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
-        let has_ref = graph.has_scoped_deps(self)?;
+        let has_ref = graph.has_scoped_deps(&self.type_.identifier())?;
         let mut ctor_params = quote! {};
         for dependency in &self.injectable.dependencies {
             let param_provider_name = dependency.type_data.identifier();
@@ -86,14 +85,6 @@ impl Node for InjectableNode {
 
     fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
-    }
-
-    fn is_scoped(&self) -> bool {
-        self.scoped
-    }
-
-    fn set_scoped(&mut self, scoped: bool) {
-        self.scoped = scoped;
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

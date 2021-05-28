@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 use crate::graph::{ComponentSections, Graph};
+use crate::manifest::TypeRoot;
 use crate::nodes::node::Node;
 use crate::nodes::provider::ProviderNode;
 use crate::type_data::TypeData;
@@ -24,17 +25,27 @@ use quote::quote;
 pub struct LazyNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
-    pub node: Box<dyn Node>,
+    pub target: TypeData,
 }
 
 impl LazyNode {
-    pub fn new(node: &dyn Node) -> Self {
-        let provider = ProviderNode::new(node);
-        Self {
-            type_: <dyn Node>::lazy_type(node.get_type()),
-            dependencies: vec![provider.get_type().clone()],
-            node: provider.clone_box(),
-        }
+    pub fn for_type(type_: &TypeData) -> Option<Box<dyn Node>> {
+        let inner = type_.args.get(0).unwrap();
+        let provider = ProviderNode::provider_type(inner);
+        Some(Box::new(Self {
+            type_: LazyNode::lazy_type(inner),
+            dependencies: vec![provider.clone()],
+            target: provider.clone(),
+        }))
+    }
+
+    pub fn lazy_type(type_: &TypeData) -> TypeData {
+        let mut lazy_type = TypeData::new();
+        lazy_type.root = TypeRoot::GLOBAL;
+        lazy_type.path = "lockjaw::Lazy".to_string();
+        lazy_type.args.push(type_.clone());
+
+        lazy_type
     }
 }
 
@@ -43,7 +54,7 @@ impl Clone for LazyNode {
         Self {
             type_: self.type_.clone(),
             dependencies: self.dependencies.clone(),
-            node: self.node.clone_box(),
+            target: self.target.clone(),
         }
     }
 }
@@ -54,13 +65,13 @@ impl Node for LazyNode {
     }
 
     fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
-        let arg_provider_name = self.node.get_type().identifier();
+        let arg_provider_name = self.target.identifier();
         let name_ident = self.get_identifier();
         let lazy_type = self
-            .node
-            .get_dependencies()
+            .type_
+            .args
             .get(0)
-            .expect("missing Provider<T> dep for Lazy<T>")
+            .expect("missing T dep for Lazy<T>")
             .syn_type();
 
         let mut result = ComponentSections::new();
@@ -80,14 +91,6 @@ impl Node for LazyNode {
 
     fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
-    }
-
-    fn is_scoped(&self) -> bool {
-        false
-    }
-
-    fn set_scoped(&mut self, _scoped: bool) {
-        panic!("should not set scoped on Lazy<>");
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

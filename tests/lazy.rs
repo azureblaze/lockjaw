@@ -88,4 +88,4 @@ pub fn multiple_get_same_instance() {
     assert_eq!(lazy.get().i, 1);
 }
 
-epilogue!(debug_output);
+epilogue!();

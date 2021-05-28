@@ -20,6 +20,7 @@ use crate::graph::ComponentSections;
 use crate::graph::Graph;
 use crate::manifest::{ComponentModuleManifest, Provider};
 use crate::nodes::binds::BindsNode;
+use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::node::{ModuleInstance, Node};
 use crate::type_data::TypeData;
 
@@ -27,7 +28,6 @@ use crate::type_data::TypeData;
 pub struct ProvidesNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
-    pub scoped: bool,
 
     pub module_instance: ModuleInstance,
     pub provider: Provider,
@@ -38,31 +38,27 @@ impl ProvidesNode {
         module_manifest: &ComponentModuleManifest,
         module_type: &TypeData,
         provider: &Provider,
-    ) -> Vec<Box<dyn Node>> {
+    ) -> Box<dyn Node> {
         let dependencies = provider
             .dependencies
             .iter()
             .map(|dependency| dependency.type_data.clone())
             .collect();
-        let node: Box<dyn Node>;
-        if provider.binds {
-            node = Box::new(BindsNode {
-                type_: <dyn Node>::component_lifetime_type(&provider.type_data),
+        return if provider.binds {
+            Box::new(BindsNode {
+                type_: ComponentLifetimeNode::component_lifetime_type(&provider.type_data),
                 dependencies,
-                scoped: false,
                 module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
                 provider: provider.clone(),
-            });
+            })
         } else {
-            node = Box::new(ProvidesNode {
+            Box::new(ProvidesNode {
                 type_: provider.type_data.clone(),
                 dependencies,
-                scoped: false,
                 module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
                 provider: provider.clone(),
-            });
-        }
-        <dyn Node>::generate_node_variants(node)
+            })
+        };
     }
 }
 
@@ -112,14 +108,6 @@ impl Node for ProvidesNode {
 
     fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
-    }
-
-    fn is_scoped(&self) -> bool {
-        self.scoped
-    }
-
-    fn set_scoped(&mut self, scoped: bool) {
-        self.scoped = scoped;
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

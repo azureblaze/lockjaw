@@ -27,7 +27,6 @@ use crate::type_data::TypeData;
 pub struct BindsNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
-    pub scoped: bool,
 
     pub module_instance: ModuleInstance,
     pub provider: Provider,
@@ -76,14 +75,6 @@ impl Node for BindsNode {
 
     fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
-    }
-
-    fn is_scoped(&self) -> bool {
-        self.scoped
-    }
-
-    fn set_scoped(&mut self, scoped: bool) {
-        self.scoped = scoped;
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

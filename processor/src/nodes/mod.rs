@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 pub mod binds;
+pub mod boxed;
 pub mod component_lifetime;
 pub mod injectable;
 pub mod lazy;

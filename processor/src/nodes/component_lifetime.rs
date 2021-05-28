@@ -15,6 +15,7 @@ limitations under the License.
 */
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
+use crate::manifest::TypeRoot;
 use crate::nodes::node::Node;
 use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
@@ -25,16 +26,26 @@ pub struct ComponentLifetimeNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
 
-    pub node: Box<dyn Node>,
+    pub inner: TypeData,
 }
-impl ComponentLifetimeNode {
-    pub fn new(node: &dyn Node) -> Self {
-        ComponentLifetimeNode {
-            type_: <dyn Node>::component_lifetime_type(&node.get_type()),
-            dependencies: vec![node.get_type().clone()],
 
-            node: node.clone_box(),
-        }
+impl ComponentLifetimeNode {
+    pub fn for_type(type_: &TypeData) -> Option<Box<dyn Node>> {
+        let inner = type_.args.get(0).unwrap();
+        Some(Box::new(ComponentLifetimeNode {
+            type_: ComponentLifetimeNode::component_lifetime_type(inner),
+            dependencies: vec![inner.clone()],
+
+            inner: inner.clone(),
+        }))
+    }
+
+    pub fn component_lifetime_type(type_: &TypeData) -> TypeData {
+        let mut boxed_type = TypeData::new();
+        boxed_type.root = TypeRoot::GLOBAL;
+        boxed_type.path = "lockjaw::ComponentLifetime".to_string();
+        boxed_type.args.push(type_.clone());
+        boxed_type
     }
 }
 
@@ -43,23 +54,23 @@ impl Clone for ComponentLifetimeNode {
         ComponentLifetimeNode {
             type_: self.type_.clone(),
             dependencies: self.dependencies.clone(),
-            node: self.node.clone_box(),
+            inner: self.inner.clone(),
         }
     }
 }
 
 impl Node for ComponentLifetimeNode {
     fn get_name(&self) -> String {
-        format!("{} (auto boxed)", self.type_.canonical_string_path())
+        format!("ComponentLifetime{}", self.type_.canonical_string_path())
     }
 
     fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
-        let arg_provider_name = self.node.get_type().identifier();
+        let arg_provider_name = self.inner.identifier();
         let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();
 
         let mut result = ComponentSections::new();
-        if self.node.get_type().field_ref {
+        if self.inner.field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
                     lockjaw::ComponentLifetime::Ref(self.#arg_provider_name())
@@ -100,14 +111,6 @@ impl Node for ComponentLifetimeNode {
 
     fn get_dependencies(&self) -> &Vec<TypeData> {
         &self.dependencies
-    }
-
-    fn is_scoped(&self) -> bool {
-        false
-    }
-
-    fn set_scoped(&mut self, _scoped: bool) {
-        panic!("should not set scope on ComponentLifetime<>")
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
