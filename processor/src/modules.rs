@@ -30,7 +30,8 @@ use syn::Token;
 use syn::{Attribute, GenericArgument};
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::{Dependency, Module, Provider, TypeRoot};
+use crate::manifest::BindingType::{Binds, BindsOptionOf, Provides};
+use crate::manifest::{Binding, Dependency, Module, TypeRoot};
 use crate::type_data::TypeData;
 use crate::{environment, parsing};
 
@@ -48,7 +49,7 @@ lazy_static! {
 
 struct LocalModule {
     name: String,
-    providers: Vec<Provider>,
+    bindings: Vec<Binding>,
     additional_path: Option<String>,
 }
 
@@ -82,7 +83,7 @@ pub fn handle_module_attribute(
         let mut module = LocalModule {
             name: module_path.to_owned(),
             additional_path: attributes.get("path").cloned(),
-            providers: Vec::new(),
+            bindings: Vec::new(),
         };
 
         for i in 0..item_impl.items.len() {
@@ -95,6 +96,15 @@ pub fn handle_module_attribute(
                         handle_provides(attr, &mut module, &mut method.sig)?;
                     } else if parsing::is_attribute(attr, "binds") {
                         handle_binds(attr, &mut module, &mut method.sig, &mut method.block)?;
+                        let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
+                        new_attrs.push(allow_dead_code);
+                    } else if parsing::is_attribute(attr, "binds_option_of") {
+                        handle_binds_option_of(
+                            attr,
+                            &mut module,
+                            &mut method.sig,
+                            &mut method.block,
+                        )?;
                         let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                         new_attrs.push(allow_dead_code);
                     } else {
@@ -115,10 +125,10 @@ fn handle_provides(
     module: &mut LocalModule,
     signature: &mut syn::Signature,
 ) -> Result<(), TokenStream2> {
-    let mut provider = Provider::new();
-    provider.name = signature.ident.to_string();
+    let mut provides = Binding::new(Provides);
+    provides.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref ty) = signature.output {
-        provider.type_data = TypeData::from_syn_type(ty.deref())?;
+        provides.type_data = TypeData::from_syn_type(ty.deref())?;
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -128,7 +138,7 @@ fn handle_provides(
                 if receiver.reference.is_none() {
                     return spanned_compile_error(args.span(), "modules should not consume self");
                 }
-                provider.field_static = false;
+                provides.field_static = false;
             }
             syn::FnArg::Typed(ref type_) => {
                 let mut dependency = Dependency::new();
@@ -138,14 +148,14 @@ fn handle_provides(
                     return spanned_compile_error(args.span(), "identifier expected");
                 }
                 dependency.type_data = TypeData::from_syn_type(type_.ty.deref())?;
-                provider.dependencies.push(dependency);
+                provides.dependencies.push(dependency);
             }
         }
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
-    provider.type_data.scopes.extend(scopes);
-    module.providers.push(provider);
+    provides.type_data.scopes.extend(scopes);
+    module.bindings.push(provides);
     Ok(())
 }
 
@@ -161,9 +171,8 @@ fn handle_binds(
     let body: syn::Stmt = syn::parse2(quote! { unimplemented!(); }).unwrap();
     block.stmts.push(body);
 
-    let mut provider = Provider::new();
-    provider.binds = true;
-    provider.name = signature.ident.to_string();
+    let mut binds = Binding::new(Binds);
+    binds.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
         let return_type = TypeData::from_syn_type(ty.deref())?;
         match return_type.path.as_str() {
@@ -186,7 +195,7 @@ fn handle_binds(
                 }
             }
         }
-        provider.type_data = return_type.args[0].clone();
+        binds.type_data = return_type.args[0].clone();
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -212,13 +221,58 @@ fn handle_binds(
                 return spanned_compile_error(args.span(), "identifier expected");
             }
             dependency.type_data = TypeData::from_syn_type(type_.ty.deref())?;
-            provider.dependencies.push(dependency);
+            binds.dependencies.push(dependency);
         }
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
-    provider.type_data.scopes.extend(scopes);
-    module.providers.push(provider);
+    binds.type_data.scopes.extend(scopes);
+    module.bindings.push(binds);
+    Ok(())
+}
+
+fn handle_binds_option_of(
+    attr: &syn::Attribute,
+    module: &mut LocalModule,
+    signature: &mut syn::Signature,
+    block: &mut syn::Block,
+) -> Result<(), TokenStream2> {
+    if !block.stmts.is_empty() {
+        return spanned_compile_error(
+            block.span(),
+            "#[binds_option_of] methods must have empty body",
+        );
+    }
+    let body: syn::Stmt = syn::parse2(quote! { unimplemented!(); }).unwrap();
+    block.stmts.push(body);
+
+    let mut binds_option_of = Binding::new(BindsOptionOf);
+    if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
+        let return_type = TypeData::from_syn_type(ty.deref())?;
+        if let syn::Type::Path(ref mut type_path) = ty.deref_mut() {
+            if let syn::PathArguments::AngleBracketed(ref mut angle_bracketed) =
+                type_path.path.segments.last_mut().unwrap().arguments
+            {
+                if !has_lifetime(&angle_bracketed.args) {
+                    let lifetime: GenericArgument = syn::parse2(quote! {'static}).unwrap();
+                    angle_bracketed.args.push(lifetime);
+                }
+            }
+        }
+        binds_option_of.type_data = return_type;
+    } else {
+        return spanned_compile_error(signature.span(), "return type expected");
+    }
+    if signature.inputs.len() != 0 {
+        return spanned_compile_error(
+            signature.span(),
+            "binds_option_of method must only take no parameter",
+        );
+    }
+    let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
+    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
+    binds_option_of.type_data.scopes.extend(scopes);
+    module.bindings.push(binds_option_of);
     Ok(())
 }
 
@@ -253,7 +307,7 @@ pub fn generate_manifest(base_path: &str) -> Vec<Module> {
 
             type_.path = path;
             module.type_data = type_;
-            module.providers.extend(local_module.providers.clone());
+            module.bindings.extend(local_module.bindings.clone());
             result.push(module);
         }
         modules.clear();

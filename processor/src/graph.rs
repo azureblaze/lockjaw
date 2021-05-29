@@ -23,11 +23,14 @@ use quote::format_ident;
 use quote::quote;
 
 use crate::error::{compile_error, CompileError};
-use crate::manifest::{Component, ComponentModuleManifest, Manifest};
+use crate::manifest::{BindingType, Component, ComponentModuleManifest, Manifest};
+use crate::nodes::binds::BindsNode;
+use crate::nodes::binds_option_of::BindsOptionOfNode;
 use crate::nodes::injectable::InjectableNode;
 use crate::nodes::node::Node;
 use crate::nodes::provides::ProvidesNode;
 use crate::nodes::provision::ProvisionNode;
+use crate::type_data::TypeData;
 
 /// Dependency graph and other related data
 #[derive(Default, Debug)]
@@ -178,6 +181,10 @@ pub fn generate_component(
 }
 
 impl Graph {
+    pub fn has_node(&self, type_data: &TypeData) -> bool {
+        self.map.contains_key(&type_data.identifier())
+    }
+
     fn add_node(&mut self, node: Box<dyn Node>) -> Result<(), TokenStream> {
         if self.map.contains_key(&node.get_type().identifier()) {
             let merged_node = self
@@ -248,12 +255,27 @@ impl Graph {
         }
 
         generated_nodes.insert(node.get_identifier());
-        result.merge(node.generate_provider(self)?);
+        result.merge(node.generate_implementation(self)?);
 
         let mut new_ancestors = Vec::<String>::new();
         new_ancestors.push(node.get_name());
         new_ancestors.extend(ancestors.clone());
         for dependency in node.get_dependencies() {
+            let dependency_node = self
+                .map
+                .get(&dependency.identifier())
+                .expect(&format!("missing node for {}", dependency.readable()));
+            result.merge(self.generate_provision(
+                dependency_node.borrow(),
+                component,
+                &new_ancestors,
+                generated_nodes,
+            )?);
+        }
+        for dependency in node.get_optional_dependencies() {
+            if !self.has_node(dependency) {
+                continue;
+            }
             let dependency_node = self
                 .map
                 .get(&dependency.identifier())
@@ -335,12 +357,16 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
         if !installed_modules.contains(&module.type_data.identifier()) {
             continue;
         }
-        for provider in &module.providers {
-            result.add_node(ProvidesNode::new(
-                &result.module_manifest,
-                &module.type_data,
-                provider,
-            ))?;
+        for binding in &module.bindings {
+            result.add_node(match &binding.binding_type {
+                BindingType::Provides => {
+                    ProvidesNode::new(&result.module_manifest, &module.type_data, binding)
+                }
+                BindingType::Binds => {
+                    BindsNode::new(&result.module_manifest, &module.type_data, binding)
+                }
+                BindingType::BindsOptionOf => BindsOptionOfNode::new(binding),
+            })?;
         }
     }
     let mut resolved_nodes = HashSet::<Ident>::new();
@@ -392,6 +418,15 @@ fn resolve_dependencies(
             let identifier = generated_node.get_identifier();
             map.insert(identifier.clone(), generated_node);
             dependency_node = map.get(&identifier);
+        }
+        let cloned_node = dependency_node.unwrap().clone_box();
+        node.can_depend(cloned_node.as_ref(), ancestors)?;
+        resolve_dependencies(cloned_node.as_ref(), map, ancestors, resovled_nodes)?;
+    }
+    for dependency in node.get_optional_dependencies() {
+        let dependency_node = map.get(&dependency.identifier());
+        if dependency_node.is_none() {
+            continue;
         }
         let cloned_node = dependency_node.unwrap().clone_box();
         node.can_depend(cloned_node.as_ref(), ancestors)?;

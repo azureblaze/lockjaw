@@ -16,6 +16,7 @@ limitations under the License.
 
 use serde::{Deserialize, Serialize};
 
+use crate::manifest::BindingType::Provides;
 use crate::manifest::TypeRoot::UNSPECIFIED;
 use crate::type_data::TypeData;
 
@@ -129,7 +130,7 @@ impl Default for TypeRoot {
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Module {
     pub type_data: TypeData,
-    pub providers: Vec<Provider>,
+    pub bindings: Vec<Binding>,
 }
 
 impl Module {
@@ -139,18 +140,32 @@ impl Module {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
-pub struct Provider {
+pub struct Binding {
     // message fields
     pub name: String,
     pub type_data: TypeData,
     pub dependencies: Vec<Dependency>,
     pub field_static: bool,
-    pub binds: bool,
+    pub binding_type: BindingType,
 }
 
-impl Provider {
-    pub fn new() -> Self {
-        Provider {
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub enum BindingType {
+    Provides,
+    Binds,
+    BindsOptionOf,
+}
+
+impl Default for BindingType {
+    fn default() -> Self {
+        Provides
+    }
+}
+
+impl Binding {
+    pub fn new(binding_type: BindingType) -> Self {
+        Binding {
+            binding_type,
             field_static: true,
             ..Default::default()
         }

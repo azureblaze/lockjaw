@@ -64,7 +64,7 @@ impl Node for ComponentLifetimeNode {
         format!("ComponentLifetime{}", self.type_.canonical_string_path())
     }
 
-    fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.inner.identifier();
         let name_ident = self.get_identifier();
         let type_path = self.type_.syn_type();

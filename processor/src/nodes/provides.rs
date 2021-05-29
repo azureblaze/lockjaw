@@ -18,9 +18,7 @@ use quote::{format_ident, quote};
 
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::{ComponentModuleManifest, Provider};
-use crate::nodes::binds::BindsNode;
-use crate::nodes::component_lifetime::ComponentLifetimeNode;
+use crate::manifest::{Binding, ComponentModuleManifest};
 use crate::nodes::node::{ModuleInstance, Node};
 use crate::type_data::TypeData;
 
@@ -30,35 +28,26 @@ pub struct ProvidesNode {
     pub dependencies: Vec<TypeData>,
 
     pub module_instance: ModuleInstance,
-    pub provider: Provider,
+    pub binding: Binding,
 }
 
 impl ProvidesNode {
     pub fn new(
         module_manifest: &ComponentModuleManifest,
         module_type: &TypeData,
-        provider: &Provider,
+        binding: &Binding,
     ) -> Box<dyn Node> {
-        let dependencies = provider
+        let dependencies = binding
             .dependencies
             .iter()
             .map(|dependency| dependency.type_data.clone())
             .collect();
-        return if provider.binds {
-            Box::new(BindsNode {
-                type_: ComponentLifetimeNode::component_lifetime_type(&provider.type_data),
-                dependencies,
-                module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
-                provider: provider.clone(),
-            })
-        } else {
-            Box::new(ProvidesNode {
-                type_: provider.type_data.clone(),
-                dependencies,
-                module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
-                provider: provider.clone(),
-            })
-        };
+        Box::new(ProvidesNode {
+            type_: binding.type_data.clone(),
+            dependencies,
+            module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
+            binding: binding.clone(),
+        })
     }
 }
 
@@ -67,13 +56,13 @@ impl Node for ProvidesNode {
         format!(
             "{}.{} (module provides)",
             self.module_instance.type_.canonical_string_path(),
-            self.provider.name
+            self.binding.name
         )
     }
 
-    fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut args = quote! {};
-        for arg in &self.provider.dependencies {
+        for arg in &self.binding.dependencies {
             let arg_provider_name = arg.type_data.identifier();
             args = quote! {
                 #args  self.#arg_provider_name(),
@@ -83,10 +72,10 @@ impl Node for ProvidesNode {
         let type_path = self.type_.syn_type();
 
         let name_ident = self.get_identifier();
-        let module_method = format_ident!("{}", self.provider.name);
+        let module_method = format_ident!("{}", self.binding.name);
         let invoke_module;
 
-        if self.provider.field_static {
+        if self.binding.field_static {
             let module_path = self.module_instance.type_.syn_type();
             invoke_module = quote! {#module_path::#module_method(#args)}
         } else {

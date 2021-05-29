@@ -19,7 +19,8 @@ use quote::quote;
 
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::Provider;
+use crate::manifest::{Binding, ComponentModuleManifest};
+use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::node::{ModuleInstance, Node};
 use crate::type_data::TypeData;
 
@@ -29,7 +30,27 @@ pub struct BindsNode {
     pub dependencies: Vec<TypeData>,
 
     pub module_instance: ModuleInstance,
-    pub provider: Provider,
+    pub binding: Binding,
+}
+
+impl BindsNode {
+    pub fn new(
+        module_manifest: &ComponentModuleManifest,
+        module_type: &TypeData,
+        binding: &Binding,
+    ) -> Box<dyn Node> {
+        let dependencies = binding
+            .dependencies
+            .iter()
+            .map(|dependency| dependency.type_data.clone())
+            .collect();
+        Box::new(BindsNode {
+            type_: ComponentLifetimeNode::component_lifetime_type(&binding.type_data),
+            dependencies,
+            module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
+            binding: binding.clone(),
+        })
+    }
 }
 
 impl Node for BindsNode {
@@ -37,13 +58,13 @@ impl Node for BindsNode {
         format!(
             "{}.{} (module binds)",
             self.module_instance.type_.canonical_string_path(),
-            self.provider.name
+            self.binding.name
         )
     }
 
-    fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg = self
-            .provider
+            .binding
             .dependencies
             .first()
             .expect("binds must have one arg");

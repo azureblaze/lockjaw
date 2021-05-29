@@ -55,7 +55,7 @@ impl Node for ScopedNode {
         format!("ref {}", self.type_.canonical_string_path())
     }
 
-    fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.target.identifier();
         let once_name = format_ident!("once_{}", self.type_.identifier());
         let once_type = self.target.syn_type();

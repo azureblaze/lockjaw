@@ -62,7 +62,7 @@ impl Node for ProviderNode {
         return format!("Provider<{}>", self.dependencies[0].readable());
     }
 
-    fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.inner.identifier();
         let name_ident = self.get_identifier();
         let provides_type = self.inner.syn_type();
