@@ -48,7 +48,7 @@ impl Node for ProvisionNode {
         )
     }
 
-    fn generate_provider(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         let dependency_name = self.get_identifier();
         let dependency_path = self.dependency.type_data.syn_type();

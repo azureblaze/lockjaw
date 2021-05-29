@@ -49,7 +49,7 @@ impl Node for InjectableNode {
         format!("{} (injectable)", self.type_.canonical_string_path())
     }
 
-    fn generate_provider(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let has_ref = graph.has_scoped_deps(&self.type_.identifier())?;
         let mut ctor_params = quote! {};
         for dependency in &self.injectable.dependencies {
