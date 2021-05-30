@@ -31,12 +31,12 @@ pub struct BindsOptionOfNode {
 }
 
 impl BindsOptionOfNode {
-    pub fn new(binding: &Binding) -> Box<dyn Node> {
-        Box::new(BindsOptionOfNode {
+    pub fn new(binding: &Binding) -> Vec<Box<dyn Node>> {
+        vec![Box::new(BindsOptionOfNode {
             type_: BindsOptionOfNode::option_type(&binding.type_data),
             dependencies: vec![binding.type_data.clone()],
             inner: binding.type_data.clone(),
-        })
+        })]
     }
 
     pub fn option_type(type_: &TypeData) -> TypeData {

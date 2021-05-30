@@ -77,6 +77,7 @@ pub struct TypeData {
     pub trait_object: bool,
     pub field_ref: bool,
     pub scopes: Vec<TypeData>,
+    pub identifier_suffix: String,
 }
 
 impl TypeData {
@@ -155,14 +156,15 @@ impl TypeData {
     /// Modifiers like & are included.
     pub fn identifier(&self) -> syn::Ident {
         quote::format_ident!(
-            "{}",
+            "{}_{}",
             self.canonical_string_path()
                 .replace("::", "_")
                 .replace("<", "_L_")
                 .replace(">", "_R_")
                 .replace(" ", "_")
                 .replace("\'", "")
-                .replace("&", "ref_")
+                .replace("&", "ref_"),
+            self.identifier_suffix
         )
     }
 

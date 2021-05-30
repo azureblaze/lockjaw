@@ -31,7 +31,7 @@ use syn::{Attribute, GenericArgument};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::BindingType::{Binds, BindsOptionOf, Provides};
-use crate::manifest::{Binding, Dependency, Module, TypeRoot};
+use crate::manifest::{Binding, Dependency, Module, MultibindingType, TypeRoot};
 use crate::type_data::TypeData;
 use crate::{environment, parsing};
 
@@ -90,28 +90,46 @@ pub fn handle_module_attribute(
             #[allow(unused_mut)] // required
             let mut item = item_impl.items.get_mut(i).unwrap();
             if let syn::ImplItem::Method(ref mut method) = item {
+                let mut opiton_binding: Option<Binding> = None;
+                let mut multibinding = MultibindingType::None;
                 let mut new_attrs: Vec<syn::Attribute> = Vec::new();
                 for attr in &method.attrs {
                     if parsing::is_attribute(attr, "provides") {
-                        handle_provides(attr, &mut module, &mut method.sig)?;
+                        if opiton_binding.is_some() {
+                            return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                        }
+                        opiton_binding = Some(handle_provides(attr, &mut method.sig)?);
                     } else if parsing::is_attribute(attr, "binds") {
-                        handle_binds(attr, &mut module, &mut method.sig, &mut method.block)?;
+                        if opiton_binding.is_some() {
+                            return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                        }
+                        opiton_binding = Some(handle_binds(attr, &mut method.sig, &mut method.block)?);
                         let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                         new_attrs.push(allow_dead_code);
                     } else if parsing::is_attribute(attr, "binds_option_of") {
-                        handle_binds_option_of(
+                        if opiton_binding.is_some() {
+                            return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                        }
+                        opiton_binding = Some(handle_binds_option_of(
                             attr,
-                            &mut module,
                             &mut method.sig,
                             &mut method.block,
-                        )?;
+                        )?);
                         let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                         new_attrs.push(allow_dead_code);
+                    } else if parsing::is_attribute(attr, "into_vec") {
+                        multibinding = MultibindingType::IntoVec
                     } else {
                         new_attrs.push(attr.clone());
                     }
                 }
                 method.attrs = new_attrs;
+                if opiton_binding.is_none() {
+                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by #[provides]/#[binds]/#[binds_option_of]");
+                }
+                let mut binding = opiton_binding.unwrap();
+                binding.multibinding_type = multibinding;
+                module.bindings.push(binding);
             }
         }
         module_map.insert(module_path, module);
@@ -122,9 +140,8 @@ pub fn handle_module_attribute(
 
 fn handle_provides(
     attr: &syn::Attribute,
-    module: &mut LocalModule,
     signature: &mut syn::Signature,
-) -> Result<(), TokenStream2> {
+) -> Result<Binding, TokenStream2> {
     let mut provides = Binding::new(Provides);
     provides.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref ty) = signature.output {
@@ -155,16 +172,14 @@ fn handle_provides(
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
     provides.type_data.scopes.extend(scopes);
-    module.bindings.push(provides);
-    Ok(())
+    Ok(provides)
 }
 
 fn handle_binds(
     attr: &syn::Attribute,
-    module: &mut LocalModule,
     signature: &mut syn::Signature,
     block: &mut syn::Block,
-) -> Result<(), TokenStream2> {
+) -> Result<Binding, TokenStream2> {
     if !block.stmts.is_empty() {
         return spanned_compile_error(block.span(), "#[binds] methods must have empty body");
     }
@@ -227,16 +242,14 @@ fn handle_binds(
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
     binds.type_data.scopes.extend(scopes);
-    module.bindings.push(binds);
-    Ok(())
+    Ok(binds)
 }
 
 fn handle_binds_option_of(
     attr: &syn::Attribute,
-    module: &mut LocalModule,
     signature: &mut syn::Signature,
     block: &mut syn::Block,
-) -> Result<(), TokenStream2> {
+) -> Result<Binding, TokenStream2> {
     if !block.stmts.is_empty() {
         return spanned_compile_error(
             block.span(),
@@ -272,8 +285,7 @@ fn handle_binds_option_of(
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
     let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
     binds_option_of.type_data.scopes.extend(scopes);
-    module.bindings.push(binds_option_of);
-    Ok(())
+    Ok(binds_option_of)
 }
 
 fn has_lifetime(args: &Punctuated<GenericArgument, Token![,]>) -> bool {

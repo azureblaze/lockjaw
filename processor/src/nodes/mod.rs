@@ -25,3 +25,4 @@ pub mod provider;
 pub mod provides;
 pub mod provision;
 pub mod scoped;
+pub mod vec;

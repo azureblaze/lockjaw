@@ -184,3 +184,16 @@ mod binds_no_identifier {}
 ///
 /// ```
 mod binds_has_method_body {}
+
+/// ```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// pub struct S {}
+/// #[module]
+/// impl S {
+///     #[provides]
+///     #[binds]
+///     pub fn provide_string(&self) -> String{"foo".to_owned()}
+/// }
+///
+/// ```
+mod provides_duplicated_bindings {}
