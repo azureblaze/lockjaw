@@ -18,8 +18,10 @@ use quote::{format_ident, quote};
 
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::{Binding, ComponentModuleManifest};
+use crate::manifest::{Binding, ComponentModuleManifest, MultibindingType};
+use crate::nodes::node;
 use crate::nodes::node::{ModuleInstance, Node};
+use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
 
 #[derive(Debug, Clone)]
@@ -36,18 +38,33 @@ impl ProvidesNode {
         module_manifest: &ComponentModuleManifest,
         module_type: &TypeData,
         binding: &Binding,
-    ) -> Box<dyn Node> {
+    ) -> Vec<Box<dyn Node>> {
         let dependencies = binding
             .dependencies
             .iter()
             .map(|dependency| dependency.type_data.clone())
             .collect();
-        Box::new(ProvidesNode {
-            type_: binding.type_data.clone(),
+        let mut type_ = binding.type_data.clone();
+        if binding.multibinding_type != MultibindingType::None {
+            type_ = binding.type_data.clone();
+            type_.identifier_suffix = format!("{}", node::get_multibinding_id());
+        }
+        let mut result: Vec<Box<dyn Node>> = vec![Box::new(ProvidesNode {
+            type_: type_.clone(),
             dependencies,
             module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
             binding: binding.clone(),
-        })
+        })];
+        match binding.multibinding_type {
+            MultibindingType::IntoVec => {
+                let mut vec_node = VecNode::new(&binding.type_data);
+                vec_node.dependencies.push(type_);
+                result.push(vec_node);
+            }
+            _ => {}
+        }
+
+        result
     }
 }
 

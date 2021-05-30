@@ -27,10 +27,12 @@ use crate::nodes::lazy::LazyNode;
 use crate::nodes::provider::ProviderNode;
 use crate::nodes::scoped::ScopedNode;
 use crate::type_data::TypeData;
+use std::any::Any;
+use std::cell::Cell;
 
 static EMPTY_DEPENDENCIES: Vec<TypeData> = vec![];
 
-pub trait Node: Debug {
+pub trait Node: Debug + Any {
     fn get_name(&self) -> String;
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream>;
     fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
@@ -140,4 +142,16 @@ impl dyn Node {
 pub struct ModuleInstance {
     pub type_: TypeData,
     pub name: syn::Ident,
+}
+
+thread_local! {
+    static MULTIBINDING_ID : Cell<i32> = Cell::new(0);
+}
+
+pub fn get_multibinding_id() -> i32 {
+    MULTIBINDING_ID.with(|m| {
+        let id = m.get();
+        m.set(id + 1);
+        id
+    })
 }

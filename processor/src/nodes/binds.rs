@@ -38,18 +38,18 @@ impl BindsNode {
         module_manifest: &ComponentModuleManifest,
         module_type: &TypeData,
         binding: &Binding,
-    ) -> Box<dyn Node> {
+    ) -> Vec<Box<dyn Node>> {
         let dependencies = binding
             .dependencies
             .iter()
             .map(|dependency| dependency.type_data.clone())
             .collect();
-        Box::new(BindsNode {
+        vec![Box::new(BindsNode {
             type_: ComponentLifetimeNode::component_lifetime_type(&binding.type_data),
             dependencies,
             module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
             binding: binding.clone(),
-        })
+        })]
     }
 }
 

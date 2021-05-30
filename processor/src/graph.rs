@@ -194,8 +194,16 @@ impl Graph {
                 .merge(node.borrow())?;
             self.map
                 .insert(merged_node.get_type().identifier(), merged_node);
+        } else {
+            self.map.insert(node.get_type().identifier(), node);
         }
-        self.map.insert(node.get_type().identifier(), node);
+        Ok(())
+    }
+
+    fn add_nodes(&mut self, nodes: Vec<Box<dyn Node>>) -> Result<(), TokenStream> {
+        for node in nodes {
+            self.add_node(node)?
+        }
         Ok(())
     }
 
@@ -358,7 +366,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
             continue;
         }
         for binding in &module.bindings {
-            result.add_node(match &binding.binding_type {
+            result.add_nodes(match &binding.binding_type {
                 BindingType::Provides => {
                     ProvidesNode::new(&result.module_manifest, &module.type_data, binding)
                 }
@@ -424,9 +432,15 @@ fn resolve_dependencies(
         resolve_dependencies(cloned_node.as_ref(), map, ancestors, resovled_nodes)?;
     }
     for dependency in node.get_optional_dependencies() {
-        let dependency_node = map.get(&dependency.identifier());
+        let mut dependency_node = map.get(&dependency.identifier());
         if dependency_node.is_none() {
-            continue;
+            let generated_node = <dyn Node>::generate_node(dependency);
+            if generated_node.is_none() {
+                continue;
+            }
+            let identifier = generated_node.as_ref().unwrap().get_identifier();
+            map.insert(identifier.clone(), generated_node.unwrap());
+            dependency_node = map.get(&identifier);
         }
         let cloned_node = dependency_node.unwrap().clone_box();
         node.can_depend(cloned_node.as_ref(), ancestors)?;

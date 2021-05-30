@@ -141,12 +141,22 @@ impl Module {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Binding {
-    // message fields
     pub name: String,
     pub type_data: TypeData,
     pub dependencies: Vec<Dependency>,
     pub field_static: bool,
     pub binding_type: BindingType,
+    pub multibinding_type: MultibindingType,
+}
+
+impl Binding {
+    pub fn new(binding_type: BindingType) -> Self {
+        Binding {
+            binding_type,
+            field_static: true,
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -162,12 +172,16 @@ impl Default for BindingType {
     }
 }
 
-impl Binding {
-    pub fn new(binding_type: BindingType) -> Self {
-        Binding {
-            binding_type,
-            field_static: true,
-            ..Default::default()
-        }
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub enum MultibindingType {
+    None,
+    IntoVec,
+    ElementsIntoVec,
+    IntoMap,
+}
+
+impl Default for MultibindingType {
+    fn default() -> Self {
+        MultibindingType::None
     }
 }
