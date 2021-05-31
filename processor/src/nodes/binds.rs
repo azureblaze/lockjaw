@@ -19,9 +19,11 @@ use quote::quote;
 
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::{Binding, ComponentModuleManifest};
+use crate::manifest::{Binding, ComponentModuleManifest, MultibindingType};
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
+use crate::nodes::node;
 use crate::nodes::node::{ModuleInstance, Node};
+use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
 use std::any::Any;
 
@@ -45,12 +47,28 @@ impl BindsNode {
             .iter()
             .map(|dependency| dependency.type_data.clone())
             .collect();
-        vec![Box::new(BindsNode {
-            type_: ComponentLifetimeNode::component_lifetime_type(&binding.type_data),
+        let mut type_ = ComponentLifetimeNode::component_lifetime_type(&binding.type_data);
+        if binding.multibinding_type != MultibindingType::None {
+            type_.identifier_suffix = format!("{}", node::get_multibinding_id());
+        }
+        let mut result: Vec<Box<dyn Node>> = vec![Box::new(BindsNode {
+            type_: type_.clone(),
             dependencies,
             module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
             binding: binding.clone(),
-        })]
+        })];
+        match binding.multibinding_type {
+            MultibindingType::IntoVec => {
+                let mut vec_node = VecNode::new(&type_);
+                vec_node.add_binding(&type_, &binding.multibinding_type);
+                result.push(vec_node);
+            }
+            MultibindingType::ElementsIntoVec => {
+                panic!("unexpected #[elements_into_vec] for #[binds]")
+            }
+            _ => {}
+        }
+        result
     }
 }
 

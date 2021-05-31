@@ -16,11 +16,49 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue, module};
+use lockjaw::{
+    component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
+};
 
 pub use String as NamedString;
 
 pub struct MyModule {}
+
+pub trait Foo {
+    fn foo(&self) -> String;
+}
+
+pub struct Bar {}
+
+#[injectable]
+impl Bar {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Foo for Bar {
+    fn foo(&self) -> String {
+        "bar".to_owned()
+    }
+}
+
+pub struct Baz {}
+
+#[injectable]
+impl Baz {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Foo for Baz {
+    fn foo(&self) -> String {
+        "baz".to_owned()
+    }
+}
 
 #[module]
 impl MyModule {
@@ -46,6 +84,14 @@ impl MyModule {
     pub fn provide_strings() -> Vec<String> {
         vec!["string3".to_owned(), "string4".to_owned()]
     }
+
+    #[binds]
+    #[into_vec]
+    pub fn bind_bar(impl_: crate::Bar) -> ComponentLifetime<dyn crate::Foo> {}
+
+    #[binds]
+    #[into_vec]
+    pub fn bind_baz(impl_: crate::Baz) -> ComponentLifetime<dyn crate::Foo> {}
 }
 
 #[component_module_manifest]
@@ -57,16 +103,30 @@ pub struct MyModuleManifest {
 pub trait MyComponent {
     fn string(&self) -> String;
     fn vec_string(&self) -> Vec<String>;
+
+    fn vec_foo(&'_ self) -> Vec<ComponentLifetime<'_, dyn crate::Foo>>;
 }
 
 #[test]
-pub fn main() {
+pub fn into_vec() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let v = component.vec_string();
     assert!(v.contains(&"string1".to_owned()));
     assert!(v.contains(&"string2".to_owned()));
     assert!(v.contains(&"string3".to_owned()));
     assert!(v.contains(&"string4".to_owned()));
+}
+
+#[test]
+pub fn bind_into_vec() {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let v = component
+        .vec_foo()
+        .iter()
+        .map(|foo| foo.foo())
+        .collect::<Vec<String>>();
+    assert!(v.contains(&"bar".to_owned()));
+    assert!(v.contains(&"baz".to_owned()));
 }
 
 #[test]

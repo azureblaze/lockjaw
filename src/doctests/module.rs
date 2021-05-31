@@ -197,3 +197,34 @@ mod binds_has_method_body {}
 ///
 /// ```
 mod provides_duplicated_bindings {}
+
+/// ```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// use lockjaw::ComponentLifetime;
+/// pub struct S {}
+/// pub trait ST{}
+/// impl ST for S {}
+/// #[module]
+/// impl S {
+///     #[binds]
+///     #[elements_into_vec]
+///     pub fn bind_s(&self) -> Vec<ComponentLifetime<dyn crate::ST>> {
+///         unimplemented!()
+///     }
+/// }
+///
+/// ```
+mod binds_elements_into_vec {}
+
+/// ```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// pub struct S {}
+/// #[module]
+/// impl S {
+///     #[provides]
+///     #[elements_into_vec]
+///     pub fn provide_string(&self) -> String{"foo".to_owned()}
+/// }
+///
+/// ```
+mod provides_elements_into_vec_not_vec {}
