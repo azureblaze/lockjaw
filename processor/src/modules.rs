@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
@@ -22,7 +22,6 @@ use std::ops::{Deref, DerefMut};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::__private::TokenStream2;
 use syn::parse_quote;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
@@ -46,7 +45,6 @@ lazy_static! {
         set
     };
 }
-
 struct LocalModule {
     name: String,
     bindings: Vec<Binding>,
@@ -57,56 +55,66 @@ pub fn handle_module_attribute(
     attr: TokenStream,
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
-    MODULES.with(|mm| {
-        let span = input.span();
-        let attributes = parsing::get_attribute_metadata(attr.clone())?;
+    MODULES.with(|mm| handle_module_attribute_internal(attr, input, mm.borrow_mut()))
+}
 
-        for key in attributes.keys() {
-            if !MODULE_METADATA_KEYS.contains(key) {
-                return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
-            }
+fn handle_module_attribute_internal(
+    attr: TokenStream,
+    input: TokenStream,
+    mut module_map: RefMut<HashMap<String, LocalModule>>,
+) -> Result<TokenStream, TokenStream> {
+    let span = input.span();
+    let attributes = parsing::get_attribute_metadata(attr.clone())?;
+
+    for key in attributes.keys() {
+        if !MODULE_METADATA_KEYS.contains(key) {
+            return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
         }
+    }
 
-        let module_path;
-        let mut module_map = mm.borrow_mut();
-        let mut item_impl: syn::ItemImpl =
-            syn::parse2(input.clone()).map_spanned_compile_error(span, "impl expected")?;
-        if let syn::Type::Path(path) = item_impl.self_ty.deref() {
-            module_path = path.path.to_token_stream().to_string().replace(" ", "");
-            if module_map.contains_key(&module_path) {
-                return spanned_compile_error(span, "module was already declared");
-            }
-        } else {
-            return spanned_compile_error(item_impl.span(), "path expected");
+    let module_path;
+    let mut item_impl: syn::ItemImpl =
+        syn::parse2(input.clone()).map_spanned_compile_error(span, "impl expected")?;
+    if let syn::Type::Path(path) = item_impl.self_ty.deref() {
+        module_path = path.path.to_token_stream().to_string().replace(" ", "");
+        if module_map.contains_key(&module_path) {
+            return spanned_compile_error(span, "module was already declared");
         }
+    } else {
+        return spanned_compile_error(item_impl.span(), "path expected");
+    }
 
-        let mut module = LocalModule {
-            name: module_path.to_owned(),
-            additional_path: attributes.get("path").cloned(),
-            bindings: Vec::new(),
-        };
+    let mut module = LocalModule {
+        name: module_path.to_owned(),
+        additional_path: attributes.get("path").cloned(),
+        bindings: Vec::new(),
+    };
 
-        for i in 0..item_impl.items.len() {
-            #[allow(unused_mut)] // required
-            let mut item = item_impl.items.get_mut(i).unwrap();
-            if let syn::ImplItem::Method(ref mut method) = item {
-                let mut opiton_binding: Option<Binding> = None;
-                let mut multibinding = MultibindingType::None;
-                let mut new_attrs: Vec<syn::Attribute> = Vec::new();
-                for attr in &method.attrs {
-                    if parsing::is_attribute(attr, "provides") {
+    for i in 0..item_impl.items.len() {
+        #[allow(unused_mut)] // required
+        let mut item = item_impl.items.get_mut(i).unwrap();
+        if let syn::ImplItem::Method(ref mut method) = item {
+            let mut opiton_binding: Option<Binding> = None;
+            let mut multibinding = MultibindingType::None;
+            let mut new_attrs: Vec<syn::Attribute> = Vec::new();
+            for attr in &method.attrs {
+                match parsing::get_attribute(attr).as_str() {
+                    "provides" => {
                         if opiton_binding.is_some() {
                             return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
                         }
                         opiton_binding = Some(handle_provides(attr, &mut method.sig)?);
-                    } else if parsing::is_attribute(attr, "binds") {
+                    }
+                    "binds" => {
                         if opiton_binding.is_some() {
                             return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
                         }
-                        opiton_binding = Some(handle_binds(attr, &mut method.sig, &mut method.block)?);
+                        opiton_binding =
+                            Some(handle_binds(attr, &mut method.sig, &mut method.block)?);
                         let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                         new_attrs.push(allow_dead_code);
-                    } else if parsing::is_attribute(attr, "binds_option_of") {
+                    }
+                    "binds_option_of" => {
                         if opiton_binding.is_some() {
                             return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
                         }
@@ -117,31 +125,36 @@ pub fn handle_module_attribute(
                         )?);
                         let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                         new_attrs.push(allow_dead_code);
-                    } else if parsing::is_attribute(attr, "into_vec") {
-                        multibinding = MultibindingType::IntoVec
-                    } else {
+                    }
+                    "into_vec" => {
+                        multibinding = MultibindingType::IntoVec;
+                    }
+                    "elements_into_vec" => {
+                        multibinding = MultibindingType::ElementsIntoVec;
+                    }
+                    _ => {
                         new_attrs.push(attr.clone());
                     }
                 }
-                method.attrs = new_attrs;
-                if opiton_binding.is_none() {
-                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by #[provides]/#[binds]/#[binds_option_of]");
-                }
-                let mut binding = opiton_binding.unwrap();
-                binding.multibinding_type = multibinding;
-                module.bindings.push(binding);
             }
+            method.attrs = new_attrs;
+            if opiton_binding.is_none() {
+                return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by #[provides]/#[binds]/#[binds_option_of]");
+            }
+            let mut binding = opiton_binding.unwrap();
+            binding.multibinding_type = multibinding;
+            module.bindings.push(binding);
         }
-        module_map.insert(module_path, module);
+    }
+    module_map.insert(module_path, module);
 
-        Ok(quote! {#item_impl})
-    })
+    Ok(quote! {#item_impl})
 }
 
 fn handle_provides(
     attr: &syn::Attribute,
     signature: &mut syn::Signature,
-) -> Result<Binding, TokenStream2> {
+) -> Result<Binding, TokenStream> {
     let mut provides = Binding::new(Provides);
     provides.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref ty) = signature.output {
@@ -179,7 +192,7 @@ fn handle_binds(
     attr: &syn::Attribute,
     signature: &mut syn::Signature,
     block: &mut syn::Block,
-) -> Result<Binding, TokenStream2> {
+) -> Result<Binding, TokenStream> {
     if !block.stmts.is_empty() {
         return spanned_compile_error(block.span(), "#[binds] methods must have empty body");
     }
@@ -249,7 +262,7 @@ fn handle_binds_option_of(
     attr: &syn::Attribute,
     signature: &mut syn::Signature,
     block: &mut syn::Block,
-) -> Result<Binding, TokenStream2> {
+) -> Result<Binding, TokenStream> {
     if !block.stmts.is_empty() {
         return spanned_compile_error(
             block.span(),

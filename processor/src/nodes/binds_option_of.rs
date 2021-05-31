@@ -22,6 +22,7 @@ use crate::graph::Graph;
 use crate::manifest::{Binding, TypeRoot};
 use crate::nodes::node::Node;
 use crate::type_data::TypeData;
+use std::any::Any;
 
 #[derive(Debug, Clone)]
 pub struct BindsOptionOfNode {
@@ -78,11 +79,15 @@ impl Node for BindsOptionOfNode {
         &self.type_
     }
 
-    fn get_optional_dependencies(&self) -> &Vec<TypeData> {
-        &self.dependencies
+    fn get_optional_dependencies(&self) -> Vec<TypeData> {
+        self.dependencies.clone()
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

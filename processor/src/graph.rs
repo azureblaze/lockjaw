@@ -281,7 +281,7 @@ impl Graph {
             )?);
         }
         for dependency in node.get_optional_dependencies() {
-            if !self.has_node(dependency) {
+            if !self.has_node(&dependency) {
                 continue;
             }
             let dependency_node = self
@@ -413,7 +413,7 @@ fn resolve_dependencies(
 
         if dependency_node.is_none() {
             let generated_node =
-                <dyn Node>::generate_node(dependency).map_compile_error(&format!(
+                <dyn Node>::generate_node(&dependency).map_compile_error(&format!(
                     "missing bindings for {}\nrequested by: {} ",
                     dependency.readable(),
                     ancestors
@@ -434,7 +434,7 @@ fn resolve_dependencies(
     for dependency in node.get_optional_dependencies() {
         let mut dependency_node = map.get(&dependency.identifier());
         if dependency_node.is_none() {
-            let generated_node = <dyn Node>::generate_node(dependency);
+            let generated_node = <dyn Node>::generate_node(&dependency);
             if generated_node.is_none() {
                 continue;
             }

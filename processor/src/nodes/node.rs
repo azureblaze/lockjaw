@@ -30,8 +30,6 @@ use crate::type_data::TypeData;
 use std::any::Any;
 use std::cell::Cell;
 
-static EMPTY_DEPENDENCIES: Vec<TypeData> = vec![];
-
 pub trait Node: Debug + Any {
     fn get_name(&self) -> String;
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream>;
@@ -57,14 +55,15 @@ pub trait Node: Debug + Any {
     fn get_identifier(&self) -> Ident {
         self.get_type().identifier()
     }
-    fn get_dependencies(&self) -> &Vec<TypeData> {
-        &EMPTY_DEPENDENCIES
+    fn get_dependencies(&self) -> Vec<TypeData> {
+        Vec::new()
     }
-    fn get_optional_dependencies(&self) -> &Vec<TypeData> {
-        &EMPTY_DEPENDENCIES
+    fn get_optional_dependencies(&self) -> Vec<TypeData> {
+        Vec::new()
     }
 
     fn clone_box(&self) -> Box<dyn Node>;
+    fn as_any(&self) -> &dyn Any;
 }
 
 impl dyn Node {

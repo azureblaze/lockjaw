@@ -21,6 +21,7 @@ use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{Component, Dependency};
 use crate::nodes::node::Node;
 use crate::type_data::TypeData;
+use std::any::Any;
 
 #[derive(Debug, Clone)]
 pub struct ProvisionNode {
@@ -69,11 +70,15 @@ impl Node for ProvisionNode {
         format_ident!("{}", self.dependency.name)
     }
 
-    fn get_dependencies(&self) -> &Vec<TypeData> {
-        &self.dependencies
+    fn get_dependencies(&self) -> Vec<TypeData> {
+        self.dependencies.clone()
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

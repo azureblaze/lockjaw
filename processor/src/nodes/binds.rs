@@ -23,6 +23,7 @@ use crate::manifest::{Binding, ComponentModuleManifest};
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::node::{ModuleInstance, Node};
 use crate::type_data::TypeData;
+use std::any::Any;
 
 #[derive(Debug, Clone)]
 pub struct BindsNode {
@@ -94,11 +95,15 @@ impl Node for BindsNode {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> &Vec<TypeData> {
-        &self.dependencies
+    fn get_dependencies(&self) -> Vec<TypeData> {
+        self.dependencies.clone()
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
