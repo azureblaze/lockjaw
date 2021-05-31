@@ -25,8 +25,12 @@ use syn::parse::Parser;
 use syn::spanned::Spanned;
 
 pub fn is_attribute(syn_attr: &syn::Attribute, attr: &str) -> bool {
+    get_attribute(syn_attr).eq(attr)
+}
+
+pub fn get_attribute(syn_attr: &syn::Attribute) -> String {
     if syn_attr.path.segments.len() != 1 {
-        false
+        "".to_owned()
     } else {
         syn_attr
             .path
@@ -35,7 +39,6 @@ pub fn is_attribute(syn_attr: &syn::Attribute, attr: &str) -> bool {
             .expect("missing segments")
             .ident
             .to_string()
-            .eq(attr)
     }
 }
 

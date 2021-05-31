@@ -40,6 +40,12 @@ impl MyModule {
     pub fn provide_string2() -> String {
         "string2".to_owned()
     }
+
+    #[provides]
+    #[elements_into_vec]
+    pub fn provide_strings() -> Vec<String> {
+        vec!["string3".to_owned(), "string4".to_owned()]
+    }
 }
 
 #[component_module_manifest]
@@ -59,6 +65,8 @@ pub fn main() {
     let v = component.vec_string();
     assert!(v.contains(&"string1".to_owned()));
     assert!(v.contains(&"string2".to_owned()));
+    assert!(v.contains(&"string3".to_owned()));
+    assert!(v.contains(&"string4".to_owned()));
 }
 
 #[test]

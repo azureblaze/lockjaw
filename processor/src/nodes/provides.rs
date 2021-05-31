@@ -23,6 +23,7 @@ use crate::nodes::node;
 use crate::nodes::node::{ModuleInstance, Node};
 use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
+use std::any::Any;
 
 #[derive(Debug, Clone)]
 pub struct ProvidesNode {
@@ -58,7 +59,13 @@ impl ProvidesNode {
         match binding.multibinding_type {
             MultibindingType::IntoVec => {
                 let mut vec_node = VecNode::new(&binding.type_data);
-                vec_node.dependencies.push(type_);
+                vec_node.add_binding(&type_, &binding.multibinding_type);
+                result.push(vec_node);
+            }
+            MultibindingType::ElementsIntoVec => {
+                let element_type = binding.type_data.args.get(0).unwrap();
+                let mut vec_node = VecNode::new(element_type);
+                vec_node.add_binding(&type_, &binding.multibinding_type);
                 result.push(vec_node);
             }
             _ => {}
@@ -112,11 +119,15 @@ impl Node for ProvidesNode {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> &Vec<TypeData> {
-        &self.dependencies
+    fn get_dependencies(&self) -> Vec<TypeData> {
+        self.dependencies.clone()
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

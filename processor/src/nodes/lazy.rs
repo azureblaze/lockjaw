@@ -20,6 +20,7 @@ use crate::nodes::provider::ProviderNode;
 use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::quote;
+use std::any::Any;
 
 #[derive(Debug)]
 pub struct LazyNode {
@@ -89,11 +90,15 @@ impl Node for LazyNode {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> &Vec<TypeData> {
-        &self.dependencies
+    fn get_dependencies(&self) -> Vec<TypeData> {
+        self.dependencies.clone()
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
         return Box::new(self.clone());
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

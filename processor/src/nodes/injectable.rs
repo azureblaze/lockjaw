@@ -19,6 +19,7 @@ use crate::nodes::node::Node;
 use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+use std::any::Any;
 
 #[derive(Debug, Clone)]
 pub struct InjectableNode {
@@ -83,11 +84,15 @@ impl Node for InjectableNode {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> &Vec<TypeData> {
-        &self.dependencies
+    fn get_dependencies(&self) -> Vec<TypeData> {
+        self.dependencies.clone()
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
