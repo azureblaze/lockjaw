@@ -30,7 +30,7 @@ use syn::{Attribute, GenericArgument};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::BindingType::{Binds, BindsOptionOf, Provides};
-use crate::manifest::{Binding, Dependency, Module, MultibindingType, TypeRoot};
+use crate::manifest::{Binding, BindingType, Dependency, Module, MultibindingType, TypeRoot};
 use crate::type_data::TypeData;
 use crate::{environment, parsing};
 
@@ -94,31 +94,33 @@ fn handle_module_attribute_internal(
         #[allow(unused_mut)] // required
         let mut item = item_impl.items.get_mut(i).unwrap();
         if let syn::ImplItem::Method(ref mut method) = item {
-            let mut opiton_binding: Option<Binding> = None;
+            let mut option_binding: Option<Binding> = None;
             let mut multibinding = MultibindingType::None;
             let mut new_attrs: Vec<syn::Attribute> = Vec::new();
             for attr in &method.attrs {
                 match parsing::get_attribute(attr).as_str() {
                     "provides" => {
-                        if opiton_binding.is_some() {
+                        if option_binding.is_some() {
                             return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
                         }
-                        opiton_binding = Some(handle_provides(attr, &mut method.sig)?);
+                        option_binding = Some(handle_provides(attr, &mut method.sig)?);
                     }
                     "binds" => {
-                        if opiton_binding.is_some() {
+                        if option_binding.is_some() {
                             return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
                         }
-                        opiton_binding =
+                        option_binding =
                             Some(handle_binds(attr, &mut method.sig, &mut method.block)?);
                         let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                         new_attrs.push(allow_dead_code);
+                        let allow_unused: Attribute = parse_quote! {#[allow(unused)]};
+                        new_attrs.push(allow_unused);
                     }
                     "binds_option_of" => {
-                        if opiton_binding.is_some() {
+                        if option_binding.is_some() {
                             return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
                         }
-                        opiton_binding = Some(handle_binds_option_of(
+                        option_binding = Some(handle_binds_option_of(
                             attr,
                             &mut method.sig,
                             &mut method.block,
@@ -138,10 +140,27 @@ fn handle_module_attribute_internal(
                 }
             }
             method.attrs = new_attrs;
-            if opiton_binding.is_none() {
+            if option_binding.is_none() {
                 return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by #[provides]/#[binds]/#[binds_option_of]");
             }
-            let mut binding = opiton_binding.unwrap();
+            let mut binding = option_binding.unwrap();
+            if binding.binding_type == BindingType::Binds {
+                if multibinding == MultibindingType::ElementsIntoVec {
+                    return spanned_compile_error(
+                        method.span(),
+                        "#[elements_into_set] cannot be used on #[binds]",
+                    );
+                }
+            }
+
+            if multibinding == MultibindingType::ElementsIntoVec {
+                if binding.type_data.path.ne("std::vec::Vec") {
+                    return spanned_compile_error(
+                        method.span(),
+                        "#[elements_into_set] must return Vec<T>",
+                    );
+                }
+            }
             binding.multibinding_type = multibinding;
             module.bindings.push(binding);
         }

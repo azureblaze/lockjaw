@@ -47,7 +47,6 @@ impl ProvidesNode {
             .collect();
         let mut type_ = binding.type_data.clone();
         if binding.multibinding_type != MultibindingType::None {
-            type_ = binding.type_data.clone();
             type_.identifier_suffix = format!("{}", node::get_multibinding_id());
         }
         let mut result: Vec<Box<dyn Node>> = vec![Box::new(ProvidesNode {
@@ -70,7 +69,6 @@ impl ProvidesNode {
             }
             _ => {}
         }
-
         result
     }
 }
