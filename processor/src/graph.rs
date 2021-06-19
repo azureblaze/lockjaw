@@ -136,6 +136,7 @@ pub fn generate_component(
     let component_impl = quote! {
         #[allow(non_snake_case)]
         #[allow(non_camel_case_types)]
+        #[allow(dead_code)]
         struct #component_impl_name {
             #fields
         }

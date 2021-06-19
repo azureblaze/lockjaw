@@ -158,12 +158,12 @@ impl TypeData {
         quote::format_ident!(
             "{}_{}",
             self.canonical_string_path()
-                .replace("::", "_")
-                .replace("<", "_L_")
-                .replace(">", "_R_")
+                .replace("::", "ⵆ")
+                .replace("<", "ᐸ")
+                .replace(">", "ᐳ")
                 .replace(" ", "_")
-                .replace("\'", "")
-                .replace("&", "ref_"),
+                .replace("\'", "ᐠ")
+                .replace("&", "ε"),
             self.identifier_suffix
         )
     }
