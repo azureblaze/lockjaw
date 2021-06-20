@@ -14,22 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#[doc = include_str ! ("component.md")]
+#![cfg_attr(nightly, feature(extended_key_value_attributes))]
+
+#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("component.md")))]
 pub use lockjaw_processor::component;
 
-#[doc = include_str ! ("component_module_manifest.md")]
+#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("component_module_manifest.md")))]
 pub use lockjaw_processor::component_module_manifest;
 
-#[doc = include_str ! ("epilogue.md")]
+#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("epilogue.md")))]
 pub use lockjaw_processor::epilogue;
 
-#[doc = include_str ! ("injectable.md")]
+#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("injectable.md")))]
 pub use lockjaw_processor::injectable;
 
-#[doc = include_str ! ("mod_epilogue.md")]
+#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("mod_epilogue.md")))]
 pub use lockjaw_processor::mod_epilogue;
 
-#[doc = include_str ! ("module.md")]
+#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("module.md")))]
 pub use lockjaw_processor::module;
 #[doc(hidden)]
 pub use lockjaw_processor::private_root_epilogue;
@@ -41,7 +43,7 @@ pub use lockjaw_processor::test_mod_epilogue;
 mod doctests;
 
 #[cfg(nightly)]
-#[doc = include_str ! ("../README.md")]
+#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("../README.md")))]
 pub mod readme {}
 
 mod component_lifetime;
