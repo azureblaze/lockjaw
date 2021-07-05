@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#![allow(stable_features)]
 #![cfg_attr(nightly, feature(extended_key_value_attributes))]
 
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("component.md")))]
@@ -33,6 +34,9 @@ pub use lockjaw_processor::mod_epilogue;
 
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("module.md")))]
 pub use lockjaw_processor::module;
+
+pub use lockjaw_processor::qualifier;
+
 #[doc(hidden)]
 pub use lockjaw_processor::private_root_epilogue;
 #[doc(hidden)]

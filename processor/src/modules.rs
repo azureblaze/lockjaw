@@ -30,9 +30,9 @@ use syn::{Attribute, GenericArgument};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::BindingType::{Binds, BindsOptionOf, Provides};
-use crate::manifest::{Binding, BindingType, Dependency, Module, MultibindingType, TypeRoot};
+use crate::manifest::{Binding, BindingType, Dependency, Module, MultibindingType};
+use crate::parsing;
 use crate::type_data::TypeData;
-use crate::{environment, parsing};
 
 thread_local! {
     static MODULES :RefCell<HashMap<String, LocalModule>> = RefCell::new(HashMap::new());
@@ -97,8 +97,10 @@ fn handle_module_attribute_internal(
             let mut option_binding: Option<Binding> = None;
             let mut multibinding = MultibindingType::None;
             let mut new_attrs: Vec<syn::Attribute> = Vec::new();
+            let mut qualifier: Option<Box<TypeData>> = None;
             for attr in &method.attrs {
-                match parsing::get_attribute(attr).as_str() {
+                let attr_str = parsing::get_attribute(attr);
+                match attr_str.as_str() {
                     "provides" => {
                         if option_binding.is_some() {
                             return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
@@ -134,6 +136,9 @@ fn handle_module_attribute_internal(
                     "elements_into_vec" => {
                         multibinding = MultibindingType::ElementsIntoVec;
                     }
+                    "qualified" => {
+                        qualifier = Some(Box::new(parsing::get_parenthesized_type(&attr.tokens)?));
+                    }
                     _ => {
                         new_attrs.push(attr.clone());
                     }
@@ -162,6 +167,7 @@ fn handle_module_attribute_internal(
                 }
             }
             binding.multibinding_type = multibinding;
+            binding.type_data.qualifier = qualifier;
             module.bindings.push(binding);
         }
     }
@@ -335,22 +341,8 @@ pub fn generate_manifest(base_path: &str) -> Vec<Module> {
         let mut result = Vec::<Module>::new();
         for local_module in modules.values() {
             let mut module = Module::new();
-            let mut type_ = TypeData::new();
-            type_.field_crate = environment::current_crate();
-            type_.root = TypeRoot::CRATE;
-            let mut path = String::new();
-            if !base_path.is_empty() {
-                path.push_str(base_path);
-                path.push_str("::");
-            }
-            if let Some(additional_path) = &local_module.additional_path {
-                path.push_str(additional_path);
-                path.push_str("::");
-            }
-            path.push_str(&local_module.name);
-
-            type_.path = path;
-            module.type_data = type_;
+            module.type_data =
+                TypeData::from_local(base_path, &local_module.additional_path, &local_module.name);
             module.bindings.extend(local_module.bindings.clone());
             result.push(module);
         }

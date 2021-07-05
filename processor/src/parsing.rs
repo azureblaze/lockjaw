@@ -52,18 +52,29 @@ pub fn get_parenthesized_attribute_metadata(
     if attr.is_empty() {
         return Ok(HashMap::new());
     }
-    let s = attr
+
+    get_attribute_metadata(
+        TokenStream::from_str(&strip_parentheses(&attr)?)
+            .map_spanned_compile_error(attr.span(), "cannot parse string to tokens")?,
+    )
+}
+
+pub fn get_parenthesized_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
+    if attr.is_empty() {
+        return spanned_compile_error(attr.span(), "path expected");
+    }
+
+    TypeData::from_str(&strip_parentheses(attr)?)
+}
+
+fn strip_parentheses(attr: &TokenStream) -> Result<String, TokenStream> {
+    Ok(attr
         .to_string()
         .strip_prefix("(")
         .map_spanned_compile_error(attr.span(), "'(' expected at start")?
         .strip_suffix(")")
         .map_spanned_compile_error(attr.span(), "')' expected at end")?
-        .to_owned();
-
-    get_attribute_metadata(
-        TokenStream::from_str(&s)
-            .map_spanned_compile_error(attr.span(), "cannot parse string to tokens")?,
-    )
+        .to_owned())
 }
 
 /// Converts #[attr(key1="value1", key2="value2")] to key-value map.

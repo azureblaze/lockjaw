@@ -45,6 +45,7 @@ mod manifest;
 mod modules;
 mod nodes;
 mod parsing;
+mod qualifier;
 mod type_data;
 thread_local! {
     static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
@@ -70,6 +71,11 @@ pub fn component(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn module(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| modules::handle_module_attribute(attr.into(), input.into()))
+}
+
+#[proc_macro_attribute]
+pub fn qualifier(attr: TokenStream, input: TokenStream) -> TokenStream {
+    handle_error(|| qualifier::handle_qualifier_attribute(attr.into(), input.into()))
 }
 
 #[proc_macro_attribute]
@@ -120,6 +126,9 @@ fn extend_local_manifest(path: &str) -> Result<(), TokenStream> {
             .component_module_manifests
             .extend(components::generate_component_module_manifest(path));
         manifest.modules.extend(modules::generate_manifest(path));
+        manifest
+            .qualifiers
+            .extend(qualifier::generate_manifest(path));
         Ok(())
     })
 }

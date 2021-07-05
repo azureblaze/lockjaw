@@ -68,7 +68,7 @@ lazy_static! {
     };
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default, Eq, Hash)]
 pub struct TypeData {
     pub root: TypeRoot,
     pub path: String,
@@ -78,11 +78,31 @@ pub struct TypeData {
     pub field_ref: bool,
     pub scopes: Vec<TypeData>,
     pub identifier_suffix: String,
+    pub qualifier: Option<Box<TypeData>>,
 }
 
 impl TypeData {
     pub fn new() -> Self {
         Default::default()
+    }
+
+    pub fn from_local(base_path: &str, additional_path: &Option<String>, identifier: &str) -> Self {
+        let mut result = TypeData::new();
+        result.field_crate = environment::current_crate();
+        result.root = TypeRoot::CRATE;
+        let mut path = String::new();
+        if !base_path.is_empty() {
+            path.push_str(base_path);
+            path.push_str("::");
+        }
+        if let Some(additional_path) = additional_path {
+            path.push_str(additional_path);
+            path.push_str("::");
+        }
+        path.push_str(identifier);
+
+        result.path = path;
+        result
     }
 
     /// Full path of the type in universal from ($CRATE always resolved)
@@ -155,8 +175,14 @@ impl TypeData {
     ///
     /// Modifiers like & are included.
     pub fn identifier(&self) -> syn::Ident {
+        let prefix = self
+            .qualifier
+            .as_ref()
+            .map(|qualifier| format!("ᑕ{}ᑐ_", qualifier.identifier()))
+            .unwrap_or("".to_owned());
         quote::format_ident!(
-            "{}_{}",
+            "{}{}_{}",
+            prefix,
             self.canonical_string_path()
                 .replace("::", "ⵆ")
                 .replace("<", "ᐸ")
@@ -171,6 +197,11 @@ impl TypeData {
     /// Human readable form.
     pub fn readable(&self) -> String {
         let mut prefix = String::new();
+        if self.qualifier.is_some() {
+            prefix.push_str(
+                &format! {"#[qualified({})] ", self.qualifier.as_ref().unwrap().readable()},
+            );
+        }
         if self.field_ref {
             prefix.push_str("ref ");
         }
@@ -243,6 +274,10 @@ impl TypeData {
         }
         let trait_ = traits.get(0).unwrap();
         return TypeData::from_path(&trait_.path);
+    }
+
+    pub fn from_str(string: &str) -> Result<TypeData, TokenStream> {
+        TypeData::from_path(&syn::parse_str(string).map_compile_error("path expected")?)
     }
 
     pub fn from_path(syn_path: &syn::Path) -> Result<TypeData, TokenStream> {

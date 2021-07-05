@@ -24,9 +24,9 @@ use syn::spanned::Spanned;
 use syn::{FnArg, ImplItem, ImplItemMethod, Pat};
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::{Dependency, Injectable, TypeRoot};
+use crate::manifest::{Dependency, Injectable};
+use crate::parsing;
 use crate::type_data::TypeData;
-use crate::{environment, parsing};
 
 struct LocalInjectable {
     identifier: String,
@@ -66,14 +66,25 @@ pub fn handle_injectable_attribute(
 
     let ctor = get_ctor(item.span(), &mut item.items)?;
     let mut dependencies = Vec::<Dependency>::new();
-    for arg in ctor.sig.inputs.iter() {
+    for arg in ctor.sig.inputs.iter_mut() {
         if let FnArg::Receiver(ref receiver) = arg {
             return spanned_compile_error(receiver.span(), &format!("self not allowed"));
         }
-        if let FnArg::Typed(ref type_) = arg {
+        if let FnArg::Typed(ref mut type_) = arg {
             if let Pat::Ident(ref ident) = *type_.pat {
                 let mut dependency = Dependency::new();
                 dependency.type_data = TypeData::from_syn_type(&type_.ty)?;
+                let mut new_attrs = Vec::new();
+                for attr in &type_.attrs {
+                    match parsing::get_attribute(attr).as_str() {
+                        "qualified" => {
+                            dependency.type_data.qualifier =
+                                Some(Box::new(parsing::get_parenthesized_type(&attr.tokens)?))
+                        }
+                        _ => new_attrs.push(attr.clone()),
+                    }
+                }
+                type_.attrs = Vec::new(); //new_attrs;
                 dependency.name = ident.ident.to_string();
                 dependencies.push(dependency);
             } else {
@@ -108,28 +119,38 @@ pub fn handle_injectable_attribute(
     Ok(item.to_token_stream())
 }
 
-fn get_ctor(span: Span, items: &mut Vec<ImplItem>) -> Result<ImplItemMethod, TokenStream> {
-    let mut ctors = Vec::<ImplItemMethod>::new();
+fn get_ctor(span: Span, items: &mut Vec<ImplItem>) -> Result<&mut ImplItemMethod, TokenStream> {
+    let mut ctors = 0;
+    for item in &mut *items {
+        if let ImplItem::Method(ref mut method) = item {
+            if parsing::has_attribute(&method.attrs, "inject") {
+                ctors += 1;
+                if ctors == 2 {
+                    return spanned_compile_error(
+                        item.span(),
+                        "only one method can be marked with #[inject]",
+                    );
+                }
+            }
+        }
+    }
+    if ctors == 0 {
+        return spanned_compile_error(span, "must have one method marked with #[inject]");
+    }
     for item in items {
         if let ImplItem::Method(ref mut method) = item {
             if parsing::has_attribute(&method.attrs, "inject") {
-                ctors.push(method.clone());
                 let index = method
                     .attrs
                     .iter()
                     .position(|a| parsing::is_attribute(a, "inject"))
                     .unwrap();
                 method.attrs.remove(index);
+                return Ok(method);
             }
         }
     }
-    if ctors.len() > 1 {
-        return spanned_compile_error(span, "only one method can be marked with #[inject]");
-    }
-    if ctors.len() == 0 {
-        return spanned_compile_error(span, "must have one method marked with #[inject]");
-    }
-    return Ok(ctors[0].clone());
+    panic!("should have ctor")
 }
 
 pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
@@ -137,23 +158,15 @@ pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
         let mut result = Vec::new();
         for local_injectable in injectables.borrow().iter() {
             let mut injectable = Injectable::new();
-            let mut type_ = TypeData::new();
-            type_.field_crate = environment::current_crate();
-            type_.root = TypeRoot::CRATE;
-            type_.scopes.extend(local_injectable.scopes.clone());
-            let mut path = String::new();
-            if !base_path.is_empty() {
-                path.push_str(base_path);
-                path.push_str("::");
-            }
-            if let Some(additional_path) = &local_injectable.additional_path {
-                path.push_str(additional_path);
-                path.push_str("::");
-            }
-            path.push_str(&local_injectable.identifier);
-
-            type_.path = path;
-            injectable.type_data = type_;
+            injectable.type_data = TypeData::from_local(
+                base_path,
+                &local_injectable.additional_path,
+                &local_injectable.identifier,
+            );
+            injectable
+                .type_data
+                .scopes
+                .extend(local_injectable.scopes.clone());
             injectable.ctor_name = local_injectable.ctor_name.clone();
             injectable
                 .dependencies
