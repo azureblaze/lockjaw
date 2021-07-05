@@ -31,6 +31,7 @@ use crate::nodes::node::Node;
 use crate::nodes::provides::ProvidesNode;
 use crate::nodes::provision::ProvisionNode;
 use crate::type_data::TypeData;
+use std::iter::FromIterator;
 
 /// Dependency graph and other related data
 #[derive(Default, Debug)]
@@ -389,6 +390,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
         )?;
         result.provisions.push(provision);
     }
+    validate_graph(manifest, &result)?;
     Ok(result)
 }
 
@@ -470,4 +472,21 @@ fn cyclic_dependency(node: &dyn Node, ancestors: &mut Vec<String>) -> Result<(),
         }
     }
     return compile_error(&format!("Cyclic dependency detected:\n{}", s.join("\n")));
+}
+
+fn validate_graph(manifest: &Manifest, graph: &Graph) -> Result<(), TokenStream> {
+    let qualifiers: HashSet<TypeData> = HashSet::from_iter(manifest.qualifiers.clone());
+    for node in graph.map.values() {
+        if let Some(ref qualifier) = node.get_type().qualifier {
+            if !qualifiers.contains(qualifier) {
+                return compile_error(&format!(
+                    "{} binds {} with a qualifier, but the qualifier struct is not annotated with \
+                    the #[lockjaw::qualifier] attribute",
+                    node.get_name(),
+                    node.get_type().readable()
+                ));
+            }
+        }
+    }
+    Ok(())
 }

@@ -228,3 +228,38 @@ mod binds_elements_into_vec {}
 ///
 /// ```
 mod provides_elements_into_vec_not_vec {}
+
+/// ```compile_fail
+///#[macro_use] extern crate lockjaw_processor;
+///
+/// struct Q;
+///
+///pub struct MyModule {}
+///#[module]
+///impl MyModule {
+///    #[provides]
+///    #[qualified(crate::Q)]
+///    pub fn provide_q1_string() -> String {
+///        "q_string".to_owned()
+///    }
+///}
+///
+///#[component_module_manifest]
+///pub struct MyModuleManifest {
+///    my_module: crate::MyModule,
+///}
+///
+///#[component(modules = "crate::MyModuleManifest")]
+///pub trait MyComponent {
+///    #[qualified(crate::Q)]
+///    fn string(&self) -> String;
+///}
+///#[test]
+///pub fn main() {
+///    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+///    component.string();
+///}
+///epilogue!();
+///
+/// ```
+mod qualifer_not_declared {}

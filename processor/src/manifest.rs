@@ -27,6 +27,7 @@ pub struct Manifest {
     pub merged_crates: Vec<::std::string::String>,
     pub modules: Vec<Module>,
     pub component_module_manifests: Vec<ComponentModuleManifest>,
+    pub qualifiers: Vec<TypeData>,
 }
 
 impl Manifest {
@@ -40,6 +41,7 @@ impl Manifest {
         self.merged_crates.clear();
         self.modules.clear();
         self.component_module_manifests.clear();
+        self.qualifiers.clear();
     }
 
     pub fn merge_from(&mut self, other: &Manifest) {
@@ -52,6 +54,8 @@ impl Manifest {
         self.modules.extend_from_slice(other.modules.as_slice());
         self.component_module_manifests
             .extend_from_slice(other.component_module_manifests.as_slice());
+        self.qualifiers
+            .extend_from_slice(other.qualifiers.as_slice());
     }
 }
 
@@ -113,7 +117,7 @@ impl Dependency {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Eq, Hash)]
 pub enum TypeRoot {
     UNSPECIFIED = 0,
     GLOBAL = 1,

@@ -30,6 +30,7 @@ use crate::graph;
 use crate::manifest::{Component, ComponentModuleManifest, Dependency, Manifest, TypeRoot};
 use crate::type_data::TypeData;
 use crate::{environment, parsing};
+use syn::Attribute;
 
 thread_local! {
     static COMPONENTS :RefCell<Vec<LocalComponent>> = RefCell::new(Vec::new());
@@ -69,18 +70,28 @@ pub fn handle_component_attribute(
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
-    let item_trait: syn::ItemTrait =
+    let mut item_trait: syn::ItemTrait =
         syn::parse2(input).map_spanned_compile_error(span, "trait expected")?;
     let mut provisions = Vec::<Dependency>::new();
-    for item in &item_trait.items {
-        if let syn::TraitItem::Method(ref method) = item {
+    for item in &mut item_trait.items {
+        if let syn::TraitItem::Method(ref mut method) = item {
             let mut provision = Dependency::new();
+            let mut qualifier: Option<TypeData> = None;
+            let mut new_attrs: Vec<Attribute> = Vec::new();
+            for attr in &method.attrs {
+                match parsing::get_attribute(attr).as_str() {
+                    "qualified" => qualifier = Some(parsing::get_parenthesized_type(&attr.tokens)?),
+                    _ => new_attrs.push(attr.clone()),
+                }
+            }
+            method.attrs = new_attrs;
             provision.name = method.sig.ident.to_string();
             if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
                 if is_trait_object_without_lifetime(ty.deref()) {
                     return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
                 }
                 provision.type_data = TypeData::from_syn_type(ty.deref())?;
+                provision.type_data.qualifier = qualifier.map(Box::new);
             } else {
                 return spanned_compile_error(
                     method.sig.span(),
@@ -233,22 +244,11 @@ pub fn generate_component_module_manifest(base_path: &str) -> Vec<ComponentModul
         let mut result = Vec::<ComponentModuleManifest>::new();
         for local_component_module_manifest in components_module_manifests.iter() {
             let mut component_module_manifest = ComponentModuleManifest::new();
-            let mut type_ = TypeData::new();
-            type_.field_crate = environment::current_crate();
-            type_.root = TypeRoot::CRATE;
-            let mut path = String::new();
-            if !base_path.is_empty() {
-                path.push_str(base_path);
-                path.push_str("::");
-            }
-            if let Some(additional_path) = &local_component_module_manifest.additional_path {
-                path.push_str(additional_path);
-                path.push_str("::");
-            }
-            path.push_str(&local_component_module_manifest.name);
-
-            type_.path = path;
-            component_module_manifest.type_data = Some(type_);
+            component_module_manifest.type_data = Some(TypeData::from_local(
+                base_path,
+                &local_component_module_manifest.additional_path,
+                &local_component_module_manifest.name,
+            ));
             component_module_manifest
                 .modules
                 .extend(local_component_module_manifest.modules.clone());
