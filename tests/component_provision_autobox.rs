@@ -18,6 +18,8 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, ComponentLifetime};
 
+lockjaw::prologue!("tests/component_provision_autobox.rs");
+
 pub struct Foo {}
 
 #[injectable]

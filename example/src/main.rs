@@ -16,6 +16,8 @@ limitations under the License.
 
 use lockjaw::{component, component_module_manifest, injectable, module, ComponentLifetime};
 
+lockjaw::prologue!("src/main.rs");
+
 pub struct Greeter<'a> {
     phrase: String,
     printer: ComponentLifetime<'a, dyn ::printer::Printer>,

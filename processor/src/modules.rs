@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::cell::{RefCell, RefMut};
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
 
@@ -30,13 +28,10 @@ use syn::{Attribute, GenericArgument};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::BindingType::{Binds, BindsOptionOf, Provides};
-use crate::manifest::{Binding, BindingType, Dependency, Module, MultibindingType};
+use crate::manifest::{with_manifest, Binding, BindingType, Dependency, Module, MultibindingType};
 use crate::parsing;
+use crate::prologue::{get_base_path, prologue_check};
 use crate::type_data::TypeData;
-
-thread_local! {
-    static MODULES :RefCell<HashMap<String, LocalModule>> = RefCell::new(HashMap::new());
-}
 
 lazy_static! {
     static ref MODULE_METADATA_KEYS: HashSet<String> = {
@@ -45,23 +40,17 @@ lazy_static! {
         set
     };
 }
-struct LocalModule {
-    name: String,
-    bindings: Vec<Binding>,
-    additional_path: Option<String>,
-}
 
 pub fn handle_module_attribute(
     attr: TokenStream,
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
-    MODULES.with(|mm| handle_module_attribute_internal(attr, input, mm.borrow_mut()))
+    handle_module_attribute_internal(attr, input)
 }
 
 fn handle_module_attribute_internal(
     attr: TokenStream,
     input: TokenStream,
-    mut module_map: RefMut<HashMap<String, LocalModule>>,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
     let attributes = parsing::get_attribute_metadata(attr.clone())?;
@@ -77,18 +66,10 @@ fn handle_module_attribute_internal(
         syn::parse2(input.clone()).map_spanned_compile_error(span, "impl expected")?;
     if let syn::Type::Path(path) = item_impl.self_ty.deref() {
         module_path = path.path.to_token_stream().to_string().replace(" ", "");
-        if module_map.contains_key(&module_path) {
-            return spanned_compile_error(span, "module was already declared");
-        }
     } else {
         return spanned_compile_error(item_impl.span(), "path expected");
     }
-
-    let mut module = LocalModule {
-        name: module_path.to_owned(),
-        additional_path: attributes.get("path").cloned(),
-        bindings: Vec::new(),
-    };
+    let mut bindings: Vec<Binding> = Vec::new();
 
     for i in 0..item_impl.items.len() {
         #[allow(unused_mut)] // required
@@ -168,12 +149,31 @@ fn handle_module_attribute_internal(
             }
             binding.multibinding_type = multibinding;
             binding.type_data.qualifier = qualifier;
-            module.bindings.push(binding);
+            bindings.push(binding);
         }
     }
-    module_map.insert(module_path, module);
 
-    Ok(quote! {#item_impl})
+    let mut module = Module::new();
+    module.type_data = TypeData::from_local(
+        &get_base_path(),
+        &attributes.get("path").cloned(),
+        &module_path.to_owned(),
+    );
+    module.bindings.extend(bindings);
+    with_manifest(|mut manifest| {
+        for existing_module in &manifest.modules {
+            if existing_module.type_data.eq(&module.type_data) {
+                return spanned_compile_error(span, "module was already declared");
+            }
+        }
+        Ok(manifest.modules.push(module))
+    })?;
+
+    let prologue_check = prologue_check();
+    Ok(quote! {
+        #item_impl
+        #prologue_check
+    })
 }
 
 fn handle_provides(
@@ -333,20 +333,4 @@ fn has_lifetime(args: &Punctuated<GenericArgument, Token![,]>) -> bool {
         }
     }
     false
-}
-
-pub fn generate_manifest(base_path: &str) -> Vec<Module> {
-    MODULES.with(|m| {
-        let mut modules = m.borrow_mut();
-        let mut result = Vec::<Module>::new();
-        for local_module in modules.values() {
-            let mut module = Module::new();
-            module.type_data =
-                TypeData::from_local(base_path, &local_module.additional_path, &local_module.name);
-            module.bindings.extend(local_module.bindings.clone());
-            result.push(module);
-        }
-        modules.clear();
-        result
-    })
 }

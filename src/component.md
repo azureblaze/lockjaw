@@ -4,6 +4,8 @@ the graph (An "injector").
 ```
 # #[macro_use] extern crate lockjaw_processor;
 #
+# lockjaw::prologue!("src/lib.rs");
+# 
 # struct Foo{}
 #
 # #[injectable]
@@ -58,6 +60,7 @@ incorporated into the dependency graph.
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
+# lockjaw::prologue!("src/lib.rs");
 # struct StringModule {}
 # #[module]
 # impl StringModule {
@@ -101,8 +104,9 @@ Lockjaw retrieves the path of the current file from [`epilogue!()`](epilogue) an
 [`mod`](https://doc.rust-lang.org/reference/items/modules.html) then the extra path must be
 specified.
 
-```
+```compile_fail
 # use lockjaw::{epilogue, injectable};
+# lockjaw::prologue!("src/lib.rs");
 # pub struct Foo {}
 #
 # #[injectable]

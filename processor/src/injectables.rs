@@ -14,31 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::cell::RefCell;
 use std::collections::HashSet;
 
 use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
-use quote::ToTokens;
+use quote::quote;
 use syn::spanned::Spanned;
 use syn::{FnArg, ImplItem, ImplItemMethod, Pat};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::{Dependency, Injectable};
-use crate::parsing;
+use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
-
-struct LocalInjectable {
-    identifier: String,
-    additional_path: Option<String>,
-    scopes: Vec<TypeData>,
-    ctor_name: String,
-    dependencies: Vec<Dependency>,
-}
-
-thread_local! {
-    static INJECTABLES :RefCell<Vec<LocalInjectable>> = RefCell::new(Vec::new());
-}
+use crate::{manifest, parsing, prologue};
 
 lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
@@ -105,18 +93,25 @@ pub fn handle_injectable_attribute(
         return spanned_compile_error(item.self_ty.span(), &format!("path expected"));
     }
 
-    let injectable = LocalInjectable {
-        identifier: type_name,
-        additional_path: attributes.get("path").cloned(),
-        scopes: parsing::get_types(attributes.get("scope").map(Clone::clone))?,
-        ctor_name: ctor.sig.ident.to_string(),
-        dependencies,
-    };
-    INJECTABLES.with(|injectables| {
-        injectables.borrow_mut().push(injectable);
-    });
+    let mut injectable = Injectable::new();
+    injectable.type_data = TypeData::from_local(
+        &prologue::get_base_path(),
+        &attributes.get("path").cloned(),
+        &type_name,
+    );
+    injectable.type_data.scopes.extend(parsing::get_types(
+        attributes.get("scope").map(Clone::clone),
+    )?);
+    injectable.ctor_name = ctor.sig.ident.to_string();
+    injectable.dependencies.extend(dependencies);
 
-    Ok(item.to_token_stream())
+    manifest::with_manifest(|mut manifest| manifest.injectables.push(injectable));
+
+    let prologue_check = prologue_check();
+    Ok(quote! {
+        #item
+        #prologue_check
+    })
 }
 
 fn get_ctor(span: Span, items: &mut Vec<ImplItem>) -> Result<&mut ImplItemMethod, TokenStream> {
@@ -151,30 +146,4 @@ fn get_ctor(span: Span, items: &mut Vec<ImplItem>) -> Result<&mut ImplItemMethod
         }
     }
     panic!("should have ctor")
-}
-
-pub fn generate_manifest(base_path: &str) -> Vec<Injectable> {
-    INJECTABLES.with(|injectables| {
-        let mut result = Vec::new();
-        for local_injectable in injectables.borrow().iter() {
-            let mut injectable = Injectable::new();
-            injectable.type_data = TypeData::from_local(
-                base_path,
-                &local_injectable.additional_path,
-                &local_injectable.identifier,
-            );
-            injectable
-                .type_data
-                .scopes
-                .extend(local_injectable.scopes.clone());
-            injectable.ctor_name = local_injectable.ctor_name.clone();
-            injectable
-                .dependencies
-                .extend(local_injectable.dependencies.clone());
-
-            result.push(injectable);
-        }
-        injectables.borrow_mut().clear();
-        result
-    })
 }

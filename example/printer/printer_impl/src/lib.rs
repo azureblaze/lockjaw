@@ -17,6 +17,8 @@ limitations under the License.
 use lockjaw::{epilogue, injectable, module, ComponentLifetime};
 use printer::Printer;
 
+lockjaw::prologue!("src/lib.rs");
+
 pub struct PrinterImpl {}
 
 #[injectable]

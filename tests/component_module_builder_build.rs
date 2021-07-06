@@ -16,6 +16,8 @@ limitations under the License.
 
 #![allow(dead_code)]
 
+lockjaw::prologue!("tests/component_module_builder_build.rs");
+
 use lockjaw::{component, component_module_manifest, epilogue, module};
 
 pub struct Foo {}
@@ -23,6 +25,7 @@ pub struct Foo {}
 pub struct MyModule {
     string: String,
 }
+
 #[module]
 impl MyModule {
     #[provides]

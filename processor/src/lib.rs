@@ -18,7 +18,6 @@ limitations under the License.
 
 use proc_macro;
 use proc_macro::TokenStream;
-use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::BufReader;
@@ -27,7 +26,6 @@ use std::process::Command;
 
 use quote::quote;
 use regex::Regex;
-use syn::spanned::Spanned;
 
 use crate::manifest::Manifest;
 use error::handle_error;
@@ -45,11 +43,9 @@ mod manifest;
 mod modules;
 mod nodes;
 mod parsing;
+mod prologue;
 mod qualifier;
 mod type_data;
-thread_local! {
-    static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
-}
 
 #[proc_macro_attribute]
 pub fn injectable(attr: TokenStream, input: TokenStream) -> TokenStream {
@@ -84,53 +80,8 @@ pub fn provides(_attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn mod_epilogue(input: TokenStream) -> TokenStream {
-    handle_error(|| {
-        let path = environment::current_file_path(input.into())?;
-        extend_local_manifest(&path)?;
-        let path_test = quote! {
-            #[test]
-            fn mod_epilogue_path_matches_macro_input(){
-                let crate_name = module_path!().split("::").next().unwrap();
-                let mod_path = format!("{}::{}",crate_name, #path);
-                assert_eq!(module_path!(), mod_path,
-                    "path supplied to epilogue!() does not match actual path");
-            }
-        };
-        Ok(path_test)
-    })
-}
-
-#[proc_macro]
-pub fn test_mod_epilogue(input: TokenStream) -> TokenStream {
-    handle_error(|| {
-        let input2: proc_macro2::TokenStream = input.into();
-        let span = input2.span();
-        let path: syn::LitStr =
-            syn::parse2(input2).map_spanned_compile_error(span, "input must be string literal")?;
-        extend_local_manifest(&path.value().replace("\\", "/"))?;
-        Ok(quote! {})
-    })
-}
-
-fn extend_local_manifest(path: &str) -> Result<(), TokenStream> {
-    MANIFEST.with(|m| {
-        let mut manifest = m.borrow_mut();
-        manifest
-            .injectables
-            .extend(injectables::generate_manifest(path));
-        manifest
-            .components
-            .extend(components::generate_component_manifest(path));
-        manifest
-            .component_module_manifests
-            .extend(components::generate_component_module_manifest(path));
-        manifest.modules.extend(modules::generate_manifest(path));
-        manifest
-            .qualifiers
-            .extend(qualifier::generate_manifest(path));
-        Ok(())
-    })
+pub fn prologue(input: TokenStream) -> TokenStream {
+    handle_error(|| prologue::handle_prologue(input.into()))
 }
 
 #[proc_macro]
@@ -185,11 +136,9 @@ fn create_epilogue_config(input: TokenStream) -> EpilogueConfig {
 fn internal_epilogue(
     config: EpilogueConfig,
 ) -> Result<proc_macro2::TokenStream, proc_macro2::TokenStream> {
-    extend_local_manifest("")?;
-
-    MANIFEST.with(|manifest| {
-        let merged_manifest = merge_manifest(&manifest.borrow_mut(), config.for_test);
-        manifest.borrow_mut().clear();
+    manifest::with_manifest(|mut manifest| {
+        let merged_manifest = merge_manifest(&manifest, config.for_test);
+        manifest.clear();
         if !config.for_test {
             let out_dir = environment::lockjaw_output_dir()?;
             let manifest_path = format!("{}manifest.pb", out_dir);

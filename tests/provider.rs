@@ -18,6 +18,8 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, Provider};
 
+lockjaw::prologue!("tests/provider.rs");
+
 pub struct Counter {
     counter: ::std::cell::RefCell<i32>,
 }

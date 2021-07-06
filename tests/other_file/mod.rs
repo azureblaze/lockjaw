@@ -16,6 +16,8 @@ limitations under the License.
 #[allow(dead_code)]
 pub struct InjectableFromOtherFile {}
 
+lockjaw::prologue!("tests/other_file/mod.rs", "other_file");
+
 #[lockjaw::injectable]
 impl InjectableFromOtherFile {
     #[inject]
@@ -28,5 +30,3 @@ impl InjectableFromOtherFile {
 pub trait OtherComponent {
     fn other_file(&self) -> crate::other_file::InjectableFromOtherFile;
 }
-
-lockjaw::test_mod_epilogue!("other_file");

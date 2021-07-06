@@ -5,6 +5,7 @@ To incorporate a module to the dependency graph, it should be included as a fiel
 
 ```
 # use lockjaw::{epilogue, injectable, component_module_manifest, component};
+# lockjaw::prologue!("src/lib.rs");
 use lockjaw::{module};
 pub struct FooModule {}
 
@@ -39,6 +40,7 @@ provided to `COMPONENT.build()`
 
 ```
 # use lockjaw::*;
+# lockjaw::prologue!("src/lib.rs");
 pub struct FooModule {
     value : String
 }
@@ -86,6 +88,7 @@ The return type and parameters (except `&self`) must be fully qualified.
 
 ```
 # use lockjaw::*;
+# lockjaw::prologue!("src/lib.rs");
 pub struct Bar {}
 #[injectable]
 impl Bar {
@@ -156,6 +159,7 @@ and the scoped returned object or any objects that depends on it will share the 
 
 ```
 # use lockjaw::*;
+# lockjaw::prologue!("src/lib.rs");
 
 pub struct Foo {}
 
@@ -225,6 +229,7 @@ Cannot annotate a method that is already annotated with [`#[provides]`](#provide
 
 ```
 # use lockjaw::*;
+# lockjaw::prologue!("src/lib.rs");
 pub trait MyTrait {
     fn hello(&self) -> String;
 }
@@ -287,6 +292,7 @@ and the scoped returned trait or any objects that depends on it will share the l
 ```
 # use lockjaw::*;
 # use std::ops::Deref;
+# lockjaw::prologue!("src/lib.rs");
 pub trait Foo {}
 
 pub struct FooImpl{}
@@ -360,7 +366,7 @@ Lockjaw retrieves the path of the current file from [`epilogue!()`](epilogue) an
 [`mod`](https://doc.rust-lang.org/reference/items/modules.html) then the extra path must be
 specified.
 
-```
+```compile_fail
 # use lockjaw::{epilogue, injectable, component_module_manifest, component};
 mod nested {
     use lockjaw::module;

@@ -15,18 +15,15 @@ limitations under the License.
 */
 use crate::error::CompileError;
 use proc_macro2::TokenStream;
-use syn::spanned::Spanned;
 
 pub fn current_crate() -> String {
     std::env::var("CARGO_CRATE_NAME").expect("missing crate name env var")
 }
 
-/// Returns the current file being compiled.
-pub fn current_file_path(input: TokenStream) -> Result<String, TokenStream> {
-    let span = input.span();
-    let item: syn::LitStr = syn::parse2(input)
-        .map_spanned_compile_error(span, "passed file path not string literal")?;
-    Ok(item.value())
+pub fn cargo_manifest_dir() -> String {
+    std::env::var("CARGO_MANIFEST_DIR")
+        .expect("missing manifest dir env var")
+        .replace("\\", "/")
 }
 
 /// Returns the common artifacts directory where all crates can read/write.

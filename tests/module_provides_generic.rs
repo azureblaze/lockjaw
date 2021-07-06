@@ -20,6 +20,8 @@ use lockjaw::{component, component_module_manifest, epilogue, module};
 
 pub use String as NamedString;
 
+lockjaw::prologue!("tests/module_provides_generic.rs");
+
 pub struct MyModule {}
 
 #[module]

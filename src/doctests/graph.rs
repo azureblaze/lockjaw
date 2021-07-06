@@ -16,6 +16,7 @@ limitations under the License.
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
 ///
 /// struct Foo{}
 /// #[component]
@@ -31,6 +32,7 @@ mod graph_missing_binding {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
 ///
 /// struct Foo{
 ///     bar: Box<crate::Bar>
@@ -69,6 +71,7 @@ mod graph_cyclic_dependency {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
 ///
 /// struct Foo {}
 ///
@@ -105,6 +108,7 @@ mod graph_duplicated_binding {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
 ///
 ///
 /// #[component(modules="crate::Mm")]

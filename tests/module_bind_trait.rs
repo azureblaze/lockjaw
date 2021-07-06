@@ -20,6 +20,8 @@ use lockjaw::{
     component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
 };
 
+lockjaw::prologue!("tests/module_bind_trait.rs");
+
 pub struct Foo {}
 
 pub trait MyTrait {

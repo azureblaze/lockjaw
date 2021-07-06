@@ -20,6 +20,8 @@ use lockjaw::{component, component_module_manifest, epilogue, module};
 
 pub use String as NamedString;
 
+lockjaw::prologue!("tests/module_provides_scoped.rs");
+
 pub struct Foo<'a> {
     s: &'a String,
 }
