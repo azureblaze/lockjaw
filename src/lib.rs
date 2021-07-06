@@ -23,14 +23,13 @@ pub use lockjaw_processor::component;
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("component_module_manifest.md")))]
 pub use lockjaw_processor::component_module_manifest;
 
+pub use lockjaw_processor::prologue;
+
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("epilogue.md")))]
 pub use lockjaw_processor::epilogue;
 
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("injectable.md")))]
 pub use lockjaw_processor::injectable;
-
-#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("mod_epilogue.md")))]
-pub use lockjaw_processor::mod_epilogue;
 
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("module.md")))]
 pub use lockjaw_processor::module;
@@ -41,8 +40,6 @@ pub use lockjaw_processor::qualifier;
 pub use lockjaw_processor::private_root_epilogue;
 #[doc(hidden)]
 pub use lockjaw_processor::private_test_epilogue;
-#[doc(hidden)]
-pub use lockjaw_processor::test_mod_epilogue;
 
 mod doctests;
 

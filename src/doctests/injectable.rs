@@ -16,6 +16,7 @@ limitations under the License.
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
 /// #[lockjaw::injectable]
 /// trait S {}
 /// ```
@@ -23,6 +24,7 @@ mod injectable_non_struct {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
 /// #[lockjaw::injectable]
 /// struct S(String);
 /// ```
@@ -30,6 +32,7 @@ mod injectable_tuple {}
 
 ///```compile_fail
 /// use lockjaw::{component, injectable, epilogue};
+/// lockjaw::prologue!("src/lib.rs");
 ///
 /// pub struct Foo {}
 ///
@@ -45,6 +48,7 @@ mod injectable_no_inject {}
 
 ///```compile_fail
 /// use lockjaw::{component, injectable, epilogue};
+/// lockjaw::prologue!("src/lib.rs");
 ///
 /// pub struct Foo {}
 ///
@@ -65,6 +69,7 @@ mod injectable_multiple_inject {}
 
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
 /// #[lockjaw::injectable(foo="bar")]
 /// struct S {};
 /// ```

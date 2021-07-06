@@ -50,8 +50,10 @@ Example:
 use lockjaw::*;
 use std::ops::Add;
 
-struct GreetCounter{
-    counter : ::std::cell::RefCell<i32>
+lockjaw::prologue!("src/lib.rs");
+
+struct GreetCounter {
+    counter: ::std::cell::RefCell<i32>
 }
 
 // Allow GreetCounter to be created in the dependency graph. These bindings are available anywhere.

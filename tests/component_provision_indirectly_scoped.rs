@@ -18,6 +18,8 @@ use lockjaw::{
     component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
 };
 
+lockjaw::prologue!("tests/component_provision_indirectly_scoped.rs");
+
 struct GreetCounter {
     counter: ::std::cell::RefCell<i32>,
 }

@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 use std::borrow::Borrow;
-use std::cell::RefCell;
 use std::collections::HashSet;
 use std::ops::Deref;
 
@@ -27,18 +26,13 @@ use syn::spanned::Spanned;
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
-use crate::manifest::{Component, ComponentModuleManifest, Dependency, Manifest, TypeRoot};
+use crate::manifest::{
+    with_manifest, Component, ComponentModuleManifest, Dependency, Manifest, TypeRoot,
+};
+use crate::prologue::{get_base_path, prologue_check};
 use crate::type_data::TypeData;
 use crate::{environment, parsing};
 use syn::Attribute;
-
-thread_local! {
-    static COMPONENTS :RefCell<Vec<LocalComponent>> = RefCell::new(Vec::new());
-}
-
-thread_local! {
-    static COMPONENT_MODULE_MANIFESTS :RefCell<Vec<LocalComponentModuleManifest>> = RefCell::new(Vec::new());
-}
 
 lazy_static! {
     static ref COMPONENT_METADATA_KEYS: HashSet<String> = {
@@ -47,22 +41,6 @@ lazy_static! {
         set.insert("path".to_owned());
         set
     };
-}
-
-/// Stores partial data until the true path can be resolved in the file epilogue.
-struct LocalComponent {
-    name: String,
-    provisions: Vec<Dependency>,
-    additional_path: Option<String>,
-    module_manifest: Option<TypeData>,
-}
-
-/// Stores partial data until the true path can be resolved in the file epilogue.
-struct LocalComponentModuleManifest {
-    name: String,
-    additional_path: Option<String>,
-    builder_modules: Vec<Dependency>,
-    modules: Vec<TypeData>,
 }
 
 pub fn handle_component_attribute(
@@ -118,20 +96,40 @@ pub fn handle_component_attribute(
         module_manifest = Option::None;
     }
 
-    let component = LocalComponent {
-        name: item_trait.ident.to_string(),
-        provisions,
-        additional_path: attributes.get("path").cloned(),
-        module_manifest,
-    };
+    let base_path = get_base_path();
 
-    COMPONENTS.with(|components| components.borrow_mut().push(component));
+    let mut component = Component::new();
+    let mut type_ = TypeData::new();
+    type_.field_crate = environment::current_crate();
+    type_.root = TypeRoot::CRATE;
+    let mut path = String::new();
+    if !base_path.is_empty() {
+        path.push_str(&base_path);
+        path.push_str("::");
+    }
+    if let Some(additional_path) = &attributes.get("path").cloned() {
+        path.push_str(additional_path);
+        path.push_str("::");
+    }
+    path.push_str(&item_trait.ident.to_string());
 
+    type_.path = path;
+    component.type_data = type_;
+    component.provisions.extend(provisions);
+    if let Some(ref m) = module_manifest {
+        component.module_manifest = Some(m.clone());
+    }
+
+    with_manifest(|mut manifest| manifest.components.push(component));
+
+    let prologue_check = prologue_check();
     let result = quote! {
         #item_trait
+        #prologue_check
     };
     Ok(result)
 }
+
 fn is_trait_object_without_lifetime(ty: &syn::Type) -> bool {
     let tokens: Vec<String> = ty
         .to_token_stream()
@@ -142,41 +140,6 @@ fn is_trait_object_without_lifetime(ty: &syn::Type) -> bool {
         return false;
     }
     !tokens.contains(&"'".to_owned())
-}
-
-pub fn generate_component_manifest(base_path: &str) -> Vec<Component> {
-    COMPONENTS.with(|c| {
-        let mut components = c.borrow_mut();
-        let mut result = Vec::<Component>::new();
-        for local_component in components.iter() {
-            let mut component = Component::new();
-            let mut type_ = TypeData::new();
-            type_.field_crate = environment::current_crate();
-            type_.root = TypeRoot::CRATE;
-            let mut path = String::new();
-            if !base_path.is_empty() {
-                path.push_str(base_path);
-                path.push_str("::");
-            }
-            if let Some(additional_path) = &local_component.additional_path {
-                path.push_str(additional_path);
-                path.push_str("::");
-            }
-            path.push_str(&local_component.name);
-
-            type_.path = path;
-            component.type_data = type_;
-            component
-                .provisions
-                .extend(local_component.provisions.clone());
-            if let Some(ref m) = local_component.module_manifest {
-                component.module_manifest = Some(m.clone());
-            }
-            result.push(component);
-        }
-        components.clear();
-        result
-    })
 }
 
 pub fn handle_component_module_manifest_attribute(
@@ -220,45 +183,32 @@ pub fn handle_component_module_manifest_attribute(
             modules.push(TypeData::from_syn_type(field.ty.borrow())?)
         }
     }
-    let manifest = LocalComponentModuleManifest {
-        name: item_struct.ident.to_string(),
-        additional_path: attributes.get("path").cloned(),
-        builder_modules,
-        modules,
-    };
 
-    COMPONENT_MODULE_MANIFESTS.with(|c| c.borrow_mut().push(manifest));
+    let base_path = get_base_path();
+    let mut component_module_manifest = ComponentModuleManifest::new();
+    component_module_manifest.type_data = Some(TypeData::from_local(
+        &base_path,
+        &attributes.get("path").cloned(),
+        &item_struct.ident.to_string(),
+    ));
+    component_module_manifest.modules.extend(modules);
+    component_module_manifest
+        .builder_modules
+        .extend(builder_modules);
+    with_manifest(|mut manifest| {
+        manifest
+            .component_module_manifests
+            .push(component_module_manifest)
+    });
 
     let vis = item_struct.vis;
     let ident = item_struct.ident;
+    let prologue_check = prologue_check();
     Ok(quote_spanned! {span=>
         #vis struct #ident {
             #fields
         }
-    })
-}
-
-pub fn generate_component_module_manifest(base_path: &str) -> Vec<ComponentModuleManifest> {
-    COMPONENT_MODULE_MANIFESTS.with(|c| {
-        let mut components_module_manifests = c.borrow_mut();
-        let mut result = Vec::<ComponentModuleManifest>::new();
-        for local_component_module_manifest in components_module_manifests.iter() {
-            let mut component_module_manifest = ComponentModuleManifest::new();
-            component_module_manifest.type_data = Some(TypeData::from_local(
-                base_path,
-                &local_component_module_manifest.additional_path,
-                &local_component_module_manifest.name,
-            ));
-            component_module_manifest
-                .modules
-                .extend(local_component_module_manifest.modules.clone());
-            component_module_manifest
-                .builder_modules
-                .extend(local_component_module_manifest.builder_modules.clone());
-            result.push(component_module_manifest);
-        }
-        components_module_manifests.clear();
-        result
+        #prologue_check
     })
 }
 

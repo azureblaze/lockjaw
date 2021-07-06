@@ -18,6 +18,8 @@ limitations under the License.
 
 use lockjaw::{component, component_module_manifest, epilogue, injectable, module};
 
+lockjaw::prologue!("tests/module_inject_param_scoped.rs");
+
 pub struct Foo {
     i: i32,
 }

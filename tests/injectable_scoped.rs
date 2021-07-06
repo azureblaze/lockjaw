@@ -18,6 +18,8 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable};
 
+lockjaw::prologue!("tests/injectable_scoped.rs");
+
 pub struct Foo {
     pub i: ::std::cell::RefCell<u32>,
 }

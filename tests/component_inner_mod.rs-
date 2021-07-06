@@ -16,36 +16,29 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue};
+use lockjaw::{epilogue, injectable};
+
+lockjaw::prologue!("tests/component_inner_mod.rs");
 
 pub struct Foo {}
 
-mod m {
-    use lockjaw::module;
-
-    pub struct MyModule {}
-
-    #[module(path = "m")]
-    impl MyModule {
-        #[provides]
-        pub fn provide_foo() -> crate::Foo {
-            crate::Foo {}
-        }
+#[injectable]
+impl Foo {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    my_module: crate::m::MyModule,
-}
-
-#[component(modules = "crate::MyModuleManifest")]
-pub trait MyComponent {
-    fn foo(&self) -> crate::Foo;
+mod m {
+    #[lockjaw::component(path = "m")]
+    pub trait MyComponent {
+        fn foo(&self) -> crate::Foo;
+    }
 }
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn m::MyComponent> = <dyn m::MyComponent>::new();
     component.foo();
 }
 epilogue!();

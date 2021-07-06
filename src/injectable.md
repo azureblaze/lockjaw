@@ -3,6 +3,7 @@ Annotates a struct impl that can be provided to the dependency graph.
 ```
 # use lockjaw::{epilogue, injectable};
 # #[macro_use] extern crate lockjaw_processor;
+# lockjaw::prologue!("src/lib.rs");
 struct Bar{}
 
 #[injectable]
@@ -64,8 +65,9 @@ Lockjaw retrieves the path of the current file from [`epilogue!()`](epilogue) an
 [`mod`](https://doc.rust-lang.org/reference/items/modules.html) then the extra path must be
 specified.
 
-```
+```compile_fail
 # use lockjaw::{epilogue, injectable};
+# lockjaw::prologue!("src/lib.rs");
 
 mod nested {
     pub struct Foo {}
@@ -101,6 +103,7 @@ the scoped `injectable` or any objects that depends on it will share the lifetim
 
 ```
 # use lockjaw::{epilogue, injectable};
+# lockjaw::prologue!("src/lib.rs");
 pub struct Foo {}
 
 #[injectable(scope = "crate::MyComponent")]

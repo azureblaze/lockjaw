@@ -17,6 +17,8 @@ use lockjaw;
 
 pub struct DepInjectable {}
 
+lockjaw::prologue!("src/lib.rs");
+
 #[lockjaw::injectable]
 impl DepInjectable {
     #[inject]

@@ -15,23 +15,15 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
+use crate::manifest::with_manifest;
 use crate::parsing;
+use crate::prologue::{get_base_path, prologue_check};
 use crate::type_data::TypeData;
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
-use quote::ToTokens;
-use std::cell::RefCell;
+use quote::quote;
 use std::collections::HashSet;
 use syn::spanned::Spanned;
-
-struct LocalQualifier {
-    identifier: String,
-    additional_path: Option<String>,
-}
-
-thread_local! {
-    static QUALIFIERS :RefCell<Vec<LocalQualifier>> = RefCell::new(Vec::new());
-}
 
 lazy_static! {
     static ref QUALIFIER_METADATA_KEYS: HashSet<String> = {
@@ -56,28 +48,17 @@ pub fn handle_qualifier_attribute(
         }
     }
 
-    let qualifier = LocalQualifier {
-        identifier: item.ident.to_string(),
-        additional_path: attributes.get("path").cloned(),
-    };
-    QUALIFIERS.with(|qualifiers| {
-        qualifiers.borrow_mut().push(qualifier);
+    with_manifest(|mut manifest| {
+        manifest.qualifiers.push(TypeData::from_local(
+            &get_base_path(),
+            &attributes.get("path").cloned(),
+            &item.ident.to_string(),
+        ))
     });
 
-    Ok(item.to_token_stream())
-}
-
-pub fn generate_manifest(base_path: &str) -> Vec<TypeData> {
-    QUALIFIERS.with(|qualifiers| {
-        let mut result = Vec::new();
-        for local_qualifier in qualifiers.borrow().iter() {
-            result.push(TypeData::from_local(
-                base_path,
-                &local_qualifier.additional_path,
-                &local_qualifier.identifier,
-            ));
-        }
-        qualifiers.borrow_mut().clear();
-        result
+    let prologue_check = prologue_check();
+    Ok(quote! {
+        #item
+        #prologue_check
     })
 }

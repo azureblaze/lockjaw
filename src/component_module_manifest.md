@@ -9,6 +9,7 @@ lockjaw will auto generate them
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
+# lockjaw::prologue!("src/lib.rs");
 # struct StringModule {}
 # #[module]
 # impl StringModule {
@@ -52,6 +53,7 @@ be explicitly provided to
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
+# lockjaw::prologue!("src/lib.rs");
 struct StringModule {
     string : String
 }

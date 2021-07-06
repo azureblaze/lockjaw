@@ -18,9 +18,12 @@ use lockjaw::{epilogue, injectable, module, ComponentLifetime};
 use printer::Printer;
 use std::cell::{Ref, RefCell};
 
+lockjaw::prologue!("src/lib.rs");
+
 pub struct TestPrinter {
     pub messages: ::std::cell::RefCell<Vec<String>>,
 }
+
 #[injectable(scope = "::example::TestComponent")]
 impl TestPrinter {
     #[inject]

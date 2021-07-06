@@ -18,9 +18,12 @@ limitations under the License.
 
 use lockjaw::{component, component_module_manifest, epilogue, module};
 
+lockjaw::prologue!("tests/component_module_auto_new.rs");
+
 pub struct Foo {}
 
 pub struct MyModule {}
+
 #[module]
 impl MyModule {
     #[provides]

@@ -19,6 +19,21 @@ use serde::{Deserialize, Serialize};
 use crate::manifest::BindingType::Provides;
 use crate::manifest::TypeRoot::UNSPECIFIED;
 use crate::type_data::TypeData;
+use std::cell::{RefCell, RefMut};
+
+thread_local! {
+    static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
+}
+
+pub fn with_manifest<F, T>(f: F) -> T
+where
+    F: FnOnce(RefMut<Manifest>) -> T,
+{
+    MANIFEST.with(|m| {
+        let manifest = m.borrow_mut();
+        f(manifest)
+    })
+}
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Manifest {

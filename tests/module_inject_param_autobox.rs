@@ -20,6 +20,8 @@ use lockjaw::{
     component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
 };
 
+lockjaw::prologue!("tests/module_inject_param_autobox.rs");
+
 pub struct Foo<'a> {
     bar: ComponentLifetime<'a, Bar>,
 }
