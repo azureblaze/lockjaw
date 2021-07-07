@@ -30,7 +30,7 @@ use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::BindingType::{Binds, BindsOptionOf, Provides};
 use crate::manifest::{with_manifest, Binding, BindingType, Dependency, Module, MultibindingType};
 use crate::parsing;
-use crate::prologue::{get_base_path, prologue_check};
+use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 
 lazy_static! {
@@ -154,11 +154,7 @@ fn handle_module_attribute_internal(
     }
 
     let mut module = Module::new();
-    module.type_data = TypeData::from_local(
-        &get_base_path(),
-        &attributes.get("path").cloned(),
-        &module_path.to_owned(),
-    );
+    module.type_data = TypeData::from_local(&module_path.to_owned(), item_impl.span())?;
     module.bindings.extend(bindings);
     with_manifest(|mut manifest| {
         for existing_module in &manifest.modules {
@@ -169,7 +165,7 @@ fn handle_module_attribute_internal(
         Ok(manifest.modules.push(module))
     })?;
 
-    let prologue_check = prologue_check();
+    let prologue_check = prologue_check(item_impl.span());
     Ok(quote! {
         #item_impl
         #prologue_check

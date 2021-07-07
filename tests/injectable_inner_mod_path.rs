@@ -21,10 +21,9 @@ use lockjaw::{component, epilogue};
 lockjaw::prologue!("tests/injectable_inner_mod_path.rs");
 
 mod baz {
-
     pub struct Foo {}
 
-    #[lockjaw::injectable(path = "baz")]
+    #[lockjaw::injectable]
     impl Foo {
         #[inject]
         pub fn new() -> Self {
@@ -32,10 +31,12 @@ mod baz {
         }
     }
 }
+
 #[component]
 pub trait MyComponent {
     fn foo(&self) -> crate::baz::Foo;
 }
+
 #[test]
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();

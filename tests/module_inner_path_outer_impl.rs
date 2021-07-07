@@ -18,6 +18,8 @@ limitations under the License.
 
 use lockjaw::{component, component_module_manifest, epilogue, module};
 
+lockjaw::prologue!("tests/module_inner_path_outer_impl.rs");
+
 pub struct Foo {}
 
 mod m {
@@ -41,6 +43,7 @@ pub struct MyModuleManifest {
 pub trait MyComponent {
     fn foo(&self) -> crate::Foo;
 }
+
 #[test]
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();

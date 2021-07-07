@@ -94,38 +94,3 @@ trait MyComponent {
 # fn main() {}
 # epilogue!();
 ```
-
-## `path`
-**Optional** [path](https://doc.rust-lang.org/reference/paths.html) relative to the path of the
-current file.
-
-Lockjaw retrieves the path of the current file from [`epilogue!()`](epilogue) and
-[`mod_epilogue!()`](mod_epilogue), but if the `component` is nested under a
-[`mod`](https://doc.rust-lang.org/reference/items/modules.html) then the extra path must be
-specified.
-
-```compile_fail
-# use lockjaw::{epilogue, injectable};
-# lockjaw::prologue!("src/lib.rs");
-# pub struct Foo {}
-#
-# #[injectable]
-# impl Foo {
-#     #[inject]
-#     pub fn new() -> Self {
-#         Self {}
-#     }
-# }
-
-mod nested {
-    #[lockjaw::component(path = "nested")]
-    pub trait MyComponent {
-        fn foo(&self) -> crate::Foo;
-    }
-}
-pub fn main() {
-    let component = <dyn nested::MyComponent>::new();
-    component.foo();
-}
-epilogue!();
-```

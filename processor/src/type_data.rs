@@ -19,8 +19,9 @@ use serde::{Deserialize, Serialize};
 use crate::environment;
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::TypeRoot;
+use crate::prologue::resolve_path;
 use lazy_static::lazy_static;
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::ops::{AddAssign, Deref};
@@ -86,23 +87,12 @@ impl TypeData {
         Default::default()
     }
 
-    pub fn from_local(base_path: &str, additional_path: &Option<String>, identifier: &str) -> Self {
+    pub fn from_local(identifier: &str, span: Span) -> Result<Self, TokenStream> {
         let mut result = TypeData::new();
         result.field_crate = environment::current_crate();
         result.root = TypeRoot::CRATE;
-        let mut path = String::new();
-        if !base_path.is_empty() {
-            path.push_str(base_path);
-            path.push_str("::");
-        }
-        if let Some(additional_path) = additional_path {
-            path.push_str(additional_path);
-            path.push_str("::");
-        }
-        path.push_str(identifier);
-
-        result.path = path;
-        result
+        result.path = resolve_path(identifier, span)?;
+        Ok(result)
     }
 
     /// Full path of the type in universal from ($CRATE always resolved)

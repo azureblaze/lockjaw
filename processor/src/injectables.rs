@@ -26,13 +26,12 @@ use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::{Dependency, Injectable};
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
-use crate::{manifest, parsing, prologue};
+use crate::{manifest, parsing};
 
 lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("scope".to_owned());
-        set.insert("path".to_owned());
         set
     };
 }
@@ -94,11 +93,7 @@ pub fn handle_injectable_attribute(
     }
 
     let mut injectable = Injectable::new();
-    injectable.type_data = TypeData::from_local(
-        &prologue::get_base_path(),
-        &attributes.get("path").cloned(),
-        &type_name,
-    );
+    injectable.type_data = TypeData::from_local(&type_name, item.self_ty.span())?;
     injectable.type_data.scopes.extend(parsing::get_types(
         attributes.get("scope").map(Clone::clone),
     )?);
@@ -107,7 +102,7 @@ pub fn handle_injectable_attribute(
 
     manifest::with_manifest(|mut manifest| manifest.injectables.push(injectable));
 
-    let prologue_check = prologue_check();
+    let prologue_check = prologue_check(item.span());
     Ok(quote! {
         #item
         #prologue_check

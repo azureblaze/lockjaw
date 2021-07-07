@@ -336,6 +336,7 @@ fn get_module_manifest(
             return Ok(module_manifest.clone());
         }
     }
+    log!("{:#?}", manifest);
     compile_error(&format!(
         "cannot find module manifest {}, used by {}",
         component
