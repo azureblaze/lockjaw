@@ -56,40 +56,6 @@ objects before calling the injection constructor.
 Injectables accept addtional metadata in the form of
 `#[injectable(key="value", key2="value2")]`. Currently all values are string literals.
 
-## `path`
-**Optional** [path](https://doc.rust-lang.org/reference/paths.html) relative to the path of the
-current file.
-
-Lockjaw retrieves the path of the current file from [`epilogue!()`](epilogue) and
-[`mod_epilogue!()`](mod_epilogue), but if the `injectable` is nested under a
-[`mod`](https://doc.rust-lang.org/reference/items/modules.html) then the extra path must be
-specified.
-
-```compile_fail
-# use lockjaw::{epilogue, injectable};
-# lockjaw::prologue!("src/lib.rs");
-
-mod nested {
-    pub struct Foo {}
-    #[lockjaw::injectable(path = "nested")]
-    impl Foo {
-        #[inject]
-        pub fn new()-> Self {
-            Self {}
-        }
-    }
-}
-#[lockjaw::component]
-pub trait MyComponent {
-    fn foo(&self) -> crate::nested::Foo;
-}
-
-pub fn main() {
-    let component = <dyn MyComponent>::new();
-    component.foo();
-}
-epilogue!();
-```
 ## `scope`
 
 **Optional** fully qualified path to a [`component`](component), which makes the `injectable` a

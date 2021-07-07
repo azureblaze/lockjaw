@@ -16,9 +16,9 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-mod other_file;
-
 lockjaw::prologue!("tests/component_other_file.rs");
+
+mod other_file;
 
 #[test]
 pub fn main() {

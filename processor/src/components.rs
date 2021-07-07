@@ -26,10 +26,8 @@ use syn::spanned::Spanned;
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
-use crate::manifest::{
-    with_manifest, Component, ComponentModuleManifest, Dependency, Manifest, TypeRoot,
-};
-use crate::prologue::{get_base_path, prologue_check};
+use crate::manifest::{with_manifest, Component, ComponentModuleManifest, Dependency, Manifest};
+use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use crate::{environment, parsing};
 use syn::Attribute;
@@ -38,7 +36,6 @@ lazy_static! {
     static ref COMPONENT_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("modules".to_owned());
-        set.insert("path".to_owned());
         set
     };
 }
@@ -96,25 +93,9 @@ pub fn handle_component_attribute(
         module_manifest = Option::None;
     }
 
-    let base_path = get_base_path();
-
     let mut component = Component::new();
-    let mut type_ = TypeData::new();
-    type_.field_crate = environment::current_crate();
-    type_.root = TypeRoot::CRATE;
-    let mut path = String::new();
-    if !base_path.is_empty() {
-        path.push_str(&base_path);
-        path.push_str("::");
-    }
-    if let Some(additional_path) = &attributes.get("path").cloned() {
-        path.push_str(additional_path);
-        path.push_str("::");
-    }
-    path.push_str(&item_trait.ident.to_string());
-
-    type_.path = path;
-    component.type_data = type_;
+    component.type_data =
+        TypeData::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
     component.provisions.extend(provisions);
     if let Some(ref m) = module_manifest {
         component.module_manifest = Some(m.clone());
@@ -122,7 +103,7 @@ pub fn handle_component_attribute(
 
     with_manifest(|mut manifest| manifest.components.push(component));
 
-    let prologue_check = prologue_check();
+    let prologue_check = prologue_check(item_trait.span());
     let result = quote! {
         #item_trait
         #prologue_check
@@ -143,13 +124,12 @@ fn is_trait_object_without_lifetime(ty: &syn::Type) -> bool {
 }
 
 pub fn handle_component_module_manifest_attribute(
-    attr: TokenStream,
+    _attr: TokenStream,
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
     let item_struct: syn::ItemStruct =
         syn::parse2(input).map_spanned_compile_error(span, "struct expected")?;
-    let attributes = parsing::get_attribute_metadata(attr.clone())?;
     let mut builder_modules = <Vec<Dependency>>::new();
     let mut modules = <Vec<TypeData>>::new();
     let mut fields = quote! {};
@@ -184,13 +164,11 @@ pub fn handle_component_module_manifest_attribute(
         }
     }
 
-    let base_path = get_base_path();
     let mut component_module_manifest = ComponentModuleManifest::new();
     component_module_manifest.type_data = Some(TypeData::from_local(
-        &base_path,
-        &attributes.get("path").cloned(),
         &item_struct.ident.to_string(),
-    ));
+        item_struct.ident.span(),
+    )?);
     component_module_manifest.modules.extend(modules);
     component_module_manifest
         .builder_modules
@@ -203,7 +181,7 @@ pub fn handle_component_module_manifest_attribute(
 
     let vis = item_struct.vis;
     let ident = item_struct.ident;
-    let prologue_check = prologue_check();
+    let prologue_check = prologue_check(ident.span());
     Ok(quote_spanned! {span=>
         #vis struct #ident {
             #fields
