@@ -15,21 +15,19 @@ limitations under the License.
 */
 
 use lockjaw::{component, component_module_manifest, injectable, module, ComponentLifetime};
+use printer::Printer;
 
 lockjaw::prologue!("src/main.rs");
 
 pub struct Greeter<'a> {
     phrase: String,
-    printer: ComponentLifetime<'a, dyn ::printer::Printer>,
+    printer: ComponentLifetime<'a, dyn Printer>,
 }
 
 #[injectable]
 impl Greeter<'_> {
     #[inject]
-    pub fn new<'a>(
-        phrase: String,
-        printer: ComponentLifetime<'a, dyn ::printer::Printer>,
-    ) -> Greeter<'a> {
+    pub fn new<'a>(phrase: String, printer: ComponentLifetime<'a, dyn Printer>) -> Greeter<'a> {
         Greeter { phrase, printer }
     }
     pub fn greet(&self) {
@@ -48,11 +46,11 @@ impl MyModule {
 }
 
 #[component_module_manifest]
-pub struct ModuleManifest(crate::MyModule, ::printer_impl::Module);
+pub struct ModuleManifest(MyModule, printer_impl::Module);
 
-#[component(modules = "crate::ModuleManifest")]
+#[component(modules = "ModuleManifest")]
 pub trait MyComponent {
-    fn greeter(&self) -> crate::Greeter;
+    fn greeter(&self) -> Greeter;
 }
 
 pub fn main() {
@@ -63,14 +61,17 @@ pub fn main() {
 
 #[cfg(test)]
 #[component_module_manifest]
-pub struct TestModuleManifest(crate::MyModule, ::printer_test::Module);
+pub struct TestModuleManifest(MyModule, ::printer_test::Module);
 
 #[cfg(test)]
-#[component(modules = "crate::TestModuleManifest")]
-pub trait TestComponent {
-    fn greeter(&self) -> crate::Greeter;
+use printer_test::TestPrinter;
 
-    fn test_printer(&self) -> &::printer_test::TestPrinter;
+#[cfg(test)]
+#[component(modules = "TestModuleManifest")]
+pub trait TestComponent {
+    fn greeter(&self) -> Greeter;
+
+    fn test_printer(&self) -> &TestPrinter;
 }
 
 #[test]

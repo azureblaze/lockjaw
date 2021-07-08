@@ -16,9 +16,11 @@ limitations under the License.
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::type_data::TypeData;
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
+use regex::Regex;
 use std::borrow::Borrow;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::process::Command;
 use std::str::FromStr;
 use syn::parse::Parser;
 #[allow(unused_imports)] // somehow rust think this is unused.
@@ -64,7 +66,7 @@ pub fn get_parenthesized_type(attr: &TokenStream) -> Result<TypeData, TokenStrea
         return spanned_compile_error(attr.span(), "path expected");
     }
 
-    TypeData::from_str(&strip_parentheses(attr)?)
+    TypeData::from_str_with_span(&strip_parentheses(attr)?, attr.span())
 }
 
 fn strip_parentheses(attr: &TokenStream) -> Result<String, TokenStream> {
@@ -102,7 +104,7 @@ pub fn get_attribute_metadata(attr: TokenStream) -> Result<HashMap<String, Strin
 }
 
 /// Parses "foo::Bar, foo::Baz" to a list of types.
-pub fn get_types(types: Option<String>) -> Result<Vec<TypeData>, TokenStream> {
+pub fn get_types(types: Option<String>, span: Span) -> Result<Vec<TypeData>, TokenStream> {
     if types.is_none() {
         return Ok(Vec::new());
     }
@@ -110,7 +112,7 @@ pub fn get_types(types: Option<String>) -> Result<Vec<TypeData>, TokenStream> {
         .unwrap()
         .split(",")
         .map(|path| -> syn::Path { syn::parse_str(&path).expect("cannot parse type string") })
-        .map(|p| TypeData::from_path(p.borrow()))
+        .map(|p| TypeData::from_path_with_span(p.borrow(), span))
         .collect()
 }
 
@@ -119,4 +121,36 @@ fn to_string_literal(lit: &syn::Lit) -> Result<&syn::LitStr, TokenStream> {
         return Ok(s);
     }
     return spanned_compile_error(lit.span(), "string literal expected");
+}
+
+pub fn get_crate_deps(for_test: bool) -> HashSet<String> {
+    let tree = String::from_utf8(
+        Command::new("cargo")
+            .current_dir(std::env::var("CARGO_MANIFEST_DIR").expect("missing manifest dir"))
+            .arg("tree")
+            .arg("--prefix")
+            .arg("depth")
+            .arg("-e")
+            .arg(if for_test { "normal,dev" } else { "normal" })
+            .output()
+            .unwrap()
+            .stdout,
+    )
+    .unwrap()
+    .split("\n")
+    .map(|s| s.to_string())
+    .collect::<Vec<String>>();
+    let mut deps = HashSet::<String>::new();
+    let pattern = Regex::new(r"(?P<depth>\d+)(?P<crate>[A-Za-z_][A-Za-z0-9_\-]*).*").unwrap();
+    for item in tree {
+        if item.is_empty() {
+            continue;
+        }
+        let captures = pattern.captures(&item).unwrap();
+        if captures["depth"].ne("1") {
+            continue;
+        }
+        deps.insert(captures["crate"].replace("-", "_").to_string());
+    }
+    deps
 }

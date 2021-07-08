@@ -23,6 +23,10 @@ pub use lockjaw_processor::component;
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("component_module_manifest.md")))]
 pub use lockjaw_processor::component_module_manifest;
 
+#[doc(hidden)]
+pub use lockjaw_processor::private_prologue;
+#[doc(hidden)]
+pub use lockjaw_processor::private_test_prologue;
 pub use lockjaw_processor::prologue;
 
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("epilogue.md")))]

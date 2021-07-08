@@ -19,12 +19,12 @@ use serde::{Deserialize, Serialize};
 use crate::environment;
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::TypeRoot;
-use crate::prologue::resolve_path;
+use crate::prologue::{resolve_declare_path, resolve_path};
 use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
-use std::ops::{AddAssign, Deref};
+use std::ops::Deref;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{TraitBound, TypeParamBound};
@@ -91,7 +91,7 @@ impl TypeData {
         let mut result = TypeData::new();
         result.field_crate = environment::current_crate();
         result.root = TypeRoot::CRATE;
-        result.path = resolve_path(identifier, span)?;
+        result.path = resolve_declare_path(identifier, span)?;
         Ok(result)
     }
 
@@ -266,15 +266,26 @@ impl TypeData {
         return TypeData::from_path(&trait_.path);
     }
 
-    pub fn from_str(string: &str) -> Result<TypeData, TokenStream> {
-        TypeData::from_path(&syn::parse_str(string).map_compile_error("path expected")?)
+    pub fn from_str_with_span(string: &str, span: Span) -> Result<TypeData, TokenStream> {
+        TypeData::from_path_with_span(
+            &syn::parse_str(string).map_compile_error("path expected")?,
+            span,
+        )
     }
 
     pub fn from_path(syn_path: &syn::Path) -> Result<TypeData, TokenStream> {
+        TypeData::from_path_with_span(syn_path, syn_path.span())
+    }
+
+    pub fn from_path_with_span(syn_path: &syn::Path, span: Span) -> Result<TypeData, TokenStream> {
         let mut result = TypeData::new();
         let mut segment_iter = syn_path.segments.iter().peekable();
         if syn_path.leading_colon.is_some() {
             result.root = TypeRoot::GLOBAL;
+            result
+                .path
+                .push_str(&segment_iter.next().unwrap().ident.to_string());
+            result.path.push_str("::");
         } else if segment_iter
             .peek()
             .map_spanned_compile_error(syn_path.span(), "empty segments")?
@@ -289,7 +300,7 @@ impl TypeData {
             let first = segment_iter
                 .next()
                 .map_spanned_compile_error(syn_path.span(), "path segment expected")?;
-            if segment_iter.next().is_none() {
+            if segment_iter.peek().is_none() {
                 if let Some(prelude) = PRELUDE_V1.get(&first.ident.to_string()) {
                     result.path = prelude.clone();
                     result.root = TypeRoot::GLOBAL;
@@ -303,16 +314,21 @@ impl TypeData {
                     return Ok(result);
                 }
             }
-            return spanned_compile_error(
-                syn_path.span(),
-                "types must be fully qualified. it should either start with \"::\" or \"crate::\"",
-            );
+            result = resolve_path(
+                &first.ident.to_string(),
+                span.clone())
+                .map_spanned_compile_error(
+                    span,
+                    "lockjaw is unable to resolve the type, consider using fully qualified path (start with \"::\" or \"crate::\")",
+                )?;
+            if segment_iter.peek().is_some() {
+                result.path.push_str("::");
+            }
         }
-        let mut path = String::new();
         while let Some(segment) = segment_iter.next() {
-            path.add_assign(&segment.ident.to_string());
+            result.path.push_str(&segment.ident.to_string());
             if let Some(_) = segment_iter.peek() {
-                path.add_assign("::");
+                result.path.push_str("::");
                 if !segment.arguments.is_empty() {
                     return spanned_compile_error(
                         segment.span(),
@@ -323,7 +339,6 @@ impl TypeData {
                 result.args.extend(TypeData::get_args(&segment)?);
             }
         }
-        result.path = path;
         Ok(result)
     }
 

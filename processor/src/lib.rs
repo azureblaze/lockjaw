@@ -24,13 +24,14 @@ use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
 
-use quote::quote;
-use regex::Regex;
+use quote::{quote, quote_spanned};
 
 use crate::manifest::Manifest;
 use error::handle_error;
 
 use crate::error::CompileError;
+use proc_macro2::Span;
+use syn::spanned::Spanned;
 
 #[macro_use]
 mod log;
@@ -81,7 +82,29 @@ pub fn provides(_attr: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn prologue(input: TokenStream) -> TokenStream {
-    handle_error(|| prologue::handle_prologue(input.into()))
+    let input2: proc_macro2::TokenStream = input.into();
+    let span = input2.span().resolved_at(Span::call_site());
+    let result = quote_spanned! {span=>
+        #[cfg(not(any(test,doctest)))]
+        lockjaw::private_prologue!(#input2);
+        #[cfg(any(test,doctest))]
+        lockjaw::private_test_prologue!(#input2);
+    };
+    result.into()
+}
+
+#[proc_macro]
+pub fn private_prologue(input: TokenStream) -> TokenStream {
+    handle_error(|| {
+        // rustdoc --test does not run with #[cfg(test)] and will reach here.
+        let for_test = environment::current_crate().eq("lockjaw");
+        prologue::handle_prologue(input.into(), for_test)
+    })
+}
+
+#[proc_macro]
+pub fn private_test_prologue(input: TokenStream) -> TokenStream {
+    handle_error(|| prologue::handle_prologue(input.into(), true))
 }
 
 #[proc_macro]
@@ -218,40 +241,8 @@ fn internal_epilogue(
     })
 }
 
-fn deps(for_test: bool) -> HashSet<String> {
-    let tree = String::from_utf8(
-        Command::new("cargo")
-            .current_dir(std::env::var("CARGO_MANIFEST_DIR").expect("missing manifest dir"))
-            .arg("tree")
-            .arg("--prefix")
-            .arg("depth")
-            .arg("-e")
-            .arg(if for_test { "normal,dev" } else { "normal" })
-            .output()
-            .unwrap()
-            .stdout,
-    )
-    .unwrap()
-    .split("\n")
-    .map(|s| s.to_string())
-    .collect::<Vec<String>>();
-    let mut deps = HashSet::<String>::new();
-    let pattern = Regex::new(r"(?P<depth>\d+)(?P<crate>[A-Za-z_][A-Za-z0-9_\-]*).*").unwrap();
-    for item in tree {
-        if item.is_empty() {
-            continue;
-        }
-        let captures = pattern.captures(&item).unwrap();
-        if captures["depth"].ne("1") {
-            continue;
-        }
-        deps.insert(captures["crate"].replace("-", "_").to_string());
-    }
-    deps
-}
-
 fn merge_manifest(manifest: &Manifest, for_test: bool) -> Manifest {
-    let deps = deps(for_test);
+    let deps = parsing::get_crate_deps(for_test);
     //log!("deps: {:?}", deps);
 
     let mut result = manifest.clone();

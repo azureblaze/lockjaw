@@ -96,6 +96,7 @@ pub fn handle_injectable_attribute(
     injectable.type_data = TypeData::from_local(&type_name, item.self_ty.span())?;
     injectable.type_data.scopes.extend(parsing::get_types(
         attributes.get("scope").map(Clone::clone),
+        item.self_ty.span(),
     )?);
     injectable.ctor_name = ctor.sig.ident.to_string();
     injectable.dependencies.extend(dependencies);

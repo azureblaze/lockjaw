@@ -88,7 +88,7 @@ pub fn handle_component_attribute(
     if let Some(value) = attributes.get("modules") {
         let path: syn::Path = syn::parse_str(value)
             .map_spanned_compile_error(attr.span(), "path expected for modules")?;
-        module_manifest = Some(TypeData::from_path(path.borrow())?);
+        module_manifest = Some(TypeData::from_path_with_span(path.borrow(), attr.span())?);
     } else {
         module_manifest = Option::None;
     }
