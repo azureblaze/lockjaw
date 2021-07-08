@@ -14,12 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::environment::cargo_manifest_dir;
+use crate::environment::{cargo_manifest_dir, current_crate};
 use crate::error::{spanned_compile_error, CompileError};
+use crate::manifest::TypeRoot;
+use crate::type_data::TypeData;
+use crate::{environment, parsing};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use regex::Regex;
 use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
 use std::ops::Range;
@@ -39,7 +44,11 @@ impl SourceData {
         Default::default()
     }
 
-    pub fn resolve_path(&self, identifier: &str, span: Span) -> Result<String, TokenStream> {
+    pub fn resolve_declare_path(
+        &self,
+        identifier: &str,
+        span: Span,
+    ) -> Result<String, TokenStream> {
         let mut path = String::new();
         if !self.base_path.is_empty() {
             path.push_str(&self.base_path);
@@ -56,12 +65,45 @@ impl SourceData {
                 path.push_str("::");
             }
         } else {
-            return spanned_compile_error(span, &format!("{:?}, {:?}", span, self));
+            return spanned_compile_error(
+                span,
+                &format!("unable to find mod at {:?}, {:?}", span, self),
+            );
         }
 
         path.push_str(identifier);
         Ok(path)
     }
+
+    pub fn resolve_path(&self, identifier: &str, span: Span) -> Option<TypeData> {
+        if let Some(mod_) = self.get_mod(span) {
+            if let Some(use_path) = mod_.uses.get(identifier) {
+                let mut result = TypeData::new();
+                result.field_crate = use_path.crate_.clone();
+                result.path = use_path.path.clone();
+                result.root = use_path.root.clone();
+                Some(result)
+            } else {
+                // assume the path is local.
+                let mut result = TypeData::new();
+                result.field_crate = current_crate();
+                result.root = TypeRoot::CRATE;
+                result.path = mod_.parents.join("::");
+                if mod_.name != "(src)" {
+                    if !mod_.parents.is_empty() {
+                        result.path.push_str("::");
+                    }
+                    result.path.push_str(&mod_.name);
+                    result.path.push_str("::");
+                }
+                result.path.push_str(identifier);
+                Some(result)
+            }
+        } else {
+            None
+        }
+    }
+
     fn get_mod(&self, span: Span) -> Option<&Mod> {
         let mut result: Option<&Mod> = None;
         let range = to_range(span);
@@ -82,6 +124,28 @@ struct Mod {
     name: String,
     span: Range<usize>,
     parents: Vec<String>,
+    uses: HashMap<String, UsePath>,
+}
+
+struct UsePath {
+    pub crate_: String,
+    pub path: String,
+    pub root: TypeRoot,
+}
+
+impl Debug for UsePath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut result = String::new();
+        if self.root == TypeRoot::GLOBAL {
+            result.push_str("::");
+            result.push_str(&self.crate_);
+        } else {
+            result.push_str("crate");
+        }
+        result.push_str("::");
+        result.push_str(&self.path);
+        write!(f, "{}", result)
+    }
 }
 
 fn to_range(span: proc_macro2::Span) -> Range<usize> {
@@ -122,11 +186,17 @@ pub fn get_parent_mods(span: Span) -> Vec<String> {
     })
 }
 
-pub fn resolve_path(identifier: &str, span: Span) -> Result<String, TokenStream> {
+/// Resolve the full path when an item is declared. e.g. struct Foo {} => crate::bar::Foo
+pub fn resolve_declare_path(identifier: &str, span: Span) -> Result<String, TokenStream> {
+    SOURCE_DATA.with(|source_data| source_data.borrow().resolve_declare_path(identifier, span))
+}
+
+/// Resolve the full path when an foreign item is referenced in a path. e.g. foo::Bar => ::qux::foo::Bar.
+pub fn resolve_path(identifier: &str, span: Span) -> Option<TypeData> {
     SOURCE_DATA.with(|source_data| source_data.borrow().resolve_path(identifier, span))
 }
 
-pub fn handle_prologue(input: TokenStream) -> Result<TokenStream, TokenStream> {
+pub fn handle_prologue(input: TokenStream, for_test: bool) -> Result<TokenStream, TokenStream> {
     let args = literal_to_strings(&input)?;
     if args.len() == 0 {
         return spanned_compile_error(
@@ -174,7 +244,9 @@ pub fn handle_prologue(input: TokenStream) -> Result<TokenStream, TokenStream> {
         &mut ast.walk(),
         &Vec::new(),
         get_byte_offset(&ast, &src, input.span()),
-    );
+        &mod_path,
+        for_test,
+    )?;
 
     let source_data = SourceData {
         base_path: mod_path.clone(),
@@ -198,6 +270,10 @@ pub fn handle_prologue(input: TokenStream) -> Result<TokenStream, TokenStream> {
     })
 }
 
+/// when "mod foo;" is used, the content of foo.rs is inserted into the parent file, which means
+/// spans in foo.rs won't match its byte position in the file. This method attempts to correct this
+/// by finding the position the prologue macro invocation (which is the call site and we have a
+/// proc_macro span) for it.
 fn get_byte_offset(ast: &Tree, src: &str, input_span: Span) -> usize {
     for n in ast.root_node().children(&mut ast.root_node().walk()) {
         let node: tree_sitter::Node = n;
@@ -230,7 +306,13 @@ fn parse_mods(
     cursor: &mut TreeCursor,
     parents: &Vec<String>,
     byte_offset: usize,
-) -> Vec<Mod> {
+    base_path: &str,
+    for_test: bool,
+) -> Result<Vec<Mod>, TokenStream> {
+    let mut new_parents = parents.clone();
+    if name.ne("(src)") {
+        new_parents.push(name.to_owned());
+    }
     let mut result = Vec::new();
     let mod_ = Mod {
         name: name.to_owned(),
@@ -239,12 +321,10 @@ fn parse_mods(
             end: span.end + byte_offset,
         },
         parents: parents.clone(),
+        uses: get_uses(&cursor.node(), src, base_path, &new_parents, for_test)?,
     };
     result.push(mod_);
-    let mut new_parents = parents.clone();
-    if name.ne("(src)") {
-        new_parents.push(name.to_owned());
-    }
+
     if cursor.goto_first_child() {
         loop {
             match cursor.node().kind() {
@@ -264,7 +344,9 @@ fn parse_mods(
                             &mut declaration_list.walk(),
                             &new_parents,
                             byte_offset,
-                        ));
+                            base_path,
+                            for_test,
+                        )?);
                     }
                 }
                 _ => {}
@@ -274,6 +356,173 @@ fn parse_mods(
             }
         }
         cursor.goto_parent();
+    }
+    Ok(result)
+}
+
+fn get_uses(
+    node: &tree_sitter::Node,
+    src: &str,
+    base_path: &str,
+    parents: &Vec<String>,
+    for_test: bool,
+) -> Result<HashMap<String, UsePath>, TokenStream> {
+    let mut deps = parsing::get_crate_deps(for_test);
+    // default deps
+    deps.insert("std".to_owned());
+    deps.insert("core".to_owned());
+    let mut result = HashMap::<String, UsePath>::new();
+    for i in 0..node.child_count() {
+        let child = node.child(i).unwrap();
+        if child.kind() == "use_declaration" {
+            result.extend(process_use(
+                child
+                    .child_by_field_name("argument")
+                    .unwrap()
+                    .utf8_text(src.as_bytes())
+                    .unwrap(),
+                &deps,
+                base_path,
+                parents,
+            )?)
+        }
+    }
+    for dep in &deps {
+        if !result.contains_key(dep) {
+            result.insert(
+                dep.clone(),
+                UsePath {
+                    crate_: dep.clone(),
+                    path: dep.clone(),
+                    root: TypeRoot::GLOBAL,
+                },
+            );
+        }
+    }
+    Ok(result)
+}
+
+fn process_use(
+    use_path: &str,
+    deps: &HashSet<String>,
+    base_path: &str,
+    parents: &Vec<String>,
+) -> Result<HashMap<String, UsePath>, TokenStream> {
+    let mut result = HashMap::<String, UsePath>::new();
+    let pattern = Regex::new(
+        r"^(?P<global_prefix>::)?(?P<segments>(?:\w[\w\d_]*::)*)(?P<remainder>\{[\w\d\s,]*\}|[\w\d\s,]*)$",
+    ).unwrap();
+    let captures = pattern
+        .captures(use_path)
+        .map_compile_error(&format!("unable to handle use expression {}", use_path))?;
+    let segments = captures
+        .name("segments")
+        .map(|m| {
+            m.as_str()
+                .split("::")
+                .filter(|s| !s.is_empty())
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or(Vec::new());
+
+    let mut path: Vec<String> = Vec::new();
+    let type_root;
+    if captures.name("global_prefix").is_some()
+        || (segments.len() >= 1 && deps.contains(&segments[0]))
+    {
+        type_root = TypeRoot::GLOBAL;
+        path.extend(segments.clone());
+    } else {
+        type_root = TypeRoot::CRATE;
+        path.extend(
+            base_path
+                .split("::")
+                .filter(|s| !s.is_empty())
+                .map(str::to_owned)
+                .collect::<Vec<_>>(),
+        );
+        path.extend(parents.clone());
+        for i in 0..segments.len() {
+            if segments[i] == "self" {
+                continue;
+            }
+            if segments[i] == "super" {
+                path.pop();
+                continue;
+            }
+            if segments[i] == "crate" {
+                path.clear();
+                continue;
+            }
+            path.extend_from_slice(&segments[i..segments.len()]);
+            break;
+        }
+    }
+    let items = get_use_items(captures.name("remainder").unwrap().as_str());
+    for item in items {
+        let crate_ = if type_root == TypeRoot::CRATE {
+            environment::current_crate()
+        } else if segments.len() >= 1 {
+            segments[0].clone()
+        } else {
+            item.item.clone()
+        };
+        let mut item_path: String = path.join("::");
+        if !path.is_empty() {
+            item_path.push_str("::");
+        }
+        item_path.push_str(&item.item);
+        result.insert(
+            item.name,
+            UsePath {
+                crate_,
+                path: item_path,
+                root: type_root.clone(),
+            },
+        );
+    }
+    Ok(result)
+}
+
+struct UseItem {
+    pub item: String,
+    pub name: String,
+}
+
+fn get_use_items(remainder: &str) -> Vec<UseItem> {
+    let item_strings = if !remainder.starts_with("{") {
+        vec![remainder.to_owned()]
+    } else {
+        remainder
+            .strip_prefix("{")
+            .unwrap()
+            .strip_suffix("}")
+            .unwrap()
+            .split(",")
+            .filter(|s| !s.is_empty())
+            .map(str::trim)
+            .map(str::to_owned)
+            .collect()
+    };
+    let mut result = Vec::new();
+    for item_string in item_strings {
+        if item_string == "*" {
+            log!("WARNING: lockjaw is unable to handle * imports");
+            continue;
+        }
+        if item_string.contains(" as ") {
+            let split: Vec<_> = item_string.split(" as ").collect();
+            result.push(UseItem {
+                item: split[0].to_owned(),
+                name: split[1].to_owned(),
+            })
+        } else {
+            result.push(UseItem {
+                item: item_string.clone(),
+                name: item_string,
+            })
+        }
     }
     result
 }

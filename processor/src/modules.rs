@@ -204,7 +204,7 @@ fn handle_provides(
         }
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
+    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone), attr.span())?;
     provides.type_data.scopes.extend(scopes);
     Ok(provides)
 }
@@ -274,7 +274,7 @@ fn handle_binds(
         }
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
+    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone), attr.span())?;
     binds.type_data.scopes.extend(scopes);
     Ok(binds)
 }
@@ -317,7 +317,7 @@ fn handle_binds_option_of(
         );
     }
     let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone))?;
+    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone), attr.span())?;
     binds_option_of.type_data.scopes.extend(scopes);
     Ok(binds_option_of)
 }

@@ -35,10 +35,10 @@ mod component_provision_no_return_type {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// lockjaw::prologue!("src/lib.rs");
-/// struct Bar{}
+/// trait Bar{}
 /// #[component]
 /// trait S {
-///     fn foo() -> Bar;
+///     fn foo() -> dyn Bar;
 /// }
 /// ```
 mod component_provision_return_type_not_qualified {}

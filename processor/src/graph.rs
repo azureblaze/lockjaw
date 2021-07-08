@@ -356,6 +356,31 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
     let mut installed_modules = HashSet::<Ident>::new();
     result.module_manifest = get_module_manifest(manifest, component)?;
 
+    let available_modules: HashSet<Ident> = manifest
+        .modules
+        .iter()
+        .map(|m| m.type_data.identifier())
+        .collect();
+    for module in &result.module_manifest.modules {
+        if !available_modules.contains(&module.identifier()) {
+            return compile_error(&format!(
+                "module {} not found, required by {}",
+                &module.readable(),
+                component.type_data.readable()
+            ));
+        }
+    }
+
+    for module in &result.module_manifest.builder_modules {
+        if !available_modules.contains(&module.type_data.identifier()) {
+            return compile_error(&format!(
+                "module {} not found, required by {}",
+                &module.type_data.readable(),
+                component.type_data.readable()
+            ));
+        }
+    }
+
     for module in &result.module_manifest.modules {
         installed_modules.insert(module.identifier());
     }
@@ -418,8 +443,9 @@ fn resolve_dependencies(
         if dependency_node.is_none() {
             let generated_node =
                 <dyn Node>::generate_node(&dependency).map_compile_error(&format!(
-                    "missing bindings for {}\nrequested by: {} ",
+                    "missing bindings for {}\n{:#?}\nrequested by: {} ",
                     dependency.readable(),
+                    &dependency,
                     ancestors
                         .iter()
                         .rev()
