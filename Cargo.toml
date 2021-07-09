@@ -19,7 +19,8 @@ members = [
     "example/printer",
     "example/printer/printer_impl",
     "example/printer/printer_test",
-    "tests/test_dep"
+    "tests/test_dep",
+    "compile_tests"
 ]
 
 [package]

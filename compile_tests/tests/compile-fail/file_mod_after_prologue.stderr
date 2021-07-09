@@ -1,0 +1,8 @@
+error: file modules cannot appear between lockjaw::prologue!() and lockjaw::epilogue!() (../../../compile_tests/tests/compile-fail/file_mod_after_prologue.rs:21:0)
+  --> $DIR/file_mod_after_prologue.rs:17:5
+   |
+17 | /     "../../../compile_tests/tests/compile-fail/file_mod_after_prologue.rs",
+18 | |     ""
+   | |______^
+   |
+   = note: this error originates in the macro `lockjaw::private_prologue` (in Nightly builds, run with -Z macro-backtrace for more info)

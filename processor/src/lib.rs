@@ -128,11 +128,14 @@ struct EpilogueConfig {
 #[proc_macro]
 pub fn private_root_epilogue(input: TokenStream) -> TokenStream {
     handle_error(|| {
-        let config = EpilogueConfig {
-            // rustdoc --test does not run with #[cfg(test)] and will reach here.
-            for_test: environment::current_crate().eq("lockjaw"),
+        let mut config = EpilogueConfig {
             ..create_epilogue_config(input)
         };
+        if environment::current_crate().eq("lockjaw") {
+            // rustdoc --test does not run with #[cfg(test)] and will reach here.
+            config.for_test = true;
+        }
+
         internal_epilogue(config)
     })
 }
@@ -152,6 +155,7 @@ fn create_epilogue_config(input: TokenStream) -> EpilogueConfig {
     let set: HashSet<String> = input.into_iter().map(|t| t.to_string()).collect();
     EpilogueConfig {
         debug_output: set.contains("debug_output"),
+        for_test: set.contains("test"),
         ..EpilogueConfig::default()
     }
 }
