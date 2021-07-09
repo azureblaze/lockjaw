@@ -14,31 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#[test]
+#[cfg_attr(nightly, test)]
+#[cfg(nightly)]
 fn file_mod_after_prologue_fail() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/compile-fail/file_mod_after_prologue.rs")
 }
 
-#[test]
+#[cfg_attr(nightly, test)]
+#[cfg(nightly)]
 fn file_mod_after_epilogue_pass() {
     let t = trybuild::TestCases::new();
     t.pass("tests/run-pass/file_mod_after_epilogue.rs")
 }
 
-#[test]
+#[cfg_attr(nightly, test)]
+#[cfg(nightly)]
 fn file_mod_before_prologue_pass() {
     let t = trybuild::TestCases::new();
     t.pass("tests/run-pass/file_mod_before_prologue.rs")
 }
 
-#[test]
+#[cfg_attr(nightly, test)]
+#[cfg(nightly)]
 fn attr_before_prologue_fail() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/compile-fail/attr_before_prologue.rs")
 }
 
-#[test]
+#[cfg_attr(nightly, test)]
+#[cfg(nightly)]
 fn attr_after_epilogue() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/compile-fail/attr_after_epilogue.rs")
