@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, component_module_manifest, injectable, module, ComponentLifetime};
+use lockjaw::{
+    component, component_module_manifest, injectable, module, prologue, ComponentLifetime,
+};
 use printer::Printer;
 
-lockjaw::prologue!("src/main.rs");
+prologue!("src/main.rs");
 
 pub struct Greeter<'a> {
     phrase: String,

@@ -1,9 +1,9 @@
 /*
-Copyright 2020 Google LLC
+Copyright 2021 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+You may obtain a.rs copy of the License at
 
     https://www.apache.org/licenses/LICENSE-2.0
 
@@ -13,16 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+extern crate lockjaw;
+lockjaw::prologue!(
+    "../../../compile_tests/tests/run-pass/file_mod_after_epilogue.rs",
+    ""
+);
 
-#![allow(dead_code)]
+lockjaw::epilogue!(test);
 
-mod other_file;
+mod foo;
 
-lockjaw::prologue!("tests/component_other_file.rs");
-
-#[test]
-pub fn main() {
-    let component: Box<dyn other_file::OtherComponent> = <dyn other_file::OtherComponent>::new();
-    component.other_file();
-}
-lockjaw::epilogue!();
+fn main() {}

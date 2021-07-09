@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 use crate::environment::{cargo_manifest_dir, current_crate};
-use crate::error::{spanned_compile_error, CompileError};
+use crate::error::{compile_error, spanned_compile_error, CompileError};
 use crate::manifest::TypeRoot;
 use crate::type_data::TypeData;
 use crate::{environment, parsing};
@@ -67,7 +67,7 @@ impl SourceData {
         } else {
             return spanned_compile_error(
                 span,
-                &format!("unable to find mod at {:?}, {:?}", span, self),
+                &format!("Unable to resolve path tho current location. Is lockjaw::prologue!() called before using any other lockjaw attributes?"),
             );
         }
 
@@ -136,10 +136,7 @@ struct UsePath {
 impl Debug for UsePath {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut result = String::new();
-        if self.root == TypeRoot::GLOBAL {
-            result.push_str("::");
-            result.push_str(&self.crate_);
-        } else {
+        if self.root == TypeRoot::CRATE {
             result.push_str("crate");
         }
         result.push_str("::");
@@ -243,7 +240,7 @@ pub fn handle_prologue(input: TokenStream, for_test: bool) -> Result<TokenStream
         ast.root_node().byte_range(),
         &mut ast.walk(),
         &Vec::new(),
-        get_byte_offset(&ast, &src, input.span()),
+        validate_prologue(&ast, &filename, &src, &mod_path, input.span(), for_test)?,
         &mod_path,
         for_test,
     )?;
@@ -274,29 +271,116 @@ pub fn handle_prologue(input: TokenStream, for_test: bool) -> Result<TokenStream
 /// spans in foo.rs won't match its byte position in the file. This method attempts to correct this
 /// by finding the position the prologue macro invocation (which is the call site and we have a
 /// proc_macro span) for it.
-fn get_byte_offset(ast: &Tree, src: &str, input_span: Span) -> usize {
+fn validate_prologue(
+    ast: &Tree,
+    src_path: &str,
+    src: &str,
+    base_path: &str,
+    input_span: Span,
+    for_test: bool,
+) -> Result<usize, TokenStream> {
+    let uses = get_uses(&ast.root_node(), src, base_path, &Vec::new(), for_test)?;
+    let prologue = local_path(&uses, "prologue");
+    let lockjaw_macros: HashSet<String> = local_path(&uses, "injectable")
+        .iter()
+        .chain(local_path(&uses, "component").iter())
+        .chain(local_path(&uses, "module").iter())
+        .chain(local_path(&uses, "qualifier").iter())
+        .map(String::clone)
+        .collect();
+    let epilogue = local_path(&uses, "epilogue");
+
+    let path_pattern = Regex::new(r"#\[(?P<path>[\w\d:_]+).*]").unwrap();
+
+    let mut byte_offset = None;
+    let mut epilogue_found = false;
     for n in ast.root_node().children(&mut ast.root_node().walk()) {
         let node: tree_sitter::Node = n;
         if node.kind() == "macro_invocation" {
-            if node
+            let macro_name = node
                 .child_by_field_name("macro")
                 .unwrap()
                 .utf8_text(&src.as_bytes())
-                .unwrap()
-                == "lockjaw::prologue"
-            {
+                .unwrap();
+            if prologue.contains(macro_name) {
                 for i in 0..node.child_count() {
                     let child = node.child(i).unwrap();
                     if child.kind() == "token_tree" {
-                        return to_range(input_span).start - child.byte_range().start;
+                        byte_offset =
+                            Some(to_range(input_span.clone()).start - child.byte_range().start);
                     }
                 }
+            } else if epilogue.contains(macro_name) {
+                epilogue_found = true;
+            }
+        } else if node.kind() == "attribute_item" {
+            let attr = path_pattern
+                .captures(node.utf8_text(&src.as_bytes()).unwrap())
+                .unwrap()
+                .name("path")
+                .unwrap()
+                .as_str();
+            if lockjaw_macros.contains(attr) {
+                if byte_offset.is_none() {
+                    return compile_error(&format!(
+                        "lockjaw macro cannot appear before lockjaw::prologue!() ({}:{}:{})",
+                        src_path,
+                        node.start_position().row + 1,
+                        node.start_position().column,
+                    ));
+                }
+                if epilogue_found {
+                    return compile_error(&format!(
+                        "lockjaw macro cannot appear after lockjaw::epilogue!() ({}:{}:{})",
+                        src_path,
+                        node.start_position().row + 1,
+                        node.start_position().column,
+                    ));
+                }
+            }
+        } else if node.kind() == "mod_item" {
+            if byte_offset.is_some()
+                && !epilogue_found
+                && node.child_by_field_name("body").is_none()
+            {
+                return compile_error(&format!(
+                    "file modules cannot appear between lockjaw::prologue!() and lockjaw::epilogue!() ({}:{}:{})",
+                    src_path,
+                    node.start_position().row + 1,
+                    node.start_position().column,
+                ));
             }
         }
     }
-    // happens in doctest
-    log!("WARNING: unable to find position of lockjaw::prologue!()");
-    return 0;
+    if let Some(result) = byte_offset {
+        Ok(result)
+    } else {
+        if for_test {
+            // happens in doctest
+            Ok(0)
+        } else {
+            spanned_compile_error(
+                input_span,
+                " unable to find position of lockjaw::prologue!()",
+            )
+        }
+    }
+}
+
+fn local_path<'a>(map: &'a HashMap<String, UsePath>, lockjaw_item: &'a str) -> HashSet<String> {
+    let full_path = format!("::lockjaw::{}", lockjaw_item);
+    let mut result = HashSet::<String>::new();
+    let mut lockjaw_name = "lockjaw".to_owned();
+    for pair in map.iter() {
+        if pair.1.path.eq(&full_path) {
+            result.insert(pair.0.to_owned());
+        } else if pair.1.path.eq("::lockjaw") {
+            lockjaw_name = pair.0.to_owned();
+        }
+    }
+    result.insert(lockjaw_item.to_owned());
+    result.insert(format!("{}::{}", lockjaw_name, lockjaw_item));
+    result
 }
 
 fn parse_mods(
