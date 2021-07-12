@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue};
+use lockjaw::{component, epilogue};
 
 lockjaw::prologue!("tests/module_inner_path.rs");
 
@@ -36,12 +36,7 @@ mod m {
     }
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    my_module: crate::m::MyModule,
-}
-
-#[component(modules: crate::MyModuleManifest)]
+#[component(modules: [m::MyModule])]
 pub trait MyComponent {
     fn foo(&self) -> crate::Foo;
 }

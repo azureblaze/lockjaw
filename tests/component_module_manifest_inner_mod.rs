@@ -33,20 +33,22 @@ impl MyModule {
 }
 
 mod m {
-    #[lockjaw::component_module_manifest]
+    #[lockjaw::builder_modules]
     pub struct MyModuleManifest {
-        my_module: crate::MyModule,
+        pub my_module: crate::MyModule,
     }
 }
 
-#[component(modules: crate::m::MyModuleManifest)]
+#[component(builder_modules: crate::m::MyModuleManifest)]
 pub trait MyComponent {
     fn foo(&self) -> crate::Foo;
 }
 
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::build(m::MyModuleManifest {
+        my_module: MyModule {},
+    });
     component.foo();
 }
 epilogue!();

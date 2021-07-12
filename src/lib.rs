@@ -20,8 +20,8 @@ limitations under the License.
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("component.md")))]
 pub use lockjaw_processor::component;
 
-#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("component_module_manifest.md")))]
-pub use lockjaw_processor::component_module_manifest;
+#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("builder_modules.md")))]
+pub use lockjaw_processor::builder_modules;
 
 #[doc(hidden)]
 pub use lockjaw_processor::private_prologue;

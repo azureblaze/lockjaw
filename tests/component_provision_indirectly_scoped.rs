@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{
-    component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
-};
+use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
 
 lockjaw::prologue!("tests/component_provision_indirectly_scoped.rs");
 
@@ -76,10 +74,7 @@ impl MyModule {
     }
 }
 
-#[component_module_manifest]
-pub struct ModuleManifest(crate::MyModule);
-
-#[component(modules: crate::ModuleManifest)]
+#[component(modules: [MyModule])]
 pub trait MyComponent {
     fn greeter(&'_ self) -> ComponentLifetime<'_, dyn crate::Greeter>;
 }

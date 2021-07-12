@@ -19,7 +19,7 @@ use quote::quote;
 
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::{Binding, ComponentModuleManifest, MultibindingType};
+use crate::manifest::{Binding, BuilderModules, MultibindingType};
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::node;
 use crate::nodes::node::{ModuleInstance, Node};
@@ -38,7 +38,7 @@ pub struct BindsNode {
 
 impl BindsNode {
     pub fn new(
-        module_manifest: &ComponentModuleManifest,
+        module_manifest: &BuilderModules,
         module_type: &TypeData,
         binding: &Binding,
     ) -> Vec<Box<dyn Node>> {

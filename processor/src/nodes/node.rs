@@ -20,7 +20,7 @@ use quote::format_ident;
 
 use crate::error::compile_error;
 use crate::graph::{ComponentSections, Graph};
-use crate::manifest::{ComponentModuleManifest, TypeRoot};
+use crate::manifest::{BuilderModules, TypeRoot};
 use crate::nodes::boxed::BoxedNode;
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::lazy::LazyNode;
@@ -110,18 +110,10 @@ impl dyn Node {
     }
 
     pub fn get_module_instance(
-        manifest: &ComponentModuleManifest,
+        manifest: &BuilderModules,
         module_type: &TypeData,
     ) -> ModuleInstance {
         let ident = module_type.identifier();
-        for module in &manifest.modules {
-            if module.identifier().eq(&ident) {
-                return ModuleInstance {
-                    type_: module_type.clone(),
-                    name: module.identifier(),
-                };
-            }
-        }
 
         for module in &manifest.builder_modules {
             if module.type_data.identifier().eq(&ident) {
@@ -132,7 +124,10 @@ impl dyn Node {
             }
         }
 
-        panic!("requested module not in manifest")
+        return ModuleInstance {
+            type_: module_type.clone(),
+            name: module_type.identifier(),
+        };
     }
 }
 

@@ -276,18 +276,12 @@ be generated.
 for `#[provides]` which bindings should be available should be specified, as it may be situational.
 
 Each component should declare a list of modules they want to use with a  
-`#[component_module_manifest]` struct. The component should then use the `modules` metadata to
-select the manifest it wants.
+using the `modules` field in the `#[component]` attribute.
 
 ```rust
-#[component_module_manifest]
-struct MyModuleManifest {
-    my_module: crate::MyModule
-}
-
-#[component(modules="crate::MyModuleManifest")]
+#[component(modules=[MyModule])]
 trait MyComponent {
-    fn my_module_binding() -> crate::MyModuleBinding;
+    fn my_module_binding() -> MyModuleBinding;
 }
 ```
 

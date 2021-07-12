@@ -17,7 +17,7 @@ limitations under the License.
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// lockjaw::prologue!("src/lib.rs");
-/// #[component_module_manifest]
+/// #[builder_modules]
 /// trait S {}
 /// ```
 mod manifest_not_struct {}
@@ -25,26 +25,7 @@ mod manifest_not_struct {}
 /// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// lockjaw::prologue!("src/lib.rs");
-/// #[component_module_manifest]
-/// struct  S {
-///     #[cfg(test)]
-///     foo : String
-/// }
-/// ```
-mod manifest_non_builder_field_attribute {}
-
-/// ```
-/// #[macro_use] extern crate lockjaw_processor;
-/// lockjaw::prologue!("src/lib.rs");
-/// #[component_module_manifest]
+/// #[builder_modules]
 /// struct  S (String);
-/// ```
-mod manifest_tuple {}
-
-/// ```compile_fail
-/// #[macro_use] extern crate lockjaw_processor;
-/// lockjaw::prologue!("src/lib.rs");
-/// #[component_module_manifest]
-/// struct  S (#[builder] String);
 /// ```
 mod manifest_tuple_builder {}
