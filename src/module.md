@@ -22,7 +22,7 @@ pub struct MyModuleManifest {
     foo : crate::FooModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules : crate::MyModuleManifest)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
@@ -59,7 +59,7 @@ pub struct MyModuleManifest {
     foo : crate::FooModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules : crate::MyModuleManifest)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
@@ -122,7 +122,7 @@ pub struct MyModuleManifest {
     foo : crate::FooModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules : crate::MyModuleManifest)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
@@ -167,7 +167,7 @@ pub struct FooModule {}
 
 #[module]
 impl FooModule {
-    #[provides(scope="crate::MyComponent")]
+    #[provides(scope : crate::MyComponent)]
     pub fn provide_foo() -> crate::Foo {
         Foo{}
     }
@@ -190,7 +190,7 @@ impl Bar<'_> {
     }
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules : crate::MyModuleManifest)]
 pub trait MyComponent {
     fn bar(&self) -> crate::Bar;
 }
@@ -262,7 +262,7 @@ pub struct MyModuleManifest {
     my_module: crate::MyModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules : crate::MyModuleManifest)]
 pub trait MyComponent {
     fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
 }
@@ -310,7 +310,7 @@ pub struct FooModule {}
 
 #[module]
 impl FooModule {
-    #[binds(scope="crate::MyComponent")]
+    #[binds(scope : crate::MyComponent)]
     pub fn binds_foo(_impl: crate::FooImpl) -> ComponentLifetime<dyn crate::Foo> {}
 }
 
@@ -330,7 +330,7 @@ impl Bar<'_> {
     }
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules : crate::MyModuleManifest)]
 pub trait MyComponent {
     fn bar(&self) -> crate::Bar;
 }

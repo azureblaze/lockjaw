@@ -28,7 +28,7 @@ pub struct Bar {
     i: i32,
 }
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope: crate::MyComponent)]
 impl Bar {
     #[inject]
     pub fn new() -> Self {
@@ -52,7 +52,7 @@ pub struct MyModuleManifest {
     my_module: crate::MyModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules: crate::MyModuleManifest)]
 pub trait MyComponent {
     fn foo(&self) -> crate::Foo;
 }

@@ -72,7 +72,7 @@ the scoped `injectable` or any objects that depends on it will share the lifetim
 # lockjaw::prologue!("src/lib.rs");
 pub struct Foo {}
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope : crate::MyComponent)]
 impl Foo {
     #[inject]
     pub fn new()-> Self {

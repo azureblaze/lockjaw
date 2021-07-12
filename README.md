@@ -126,7 +126,7 @@ struct ModuleManifest {
 
 // Components stitch modules and injectables together into a dependency graph, and can create
 // objects in the graph. This coponent installs modules listed in ModuleManifest, which is MyModule.
-#[component(modules = "crate::ModuleManifest")]
+#[component(modules: crate::ModuleManifest)]
 trait MyComponent {
     // Allows creating a greeter with the component. The created object has the lifetime of the
     // component

@@ -24,7 +24,7 @@ pub struct Foo<'a> {
     bar: &'a Bar,
 }
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope: crate::MyComponent)]
 impl<'a> Foo<'a> {
     #[inject]
     pub fn new(bar: &'a crate::Bar) -> Self {
@@ -34,7 +34,7 @@ impl<'a> Foo<'a> {
 
 pub struct Bar {}
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope: crate::MyComponent)]
 impl Bar {
     #[inject]
     pub fn new() -> Self {

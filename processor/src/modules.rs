@@ -53,7 +53,7 @@ fn handle_module_attribute_internal(
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
-    let attributes = parsing::get_attribute_metadata(attr.clone())?;
+    let attributes = parsing::get_attribute_field_values(attr.clone())?;
 
     for key in attributes.keys() {
         if !MODULE_METADATA_KEYS.contains(key) {
@@ -203,8 +203,8 @@ fn handle_provides(
             }
         }
     }
-    let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone), attr.span())?;
+    let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
+    let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
     provides.type_data.scopes.extend(scopes);
     Ok(provides)
 }
@@ -273,8 +273,8 @@ fn handle_binds(
             binds.dependencies.push(dependency);
         }
     }
-    let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone), attr.span())?;
+    let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
+    let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
     binds.type_data.scopes.extend(scopes);
     Ok(binds)
 }
@@ -316,8 +316,8 @@ fn handle_binds_option_of(
             "binds_option_of method must only take no parameter",
         );
     }
-    let provides_attr = parsing::get_parenthesized_attribute_metadata(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope").map(Clone::clone), attr.span())?;
+    let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
+    let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
     binds_option_of.type_data.scopes.extend(scopes);
     Ok(binds_option_of)
 }

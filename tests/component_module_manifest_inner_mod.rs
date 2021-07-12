@@ -39,7 +39,7 @@ mod m {
     }
 }
 
-#[component(modules = "crate::m::MyModuleManifest")]
+#[component(modules: crate::m::MyModuleManifest)]
 pub trait MyComponent {
     fn foo(&self) -> crate::Foo;
 }

@@ -18,7 +18,6 @@ use crate::error::{spanned_compile_error, CompileError};
 use crate::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use regex::Regex;
-use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::process::Command;
 use std::str::FromStr;
@@ -48,14 +47,14 @@ pub fn has_attribute(attrs: &Vec<syn::Attribute>, attr: &str) -> bool {
     attrs.iter().find(|a| is_attribute(a, attr)).is_some()
 }
 
-pub fn get_parenthesized_attribute_metadata(
+pub fn get_parenthesized_field_values(
     attr: TokenStream,
-) -> Result<HashMap<String, String>, TokenStream> {
+) -> Result<HashMap<String, FieldValue>, TokenStream> {
     if attr.is_empty() {
         return Ok(HashMap::new());
     }
 
-    get_attribute_metadata(
+    get_attribute_field_values(
         TokenStream::from_str(&strip_parentheses(&attr)?)
             .map_spanned_compile_error(attr.span(), "cannot parse string to tokens")?,
     )
@@ -79,48 +78,119 @@ fn strip_parentheses(attr: &TokenStream) -> Result<String, TokenStream> {
         .to_owned())
 }
 
-/// Converts #[attr(key1="value1", key2="value2")] to key-value map.
-pub fn get_attribute_metadata(attr: TokenStream) -> Result<HashMap<String, String>, TokenStream> {
-    let mut result = HashMap::new();
-    let parser =
-        syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
+pub enum FieldValue {
+    StringLiteral(Span, String),
+    IntLiteral(Span, i64),
+    FloatLiteral(Span, f64),
+    BoolLiteral(Span, bool),
+    Path(Span, syn::Path),
+    Array(Span, Vec<FieldValue>),
+    FieldValues(Span, HashMap<String, FieldValue>),
+}
+
+impl FieldValue {
+    pub fn span(&self) -> Span {
+        match self {
+            FieldValue::StringLiteral(ref span, _) => span.clone(),
+            FieldValue::IntLiteral(ref span, _) => span.clone(),
+            FieldValue::FloatLiteral(ref span, _) => span.clone(),
+            FieldValue::BoolLiteral(ref span, _) => span.clone(),
+            FieldValue::Path(ref span, _) => span.clone(),
+            FieldValue::Array(ref span, _) => span.clone(),
+            FieldValue::FieldValues(ref span, _) => span.clone(),
+        }
+    }
+}
+
+/// Converts #[attr(key1 : "value1", key2 : value2)] to key-value map.
+pub fn get_attribute_field_values(
+    attr: TokenStream,
+) -> Result<HashMap<String, FieldValue>, TokenStream> {
+    let parser = syn::punctuated::Punctuated::<syn::FieldValue, syn::Token![,]>::parse_terminated;
     if attr.is_empty() {
-        return Ok(result);
+        return Ok(HashMap::new());
     }
 
-    let metadata = parser
+    let field_values = parser
         .parse2(attr.clone())
-        .map_spanned_compile_error(attr.span(), "MetaNameValue (key=\"value\", ...) expected")?;
-    for data in metadata.iter() {
-        result.insert(
-            data.path
-                .get_ident()
-                .map_spanned_compile_error(data.path.span(), "path is not an identifier")?
-                .to_string(),
-            to_string_literal(&data.lit)?.value(),
-        );
+        .map_spanned_compile_error(attr.span(), "FieldValue (key: value, ...) expected")?;
+
+    parse_punctuated_field_values(&field_values)
+}
+
+fn parse_punctuated_field_values(
+    field_values: &syn::punctuated::Punctuated<syn::FieldValue, syn::Token![,]>,
+) -> Result<HashMap<String, FieldValue>, TokenStream> {
+    let mut result = HashMap::new();
+    for field in field_values.iter() {
+        if let syn::Member::Named(ref name) = field.member {
+            result.insert(
+                name.to_string(),
+                parse_field_value(&field.expr, field.span())?,
+            );
+        } else {
+            return spanned_compile_error(field.span(), "field should have named member");
+        }
     }
     Ok(result)
 }
 
+fn parse_field_value(expr: &syn::Expr, span: Span) -> Result<FieldValue, TokenStream> {
+    match expr {
+        syn::Expr::Lit(ref lit) => match lit.lit {
+            syn::Lit::Str(ref str_) => Ok(FieldValue::StringLiteral(str_.span(), str_.value())),
+            syn::Lit::Bool(ref bool_) => Ok(FieldValue::BoolLiteral(bool_.span(), bool_.value())),
+            syn::Lit::Int(ref int) => Ok(FieldValue::IntLiteral(
+                int.span(),
+                int.base10_parse::<i64>()
+                    .map_spanned_compile_error(int.span(), "unable to parse integer to i64")?,
+            )),
+            syn::Lit::Float(ref float) => Ok(FieldValue::FloatLiteral(
+                float.span(),
+                float
+                    .base10_parse::<f64>()
+                    .map_spanned_compile_error(float.span(), "unable to parse integer to f64")?,
+            )),
+            _ => spanned_compile_error(span, &format!("unable to handle literal value {:?}", lit)),
+        },
+        syn::Expr::Path(ref path) => Ok(FieldValue::Path(span, path.path.clone())),
+        syn::Expr::Array(ref array) => {
+            let mut values: Vec<FieldValue> = Vec::new();
+            for expr in &array.elems {
+                values.push(parse_field_value(expr, expr.span())?);
+            }
+            Ok(FieldValue::Array(span, values))
+        }
+        syn::Expr::Struct(ref struct_) => Ok(FieldValue::FieldValues(
+            span,
+            parse_punctuated_field_values(&struct_.fields)?,
+        )),
+        _ => spanned_compile_error(span, &format!("invalid field value {:?}", expr)),
+    }
+}
+
 /// Parses "foo::Bar, foo::Baz" to a list of types.
-pub fn get_types(types: Option<String>, span: Span) -> Result<Vec<TypeData>, TokenStream> {
+pub fn get_types(types: Option<&FieldValue>, span: Span) -> Result<Vec<TypeData>, TokenStream> {
     if types.is_none() {
         return Ok(Vec::new());
     }
-    types
-        .unwrap()
-        .split(",")
-        .map(|path| -> syn::Path { syn::parse_str(&path).expect("cannot parse type string") })
-        .map(|p| TypeData::from_path_with_span(p.borrow(), span))
-        .collect()
-}
-
-fn to_string_literal(lit: &syn::Lit) -> Result<&syn::LitStr, TokenStream> {
-    if let syn::Lit::Str(ref s) = lit {
-        return Ok(s);
+    match types.unwrap() {
+        FieldValue::Path(span, ref path) => {
+            Ok(vec![TypeData::from_path_with_span(path, span.clone())?])
+        }
+        FieldValue::Array(span, ref paths) => {
+            let mut result = Vec::new();
+            for field in paths {
+                if let FieldValue::Path(span, ref path) = field {
+                    result.push(TypeData::from_path_with_span(path, span.clone())?);
+                } else {
+                    return spanned_compile_error(span.clone(), "field in array is not a path");
+                }
+            }
+            Ok(result)
+        }
+        _ => spanned_compile_error(span, "path or [path, ...] expected"),
     }
-    return spanned_compile_error(lit.span(), "string literal expected");
 }
 
 pub fn get_crate_deps(for_test: bool) -> HashSet<String> {

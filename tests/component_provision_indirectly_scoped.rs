@@ -24,7 +24,7 @@ struct GreetCounter {
     counter: ::std::cell::RefCell<i32>,
 }
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope: crate::MyComponent)]
 impl GreetCounter {
     #[inject]
     pub fn new() -> Self {
@@ -79,7 +79,7 @@ impl MyModule {
 #[component_module_manifest]
 pub struct ModuleManifest(crate::MyModule);
 
-#[component(modules = "crate::ModuleManifest")]
+#[component(modules: crate::ModuleManifest)]
 pub trait MyComponent {
     fn greeter(&'_ self) -> ComponentLifetime<'_, dyn crate::Greeter>;
 }

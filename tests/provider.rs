@@ -24,7 +24,7 @@ pub struct Counter {
     counter: ::std::cell::RefCell<i32>,
 }
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope: crate::MyComponent)]
 impl Counter {
     #[inject]
     pub fn new() -> Self {

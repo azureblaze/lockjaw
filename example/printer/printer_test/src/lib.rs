@@ -24,7 +24,7 @@ pub struct TestPrinter {
     pub messages: ::std::cell::RefCell<Vec<String>>,
 }
 
-#[injectable(scope = "::example::TestComponent")]
+#[injectable(scope: ::example::TestComponent)]
 impl TestPrinter {
     #[inject]
     pub fn new() -> TestPrinter {

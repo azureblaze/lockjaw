@@ -44,7 +44,7 @@ pub fn handle_injectable_attribute(
     let mut item: syn::ItemImpl =
         syn::parse2(input).map_spanned_compile_error(span, "impl block expected")?;
 
-    let attributes = parsing::get_attribute_metadata(attr.clone())?;
+    let attributes = parsing::get_attribute_field_values(attr.clone())?;
     for key in attributes.keys() {
         if !INJECTABLE_METADATA_KEYS.contains(key) {
             return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
@@ -95,7 +95,7 @@ pub fn handle_injectable_attribute(
     let mut injectable = Injectable::new();
     injectable.type_data = TypeData::from_local(&type_name, item.self_ty.span())?;
     injectable.type_data.scopes.extend(parsing::get_types(
-        attributes.get("scope").map(Clone::clone),
+        attributes.get("scope"),
         item.self_ty.span(),
     )?);
     injectable.ctor_name = ctor.sig.ident.to_string();

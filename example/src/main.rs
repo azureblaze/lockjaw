@@ -50,7 +50,7 @@ impl MyModule {
 #[component_module_manifest]
 pub struct ModuleManifest(MyModule, printer_impl::Module);
 
-#[component(modules = "ModuleManifest")]
+#[component(modules: ModuleManifest)]
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 }
@@ -69,7 +69,7 @@ pub struct TestModuleManifest(MyModule, ::printer_test::Module);
 use printer_test::TestPrinter;
 
 #[cfg(test)]
-#[component(modules = "TestModuleManifest")]
+#[component(modules: TestModuleManifest)]
 pub trait TestComponent {
     fn greeter(&self) -> Greeter;
 

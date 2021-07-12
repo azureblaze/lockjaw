@@ -27,6 +27,7 @@ use syn::spanned::Spanned;
 use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
 use crate::manifest::{with_manifest, Component, ComponentModuleManifest, Dependency, Manifest};
+use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use crate::{environment, parsing};
@@ -77,7 +78,7 @@ pub fn handle_component_attribute(
         }
     }
     let module_manifest;
-    let attributes = parsing::get_attribute_metadata(attr.clone())?;
+    let attributes = parsing::get_attribute_field_values(attr.clone())?;
 
     for key in attributes.keys() {
         if !COMPONENT_METADATA_KEYS.contains(key) {
@@ -86,9 +87,11 @@ pub fn handle_component_attribute(
     }
 
     if let Some(value) = attributes.get("modules") {
-        let path: syn::Path = syn::parse_str(value)
-            .map_spanned_compile_error(attr.span(), "path expected for modules")?;
-        module_manifest = Some(TypeData::from_path_with_span(path.borrow(), attr.span())?);
+        if let FieldValue::Path(span, ref path) = value {
+            module_manifest = Some(TypeData::from_path_with_span(path.borrow(), span.clone())?);
+        } else {
+            return spanned_compile_error(value.span(), "path expected for modules");
+        }
     } else {
         module_manifest = Option::None;
     }

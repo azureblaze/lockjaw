@@ -41,7 +41,7 @@ pub struct MyModuleManifest {
     my_module: crate::m::MyModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules: crate::MyModuleManifest)]
 pub trait MyComponent {
     fn foo(&self) -> crate::Foo;
 }
