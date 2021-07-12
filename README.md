@@ -118,15 +118,9 @@ impl MyModule {
     }
 }
 
-// A list of modules.
-#[component_module_manifest]
-struct ModuleManifest {
-    my_module : crate::MyModule
-}
-
 // Components stitch modules and injectables together into a dependency graph, and can create
-// objects in the graph. This coponent installs modules listed in ModuleManifest, which is MyModule.
-#[component(modules: crate::ModuleManifest)]
+// objects in the graph. The component installs modules listed in `modules`
+#[component(modules: MyModule)]
 trait MyComponent {
     // Allows creating a greeter with the component. The created object has the lifetime of the
     // component

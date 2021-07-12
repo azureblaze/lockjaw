@@ -1,10 +1,10 @@
 Annotates a impl block that defines the bindings.
 
-To incorporate a module to the dependency graph, it should be included as a field in a
-[`#[component_module_manifest]`](component_module_manifest), and added to the compoenet.
+To incorporate a module to the dependency graph, it should be included as a field in the
+`modules` field the [component](component) annotation.
 
 ```
-# use lockjaw::{epilogue, injectable, component_module_manifest, component};
+# use lockjaw::{epilogue, injectable,  component};
 # lockjaw::prologue!("src/lib.rs");
 use lockjaw::{module};
 pub struct FooModule {}
@@ -17,12 +17,7 @@ impl FooModule {
     }
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    foo : crate::FooModule,
-}
-
-#[component(modules : crate::MyModuleManifest)]
+#[component(modules : [FooModule])]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
@@ -34,9 +29,7 @@ pub fn main() {
 epilogue!();
 ```
 
-If the module struct contains fields, it must be marked as
-[`#[builder]`](component_module_manifest#buiilder) in the `#[component_module_manifest]`, and
-provided to `COMPONENT.build()`
+If the module struct contains fields, it must use [`builder_modules`](builder_modules) instead.
 
 ```
 # use lockjaw::*;
@@ -53,19 +46,18 @@ impl FooModule {
     }
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    #[builder]
-    foo : crate::FooModule,
+#[builder_modules]
+pub struct MyBuilderModules {
+    foo : FooModule,
 }
 
-#[component(modules : crate::MyModuleManifest)]
+#[component(builder_modules : MyBuilderModules)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
 
 pub fn main() {
-    let component = MyComponent::build(MyModuleManifest {
+    let component = MyComponent::build(MyBuilderModules {
         foo : FooModule {
             value:"bar".to_owned()
         }
@@ -116,19 +108,18 @@ impl FooModule {
     }
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    #[builder]
+#[builder_modules]
+pub struct MyBuilderModules {
     foo : crate::FooModule,
 }
 
-#[component(modules : crate::MyModuleManifest)]
+#[component(builder_modules : crate::MyBuilderModules)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
 
 pub fn main() {
-    let component = MyComponent::build(MyModuleManifest {
+    let component = MyComponent::build(MyBuilderModules {
         foo : FooModule {
             value:"foo".to_owned()
         }
@@ -143,8 +134,8 @@ Cannot annotate a method that is already annotated with [`#[binds]`](#binds)
 
 ### Metadata
 
-`#[provides]` accept addtional metadata in the form of
-`#[provides(key="value", key2="value2")]`. Currently all values are string literals.
+`#[provides]` accept additional metadata in the form of
+`#[provides(key=value, key2=value)]`.
 
 #### scope
 
@@ -173,11 +164,6 @@ impl FooModule {
     }
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    foo : crate::FooModule,
-}
-
 pub struct Bar<'a>{
     foo : &'a crate::Foo
 }
@@ -190,7 +176,7 @@ impl Bar<'_> {
     }
 }
 
-#[component(modules : crate::MyModuleManifest)]
+#[component(modules : FooModule)]
 pub trait MyComponent {
     fn bar(&self) -> crate::Bar;
 }
@@ -257,12 +243,7 @@ impl MyModule {
     pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> ComponentLifetime<dyn crate::MyTrait> {}
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    my_module: crate::MyModule,
-}
-
-#[component(modules : crate::MyModuleManifest)]
+#[component(modules : MyModule)]
 pub trait MyComponent {
     fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
 }
@@ -275,8 +256,8 @@ epilogue!();
 ```
 ### Metadata
 
-`#[binds]` accept addtional metadata in the form of
-`#[binds(key="value", key2="value2")]`. Currently all values are string literals.
+`#[binds]` accept additional metadata in the form of
+`#[binds(key=value, key2=value)]`.
 
 #### scope
 
@@ -314,11 +295,6 @@ impl FooModule {
     pub fn binds_foo(_impl: crate::FooImpl) -> ComponentLifetime<dyn crate::Foo> {}
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    foo : crate::FooModule,
-}
-
 pub struct Bar<'a>{
     foo : ComponentLifetime<'a, dyn crate::Foo>
 }
@@ -330,7 +306,7 @@ impl Bar<'_> {
     }
 }
 
-#[component(modules : crate::MyModuleManifest)]
+#[component(modules : FooModule)]
 pub trait MyComponent {
     fn bar(&self) -> crate::Bar;
 }
@@ -354,5 +330,5 @@ users must implement internal mutability.
 
 # Metadata
 
-Module accept addtional metadata in the form of
-`#[module(key="value", key2="value2")]`. Currently all values are string literals.
+Module additional metadata in the form of
+`#[module(key=value, key2=value)]`.

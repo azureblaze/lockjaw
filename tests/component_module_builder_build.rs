@@ -18,7 +18,7 @@ limitations under the License.
 
 lockjaw::prologue!("tests/component_module_builder_build.rs");
 
-use lockjaw::{component, component_module_manifest, epilogue, module};
+use lockjaw::{builder_modules, component, epilogue, module};
 
 pub struct Foo {}
 
@@ -34,13 +34,12 @@ impl MyModule {
     }
 }
 
-#[component_module_manifest]
+#[builder_modules]
 pub struct MyModuleManifest {
-    #[builder]
     my_module: crate::MyModule,
 }
 
-#[component(modules: crate::MyModuleManifest)]
+#[component(builder_modules: crate::MyModuleManifest)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }

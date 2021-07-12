@@ -92,10 +92,7 @@ mod graph_cyclic_dependency {}
 ///     }
 /// }
 ///
-/// #[component_module_manifest]
-/// struct Mm(crate::M);
-///
-/// #[component(modules="crate::Mm")]
+/// #[component(modules=M)]
 /// trait S {
 ///     fn foo() -> crate::Foo;
 /// }

@@ -16,9 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{
-    component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
-};
+use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
 
 lockjaw::prologue!("tests/module_bind_indirectly_scoped_trait.rs");
 
@@ -61,12 +59,7 @@ impl MyModule {
     pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> ComponentLifetime<dyn crate::MyTrait> {}
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    my_module: crate::MyModule,
-}
-
-#[component(modules: crate::MyModuleManifest)]
+#[component(modules: MyModule)]
 pub trait MyComponent {
     fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
 }

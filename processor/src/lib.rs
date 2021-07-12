@@ -54,10 +54,8 @@ pub fn injectable(attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn component_module_manifest(attr: TokenStream, input: TokenStream) -> TokenStream {
-    handle_error(|| {
-        components::handle_component_module_manifest_attribute(attr.into(), input.into())
-    })
+pub fn builder_modules(attr: TokenStream, input: TokenStream) -> TokenStream {
+    handle_error(|| components::handle_builder_modules_attribute(attr.into(), input.into()))
 }
 
 #[proc_macro_attribute]

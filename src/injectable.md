@@ -53,8 +53,8 @@ objects before calling the injection constructor.
 
 # Metadata
 
-Injectables accept addtional metadata in the form of
-`#[injectable(key="value", key2="value2")]`. Currently all values are string literals.
+Injectables accept additional metadata in the form of
+`#[injectable(key=value, key2=value)]`.
 
 ## `scope`
 

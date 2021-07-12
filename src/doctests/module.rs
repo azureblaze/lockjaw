@@ -261,12 +261,7 @@ mod provides_elements_into_vec_not_vec {}
 ///    }
 ///}
 ///
-///#[component_module_manifest]
-///pub struct MyModuleManifest {
-///    my_module: crate::MyModule,
-///}
-///
-///#[component(modules : crate::MyModuleManifest)]
+///#[component(modules : MyModule)]
 ///pub trait MyComponent {
 ///    #[qualified(crate::Q)]
 ///    fn string(&self) -> String;

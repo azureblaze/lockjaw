@@ -29,34 +29,28 @@ epilogue!();
 ```
 # Generated methods
 
-# `pub fn build(modules: COMPONENT_MODULE_MANIFEST) -> impl COMPONENT`
+# `pub fn build(modules: BUILDER_MODULES) -> impl COMPONENT`
 
 Create an instance of the component, with modules in `modules` installed.
-`COMPONENT_MODULE_MANIFEST` is the [annotated struct](component_module_manifest) in the
-[`modules` metadata](#modules).
-
-NOTE: fields not annotated with [`#[builder]`](component_module_manifest#builder) will be
-stripped from the struct and should not be specified as they are auto-generated.
+`BUILDER_MODULES` is the [annotated struct](builder_modules) in the
+[`builder_modules` metadata](#modules).
 
 # `pub fn new() -> impl COMPONENT`
 
-Create an instance of the component. Only generated if no module instances are required,
-which means either the component does not install any module with the [`modules`](#modules)
-metadata, or none of the fields in
-[`#[component_module_manifest]`](component_module_manifest) struct are annotated with
-[`#[builder]`](component_module_manifest#builder).
+Create an instance of the component. Only generated if `builder_modules` is not used.
 
 # Metadata
 
-Components accept addtional metadata in the form of
-`#[component(key="value", key2="value2")]`. Currently all values are string literals.
+Components accept additional metadata in the form of `#[component(key=value, key2=value2)]`.
 
 ## `modules`
 
-**Optional** comma-separated, fully qualifed path a struct annotated by
-[`#[component_module_manifest]`](component_module_manifest), which contains
-[`modules`](module) to be installed as fields. Bindings in listed modules will be
-incorporated into the dependency graph.
+**Optional** path or array of path to
+[`modules`](module) to be installed as fields. Bindings in listed modules will be incorporated into
+the dependency graph.
+
+These modules must contain no field. Modules with fields must be provided with
+[builder_modules](#builder_modules) instead.
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
@@ -80,12 +74,7 @@ incorporated into the dependency graph.
 # }
 #
 
-#[component_module_manifest]
-struct MyModuleManifest {
-    string : crate::StringModule,
-    unsigned : crate::UnsignedModule
-}
-#[component(modules : crate::MyModuleManifest)]
+#[component(modules : [StringModule, UnsignedModule])]
 trait MyComponent {
     fn string(&self) -> String;
     fn unsigned(&self) -> u32;
@@ -93,4 +82,48 @@ trait MyComponent {
 
 # fn main() {}
 # epilogue!();
+```
+
+## `builder_modules`
+
+**Optional** path or array of path to a struct annotated by
+[`#[builder_modules]`](builder_modules), which contains
+[`modules`](module) to be installed as fields. Bindings in listed modules will be incorporated into
+the dependency graph.
+
+If a module does not contain any field, it can be listed in [`modules`](#modules) instead.
+
+```
+# #[macro_use] extern crate lockjaw_processor;
+# lockjaw::prologue!("src/lib.rs");
+struct StringModule {
+    string : String
+}
+#[module]
+impl StringModule {
+    #[provides]
+    pub fn provide_string(&self) -> String {
+        self.string.clone()
+    }
+}
+
+#[builder_modules]
+struct MyBuilderModules {
+    module : crate::StringModule,
+}
+#[component(builder_modules : crate::MyBuilderModules)]
+trait MyComponent {
+    fn string(&self) -> String;
+}
+
+fn main() {
+    let component = MyComponent::build(MyBuilderModules{
+        module: StringModule{
+            string: "foo".to_owned()
+        }
+    });
+    
+    assert_eq!("foo", component.string());
+}
+epilogue!();
 ```

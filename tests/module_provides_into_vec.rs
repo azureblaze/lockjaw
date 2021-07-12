@@ -16,9 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{
-    component, component_module_manifest, epilogue, injectable, module, ComponentLifetime,
-};
+use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
 
 pub use String as NamedString;
 
@@ -96,12 +94,7 @@ impl MyModule {
     pub fn bind_baz(impl_: crate::Baz) -> ComponentLifetime<dyn crate::Foo> {}
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    my_module: crate::MyModule,
-}
-
-#[component(modules: crate::MyModuleManifest)]
+#[component(modules: [MyModule])]
 pub trait MyComponent {
     fn string(&self) -> String;
     fn vec_string(&self) -> Vec<String>;

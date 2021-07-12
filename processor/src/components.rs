@@ -26,7 +26,7 @@ use syn::spanned::Spanned;
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
-use crate::manifest::{with_manifest, Component, ComponentModuleManifest, Dependency, Manifest};
+use crate::manifest::{with_manifest, BuilderModules, Component, Dependency, Manifest};
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
@@ -37,6 +37,7 @@ lazy_static! {
     static ref COMPONENT_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("modules".to_owned());
+        set.insert("builder_modules".to_owned());
         set
     };
 }
@@ -77,7 +78,6 @@ pub fn handle_component_attribute(
             provisions.push(provision);
         }
     }
-    let module_manifest;
     let attributes = parsing::get_attribute_field_values(attr.clone())?;
 
     for key in attributes.keys() {
@@ -86,22 +86,49 @@ pub fn handle_component_attribute(
         }
     }
 
-    if let Some(value) = attributes.get("modules") {
+    let builder_modules = if let Some(value) = attributes.get("builder_modules") {
         if let FieldValue::Path(span, ref path) = value {
-            module_manifest = Some(TypeData::from_path_with_span(path.borrow(), span.clone())?);
+            Some(TypeData::from_path_with_span(path.borrow(), span.clone())?)
         } else {
             return spanned_compile_error(value.span(), "path expected for modules");
         }
     } else {
-        module_manifest = Option::None;
-    }
+        None
+    };
+
+    let modules = if let Some(value) = attributes.get("modules") {
+        match value {
+            FieldValue::Path(span, ref path) => {
+                Some(vec![TypeData::from_path_with_span(&path, span.clone())?])
+            }
+            FieldValue::Array(span, ref array) => {
+                let mut result = Vec::new();
+                for field in array {
+                    if let FieldValue::Path(span, ref path) = field {
+                        result.push(TypeData::from_path_with_span(&path, span.clone())?)
+                    } else {
+                        return spanned_compile_error(span.clone(), "path expected for modules");
+                    }
+                }
+                Some(result)
+            }
+            _ => {
+                return spanned_compile_error(value.span(), "path expected for modules");
+            }
+        }
+    } else {
+        None
+    };
 
     let mut component = Component::new();
     component.type_data =
         TypeData::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
     component.provisions.extend(provisions);
-    if let Some(ref m) = module_manifest {
-        component.module_manifest = Some(m.clone());
+    if let Some(ref m) = builder_modules {
+        component.builder_modules = Some(m.clone());
+    }
+    if let Some(ref m) = modules {
+        component.modules = m.clone();
     }
 
     with_manifest(|mut manifest| manifest.components.push(component));
@@ -126,69 +153,38 @@ fn is_trait_object_without_lifetime(ty: &syn::Type) -> bool {
     !tokens.contains(&"'".to_owned())
 }
 
-pub fn handle_component_module_manifest_attribute(
+pub fn handle_builder_modules_attribute(
     _attr: TokenStream,
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
     let item_struct: syn::ItemStruct =
         syn::parse2(input).map_spanned_compile_error(span, "struct expected")?;
-    let mut builder_modules = <Vec<Dependency>>::new();
-    let mut modules = <Vec<TypeData>>::new();
-    let mut fields = quote! {};
+    let mut modules = <Vec<Dependency>>::new();
 
-    for field in item_struct.fields {
-        let mut is_builder = false;
-        for attr in &field.attrs {
-            if parsing::is_attribute(&attr, "builder") {
-                is_builder = true;
-            } else {
-                return spanned_compile_error(attr.span(), "lockjaw::component_module_manifest struct fields can only have 'builder' attribute");
-            }
-        }
-
-        if is_builder {
-            let mut dep = Dependency::new();
-            let span = field.span().clone();
-            let name = field
-                .ident
-                .map_spanned_compile_error(span, "tuples module manifests cannot have builders")?;
-            dep.name = name.to_string();
-            dep.type_data = TypeData::from_syn_type(field.ty.borrow())?;
-            builder_modules.push(dep);
-
-            let ty = field.ty;
-            fields = quote! {
-                #fields
-                #name : #ty,
-            }
-        } else {
-            modules.push(TypeData::from_syn_type(field.ty.borrow())?)
-        }
+    for field in &item_struct.fields {
+        let mut dep = Dependency::new();
+        let span = field.span();
+        let name = field
+            .ident
+            .as_ref()
+            .map_spanned_compile_error(span, "tuples module manifests cannot have builders")?;
+        dep.name = name.to_string();
+        dep.type_data = TypeData::from_syn_type(field.ty.borrow())?;
+        modules.push(dep);
     }
 
-    let mut component_module_manifest = ComponentModuleManifest::new();
-    component_module_manifest.type_data = Some(TypeData::from_local(
+    let mut builder_modules = BuilderModules::new();
+    builder_modules.type_data = Some(TypeData::from_local(
         &item_struct.ident.to_string(),
         item_struct.ident.span(),
     )?);
-    component_module_manifest.modules.extend(modules);
-    component_module_manifest
-        .builder_modules
-        .extend(builder_modules);
-    with_manifest(|mut manifest| {
-        manifest
-            .component_module_manifests
-            .push(component_module_manifest)
-    });
+    builder_modules.builder_modules.extend(modules);
+    with_manifest(|mut manifest| manifest.builder_modules.push(builder_modules));
 
-    let vis = item_struct.vis;
-    let ident = item_struct.ident;
-    let prologue_check = prologue_check(ident.span());
+    let prologue_check = prologue_check(item_struct.ident.span());
     Ok(quote_spanned! {span=>
-        #vis struct #ident {
-            #fields
-        }
+        #item_struct
         #prologue_check
     })
 }

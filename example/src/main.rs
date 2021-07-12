@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{
-    component, component_module_manifest, injectable, module, prologue, ComponentLifetime,
-};
+use lockjaw::{builder_modules, component, injectable, module, prologue, ComponentLifetime};
 use printer::Printer;
 
 prologue!("src/main.rs");
@@ -37,39 +35,43 @@ impl Greeter<'_> {
     }
 }
 
-struct MyModule {}
+struct MyModule {
+    phrase: String,
+}
 
 #[module]
 impl MyModule {
     #[provides]
-    pub fn provide_string() -> String {
-        "helloworld".to_owned()
+    pub fn provide_string(&self) -> String {
+        self.phrase.clone()
     }
 }
 
-#[component_module_manifest]
-pub struct ModuleManifest(MyModule, printer_impl::Module);
+#[builder_modules]
+pub struct BuilderModules {
+    my_module: MyModule,
+}
 
-#[component(modules: ModuleManifest)]
+#[component(modules: [printer_impl::Module], builder_modules: BuilderModules)]
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 }
 
 pub fn main() {
-    let component = <dyn MyComponent>::new();
+    let component = <dyn MyComponent>::build(BuilderModules {
+        my_module: MyModule {
+            phrase: "helloworld".to_owned(),
+        },
+    });
 
     component.greeter().greet();
 }
 
 #[cfg(test)]
-#[component_module_manifest]
-pub struct TestModuleManifest(MyModule, ::printer_test::Module);
-
-#[cfg(test)]
 use printer_test::TestPrinter;
 
 #[cfg(test)]
-#[component(modules: TestModuleManifest)]
+#[component(modules: [::printer_test::Module], builder_modules: BuilderModules)]
 pub trait TestComponent {
     fn greeter(&self) -> Greeter;
 
@@ -78,7 +80,11 @@ pub trait TestComponent {
 
 #[test]
 fn test_greeter() {
-    let component = <dyn TestComponent>::new();
+    let component = <dyn TestComponent>::build(BuilderModules {
+        my_module: MyModule {
+            phrase: "helloworld".to_owned(),
+        },
+    });
     component.greeter().greet();
 
     assert_eq!(

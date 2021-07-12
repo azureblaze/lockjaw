@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue, injectable, module};
+use lockjaw::{component, epilogue, injectable, module};
 
 lockjaw::prologue!("tests/module_inject_param.rs");
 
@@ -43,12 +43,7 @@ impl MyModule {
     }
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    my_module: crate::MyModule,
-}
-
-#[component(modules: crate::MyModuleManifest)]
+#[component(modules: [MyModule])]
 pub trait MyComponent {
     fn foo(&self) -> crate::Foo;
 }

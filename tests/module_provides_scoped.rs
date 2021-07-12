@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, component_module_manifest, epilogue, module};
+use lockjaw::{component, epilogue, module};
 
 pub use String as NamedString;
 
@@ -41,12 +41,7 @@ impl MyModule {
     }
 }
 
-#[component_module_manifest]
-pub struct MyModuleManifest {
-    my_module: crate::MyModule,
-}
-
-#[component(modules: crate::MyModuleManifest)]
+#[component(modules: [MyModule])]
 pub trait MyComponent {
     fn string(&self) -> &String;
     fn foo(&'_ self) -> crate::Foo<'_>;
