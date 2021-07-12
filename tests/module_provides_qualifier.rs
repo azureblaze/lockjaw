@@ -55,7 +55,7 @@ pub struct MyModuleManifest {
     my_module: crate::MyModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules: crate::MyModuleManifest)]
 pub trait MyComponent {
     fn string(&self) -> String;
     #[qualified(crate::Q1)]

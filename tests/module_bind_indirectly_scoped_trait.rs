@@ -24,7 +24,7 @@ lockjaw::prologue!("tests/module_bind_indirectly_scoped_trait.rs");
 
 pub struct Foo {}
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope: crate::MyComponent)]
 impl Foo {
     #[inject]
     pub fn new() -> Self {
@@ -66,7 +66,7 @@ pub struct MyModuleManifest {
     my_module: crate::MyModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules: crate::MyModuleManifest)]
 pub trait MyComponent {
     fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
 }

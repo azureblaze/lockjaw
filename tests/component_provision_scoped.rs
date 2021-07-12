@@ -22,7 +22,7 @@ lockjaw::prologue!("tests/component_provision_scoped.rs");
 
 pub struct Foo {}
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope: crate::MyComponent)]
 impl Foo {
     #[inject]
     pub fn new() -> Self {

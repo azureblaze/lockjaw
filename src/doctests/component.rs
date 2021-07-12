@@ -99,7 +99,7 @@ mod component_trait_object_provision_no_lifetime {}
 ///
 /// pub struct Foo {}
 ///
-/// #[injectable(scope = "crate::MyComponent")]
+/// #[injectable(scope : crate::MyComponent)]
 /// impl Foo{
 ///     #[inject]
 ///     pub fn new() -> Self {

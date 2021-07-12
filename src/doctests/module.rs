@@ -266,7 +266,7 @@ mod provides_elements_into_vec_not_vec {}
 ///    my_module: crate::MyModule,
 ///}
 ///
-///#[component(modules = "crate::MyModuleManifest")]
+///#[component(modules : crate::MyModuleManifest)]
 ///pub trait MyComponent {
 ///    #[qualified(crate::Q)]
 ///    fn string(&self) -> String;

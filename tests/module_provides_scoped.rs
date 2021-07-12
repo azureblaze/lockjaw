@@ -30,7 +30,7 @@ pub struct MyModule {}
 
 #[module]
 impl MyModule {
-    #[provides(scope = "crate::MyComponent")]
+    #[provides(scope: crate::MyComponent)]
     pub fn provide_string() -> String {
         "string".to_owned()
     }
@@ -46,7 +46,7 @@ pub struct MyModuleManifest {
     my_module: crate::MyModule,
 }
 
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules: crate::MyModuleManifest)]
 pub trait MyComponent {
     fn string(&self) -> &String;
     fn foo(&'_ self) -> crate::Foo<'_>;

@@ -34,7 +34,7 @@ struct MyModuleManifest {
     string : crate::StringModule,
     unsigned : crate::UnsignedModule
 }
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules : crate::MyModuleManifest)]
 trait MyComponent {
     fn string(&self) -> String;
     fn unsigned(&self) -> u32;
@@ -70,7 +70,7 @@ struct MyModuleManifest {
     #[builder]
     module : crate::StringModule,
 }
-#[component(modules = "crate::MyModuleManifest")]
+#[component(modules : crate::MyModuleManifest)]
 trait MyComponent {
     fn string(&self) -> String;
 }

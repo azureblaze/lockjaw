@@ -24,7 +24,7 @@ pub struct Foo {
     pub i: ::std::cell::RefCell<u32>,
 }
 
-#[injectable(scope = "crate::MyComponent")]
+#[injectable(scope: crate::MyComponent)]
 impl Foo {
     #[inject]
     pub fn new() -> Self {
