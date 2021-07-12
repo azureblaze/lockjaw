@@ -553,12 +553,19 @@ fn process_use(
             item.item.clone()
         };
         let mut item_path: String = path.join("::");
-        if !path.is_empty() {
-            item_path.push_str("::");
+        if item.item != "self" {
+            if !path.is_empty() {
+                item_path.push_str("::");
+            }
+            item_path.push_str(&item.item);
         }
-        item_path.push_str(&item.item);
+        let name = if item.name.contains(" as ") {
+            item.name.split(" as ").collect::<Vec<&str>>()[1]
+        } else {
+            &item.name
+        };
         result.insert(
-            item.name,
+            name.to_owned(),
             UsePath {
                 crate_,
                 path: item_path,
