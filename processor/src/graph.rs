@@ -23,7 +23,7 @@ use quote::format_ident;
 use quote::quote;
 
 use crate::error::{compile_error, CompileError};
-use crate::manifest::{BindingType, BuilderModules, Component, Manifest};
+use crate::manifest::{BindingType, BuilderModules, Component, Manifest, TypeRoot};
 use crate::nodes::binds::BindsNode;
 use crate::nodes::binds_option_of::BindsOptionOfNode;
 use crate::nodes::injectable::InjectableNode;
@@ -351,8 +351,14 @@ fn get_module_manifest(
 
 fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, TokenStream> {
     let mut result = Graph::default();
+    let singleton = singleton_type();
     for injectable in &manifest.injectables {
-        result.add_node(InjectableNode::new(injectable))?;
+        if injectable.type_data.scopes.is_empty()
+            || injectable.type_data.scopes.contains(&component.type_data)
+            || injectable.type_data.scopes.contains(&singleton)
+        {
+            result.add_node(InjectableNode::new(injectable))?;
+        }
     }
     let mut installed_modules = HashSet::<Ident>::new();
     result.builder_modules = get_module_manifest(manifest, component)?;
@@ -395,15 +401,20 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
             continue;
         }
         for binding in &module.bindings {
-            result.add_nodes(match &binding.binding_type {
-                BindingType::Provides => {
-                    ProvidesNode::new(&result.builder_modules, &module.type_data, binding)
-                }
-                BindingType::Binds => {
-                    BindsNode::new(&result.builder_modules, &module.type_data, binding)
-                }
-                BindingType::BindsOptionOf => BindsOptionOfNode::new(binding),
-            })?;
+            if binding.type_data.scopes.is_empty()
+                || binding.type_data.scopes.contains(&component.type_data)
+                || binding.type_data.scopes.contains(&singleton)
+            {
+                result.add_nodes(match &binding.binding_type {
+                    BindingType::Provides => {
+                        ProvidesNode::new(&result.builder_modules, &module.type_data, binding)
+                    }
+                    BindingType::Binds => {
+                        BindsNode::new(&result.builder_modules, &module.type_data, binding)
+                    }
+                    BindingType::BindsOptionOf => BindsOptionOfNode::new(binding),
+                })?;
+            }
         }
     }
     let mut resolved_nodes = HashSet::<Ident>::new();
@@ -419,6 +430,14 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
     }
     validate_graph(manifest, &result)?;
     Ok(result)
+}
+
+fn singleton_type() -> TypeData {
+    let mut result = TypeData::new();
+    result.root = TypeRoot::GLOBAL;
+    result.path = "lockjaw::Singleton".to_string();
+    result.field_crate = "lockjaw".to_string();
+    result
 }
 
 fn resolve_dependencies(

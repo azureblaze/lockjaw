@@ -30,6 +30,7 @@ use crate::manifest::{with_manifest, BuilderModules, Component, Dependency, Mani
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
+use crate::type_validator::TypeValidator;
 use crate::{environment, parsing};
 use syn::Attribute;
 
@@ -50,6 +51,7 @@ pub fn handle_component_attribute(
     let mut item_trait: syn::ItemTrait =
         syn::parse2(input).map_spanned_compile_error(span, "trait expected")?;
     let mut provisions = Vec::<Dependency>::new();
+    let mut type_validator = TypeValidator::new();
     for item in &mut item_trait.items {
         if let syn::TraitItem::Method(ref mut method) = item {
             let mut provision = Dependency::new();
@@ -57,7 +59,10 @@ pub fn handle_component_attribute(
             let mut new_attrs: Vec<Attribute> = Vec::new();
             for attr in &method.attrs {
                 match parsing::get_attribute(attr).as_str() {
-                    "qualified" => qualifier = Some(parsing::get_parenthesized_type(&attr.tokens)?),
+                    "qualified" => {
+                        qualifier = Some(parsing::get_parenthesized_type(&attr.tokens)?);
+                        type_validator.add_type(qualifier.as_ref().unwrap(), attr.span());
+                    }
                     _ => new_attrs.push(attr.clone()),
                 }
             }
@@ -88,7 +93,9 @@ pub fn handle_component_attribute(
 
     let builder_modules = if let Some(value) = attributes.get("builder_modules") {
         if let FieldValue::Path(span, ref path) = value {
-            Some(TypeData::from_path_with_span(path.borrow(), span.clone())?)
+            let type_ = TypeData::from_path_with_span(path.borrow(), span.clone())?;
+            type_validator.add_type(&type_, span.clone());
+            Some(type_)
         } else {
             return spanned_compile_error(value.span(), "path expected for modules");
         }
@@ -99,13 +106,17 @@ pub fn handle_component_attribute(
     let modules = if let Some(value) = attributes.get("modules") {
         match value {
             FieldValue::Path(span, ref path) => {
-                Some(vec![TypeData::from_path_with_span(&path, span.clone())?])
+                let type_ = TypeData::from_path_with_span(&path, span.clone())?;
+                type_validator.add_type(&type_, span.clone());
+                Some(vec![type_])
             }
             FieldValue::Array(span, ref array) => {
                 let mut result = Vec::new();
                 for field in array {
                     if let FieldValue::Path(span, ref path) = field {
-                        result.push(TypeData::from_path_with_span(&path, span.clone())?)
+                        let type_ = TypeData::from_path_with_span(&path, span.clone())?;
+                        type_validator.add_type(&type_, span.clone());
+                        result.push(type_)
                     } else {
                         return spanned_compile_error(span.clone(), "path expected for modules");
                     }
@@ -130,12 +141,15 @@ pub fn handle_component_attribute(
     if let Some(ref m) = modules {
         component.modules = m.clone();
     }
+    let identifier = component.type_data.identifier().to_string();
 
     with_manifest(|mut manifest| manifest.components.push(component));
 
     let prologue_check = prologue_check(item_trait.span());
+    let validate_type = type_validator.validate(identifier);
     let result = quote! {
         #item_trait
+        #validate_type
         #prologue_check
     };
     Ok(result)

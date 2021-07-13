@@ -48,3 +48,11 @@ fn attr_after_epilogue() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/compile-fail/attr_after_epilogue.rs")
 }
+
+#[cfg_attr(nightly, test)]
+#[cfg(nightly)]
+#[test]
+fn qualifier_not_declared() {
+    let t = trybuild::TestCases::new();
+    t.compile_fail("tests/compile-fail/scope_not_declared.rs")
+}

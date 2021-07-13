@@ -26,6 +26,7 @@ use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::{Dependency, Injectable};
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
+use crate::type_validator::TypeValidator;
 use crate::{manifest, parsing};
 
 lazy_static! {
@@ -43,6 +44,7 @@ pub fn handle_injectable_attribute(
     let span = input.span();
     let mut item: syn::ItemImpl =
         syn::parse2(input).map_spanned_compile_error(span, "impl block expected")?;
+    let mut type_validator = TypeValidator::new();
 
     let attributes = parsing::get_attribute_field_values(attr.clone())?;
     for key in attributes.keys() {
@@ -94,18 +96,22 @@ pub fn handle_injectable_attribute(
 
     let mut injectable = Injectable::new();
     injectable.type_data = TypeData::from_local(&type_name, item.self_ty.span())?;
-    injectable.type_data.scopes.extend(parsing::get_types(
-        attributes.get("scope"),
-        item.self_ty.span(),
-    )?);
+    let scopes = parsing::get_types(attributes.get("scope"), item.self_ty.span())?;
+    for scope in &scopes {
+        type_validator.add_type(scope, attr.span())
+    }
+    injectable.type_data.scopes.extend(scopes);
     injectable.ctor_name = ctor.sig.ident.to_string();
     injectable.dependencies.extend(dependencies);
+    let identifier = injectable.type_data.identifier().to_string();
 
     manifest::with_manifest(|mut manifest| manifest.injectables.push(injectable));
 
+    let type_check = type_validator.validate(identifier);
     let prologue_check = prologue_check(item.span());
     Ok(quote! {
         #item
+        #type_check
         #prologue_check
     })
 }
