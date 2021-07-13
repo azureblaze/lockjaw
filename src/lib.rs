@@ -80,3 +80,5 @@ pub use provider::Provider;
 mod lazy;
 
 pub use lazy::Lazy;
+
+pub trait Singleton {}

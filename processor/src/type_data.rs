@@ -24,6 +24,7 @@ use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
@@ -69,7 +70,7 @@ lazy_static! {
     };
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, Eq)]
 pub struct TypeData {
     pub root: TypeRoot,
     pub path: String,
@@ -77,9 +78,21 @@ pub struct TypeData {
     pub args: Vec<TypeData>,
     pub trait_object: bool,
     pub field_ref: bool,
-    pub scopes: Vec<TypeData>,
+    pub scopes: HashSet<TypeData>,
     pub identifier_suffix: String,
     pub qualifier: Option<Box<TypeData>>,
+}
+
+impl PartialEq for TypeData {
+    fn eq(&self, other: &Self) -> bool {
+        self.identifier().eq(&other.identifier())
+    }
+}
+
+impl Hash for TypeData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.identifier().hash(state)
+    }
 }
 
 impl TypeData {
