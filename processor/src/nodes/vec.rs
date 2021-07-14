@@ -61,6 +61,7 @@ fn vec_type(type_data: &TypeData) -> TypeData {
     vec_type.root = TypeRoot::GLOBAL;
     vec_type.path = "std::vec::Vec".to_string();
     vec_type.args.push(type_data.clone());
+    vec_type.qualifier = type_data.qualifier.clone();
     vec_type
 }
 

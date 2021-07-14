@@ -20,6 +20,7 @@ pub mod boxed;
 pub mod component_lifetime;
 pub mod injectable;
 pub mod lazy;
+pub mod map;
 pub mod node;
 pub mod provider;
 pub mod provides;

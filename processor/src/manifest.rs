@@ -166,6 +166,7 @@ pub struct Binding {
     pub field_static: bool,
     pub binding_type: BindingType,
     pub multibinding_type: MultibindingType,
+    pub map_key: MultibindingMapKey,
 }
 
 impl Binding {
@@ -202,5 +203,19 @@ pub enum MultibindingType {
 impl Default for MultibindingType {
     fn default() -> Self {
         MultibindingType::None
+    }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Hash, Eq)]
+pub enum MultibindingMapKey {
+    None,
+    String(String),
+    I32(i32),
+    Enum(TypeData, String),
+}
+
+impl Default for MultibindingMapKey {
+    fn default() -> Self {
+        MultibindingMapKey::None
     }
 }

@@ -45,6 +45,18 @@ impl MyModule {
     pub fn provide_string(&self) -> String {
         self.phrase.clone()
     }
+
+    #[provides]
+    #[into_map(string_key: "1")]
+    pub fn map_1(&self) -> String {
+        "foo".to_owned()
+    }
+
+    #[provides]
+    #[into_map(string_key: "2")]
+    pub fn map_2(&self) -> String {
+        "bar".to_owned()
+    }
 }
 
 #[builder_modules]
@@ -55,6 +67,8 @@ pub struct BuilderModules {
 #[component(modules: [printer_impl::Module], builder_modules: BuilderModules)]
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
+
+    fn string_map(&self) -> HashMap<String, String>;
 }
 
 pub fn main() {
@@ -65,10 +79,13 @@ pub fn main() {
     });
 
     component.greeter().greet();
+
+    print!("{:#?}", component.string_map());
 }
 
 #[cfg(test)]
 use printer_test::TestPrinter;
+use std::collections::HashMap;
 
 #[cfg(test)]
 #[component(modules: [::printer_test::Module], builder_modules: BuilderModules)]
