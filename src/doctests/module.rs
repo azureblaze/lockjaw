@@ -275,3 +275,37 @@ mod provides_elements_into_vec_not_vec {}
 ///
 /// ```
 mod qualifer_not_declared {}
+
+/// ```compile_fail
+///#[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
+///
+/// struct Q;
+///
+///pub struct MyModule {}
+///#[module]
+///impl MyModule {
+///    #[provides]
+///    #[into_map(string_key : "1")]
+///    pub fn provide_string_1() -> String {
+///        "1".to_owned()
+///    }
+///
+///    #[provides]
+///    #[into_map(string_key : "1")]
+///    pub fn provide_string_2() -> String {
+///        "2".to_owned()
+///    }
+///}
+///
+///#[component(modules : MyModule)]
+///pub trait MyComponent {
+///    fn string_map(&self) -> std::collections::HashMap<String, String>;
+///}
+///pub fn main() {
+///    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+///}
+///epilogue!();
+///
+/// ```
+mod into_map_string_key_collision {}

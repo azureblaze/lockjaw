@@ -407,7 +407,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
             {
                 result.add_nodes(match &binding.binding_type {
                     BindingType::Provides => {
-                        ProvidesNode::new(&result.builder_modules, &module.type_data, binding)
+                        ProvidesNode::new(&result.builder_modules, &module.type_data, binding)?
                     }
                     BindingType::Binds => {
                         BindsNode::new(&result.builder_modules, &module.type_data, binding)

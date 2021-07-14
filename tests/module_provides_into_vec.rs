@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, module, qualifier, ComponentLifetime};
 
 pub use String as NamedString;
 
@@ -60,6 +60,9 @@ impl Foo for Baz {
     }
 }
 
+#[qualifier]
+struct Q;
+
 #[module]
 impl MyModule {
     #[provides]
@@ -77,6 +80,20 @@ impl MyModule {
     #[into_vec]
     pub fn provide_string2() -> String {
         "string2".to_owned()
+    }
+
+    #[provides]
+    #[qualified(Q)]
+    #[into_vec]
+    pub fn provide_q_string1() -> String {
+        "q_string1".to_owned()
+    }
+
+    #[provides]
+    #[qualified(Q)]
+    #[into_vec]
+    pub fn provide_q_string2() -> String {
+        "q_string2".to_owned()
     }
 
     #[provides]
@@ -98,6 +115,8 @@ impl MyModule {
 pub trait MyComponent {
     fn string(&self) -> String;
     fn vec_string(&self) -> Vec<String>;
+    #[qualified(Q)]
+    fn q_vec_string(&self) -> Vec<String>;
 
     fn vec_foo(&'_ self) -> Vec<ComponentLifetime<'_, dyn crate::Foo>>;
 }
@@ -110,6 +129,20 @@ pub fn into_vec() {
     assert!(v.contains(&"string2".to_owned()));
     assert!(v.contains(&"string3".to_owned()));
     assert!(v.contains(&"string4".to_owned()));
+
+    assert!(!v.contains(&"q_string1".to_owned()));
+    assert!(!v.contains(&"q_string2".to_owned()));
+}
+
+#[test]
+pub fn into_vec_qualified() {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let v = component.q_vec_string();
+    assert!(v.contains(&"q_string1".to_owned()));
+    assert!(v.contains(&"q_string2".to_owned()));
+
+    assert!(!v.contains(&"string1".to_owned()));
+    assert!(!v.contains(&"string2".to_owned()));
 }
 
 #[test]

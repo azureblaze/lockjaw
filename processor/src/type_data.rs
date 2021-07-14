@@ -192,7 +192,8 @@ impl TypeData {
                 .replace(">", "ᐳ")
                 .replace(" ", "_")
                 .replace("\'", "ᐠ")
-                .replace("&", "ε"),
+                .replace("&", "ε")
+                .replace(",", "ᒧ"),
             self.identifier_suffix
         )
     }
@@ -336,20 +337,25 @@ impl TypeData {
                 )?;
             if segment_iter.peek().is_some() {
                 result.path.push_str("::");
+            } else {
+                result.args.extend(TypeData::get_args(first)?);
+                return Ok(result);
             }
         }
-        while let Some(segment) = segment_iter.next() {
-            result.path.push_str(&segment.ident.to_string());
-            if let Some(_) = segment_iter.peek() {
-                result.path.push_str("::");
-                if !segment.arguments.is_empty() {
-                    return spanned_compile_error(
-                        segment.span(),
-                        "arguments only supported in the last segment of the path",
-                    );
+        if segment_iter.peek().is_some() {
+            while let Some(segment) = segment_iter.next() {
+                result.path.push_str(&segment.ident.to_string());
+                if let Some(_) = segment_iter.peek() {
+                    result.path.push_str("::");
+                    if !segment.arguments.is_empty() {
+                        return spanned_compile_error(
+                            segment.span(),
+                            "arguments only supported in the last segment of the path",
+                        );
+                    }
+                } else {
+                    result.args.extend(TypeData::get_args(&segment)?);
                 }
-            } else {
-                result.args.extend(TypeData::get_args(&segment)?);
             }
         }
         Ok(result)

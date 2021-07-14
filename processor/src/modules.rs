@@ -20,16 +20,19 @@ use std::ops::{Deref, DerefMut};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::parse_quote;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::Token;
+use syn::{parse_quote, ImplItemMethod};
 use syn::{Attribute, GenericArgument};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::BindingType::{Binds, BindsOptionOf, Provides};
-use crate::manifest::{with_manifest, Binding, BindingType, Dependency, Module, MultibindingType};
+use crate::manifest::{
+    with_manifest, Binding, BindingType, Dependency, Module, MultibindingMapKey, MultibindingType,
+};
 use crate::parsing;
+use crate::parsing::{get_parenthesized_field_values, FieldValue};
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 
@@ -75,81 +78,7 @@ fn handle_module_attribute_internal(
         #[allow(unused_mut)] // required
         let mut item = item_impl.items.get_mut(i).unwrap();
         if let syn::ImplItem::Method(ref mut method) = item {
-            let mut option_binding: Option<Binding> = None;
-            let mut multibinding = MultibindingType::None;
-            let mut new_attrs: Vec<syn::Attribute> = Vec::new();
-            let mut qualifier: Option<Box<TypeData>> = None;
-            for attr in &method.attrs {
-                let attr_str = parsing::get_attribute(attr);
-                match attr_str.as_str() {
-                    "provides" => {
-                        if option_binding.is_some() {
-                            return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
-                        }
-                        option_binding = Some(handle_provides(attr, &mut method.sig)?);
-                    }
-                    "binds" => {
-                        if option_binding.is_some() {
-                            return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
-                        }
-                        option_binding =
-                            Some(handle_binds(attr, &mut method.sig, &mut method.block)?);
-                        let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
-                        new_attrs.push(allow_dead_code);
-                        let allow_unused: Attribute = parse_quote! {#[allow(unused)]};
-                        new_attrs.push(allow_unused);
-                    }
-                    "binds_option_of" => {
-                        if option_binding.is_some() {
-                            return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
-                        }
-                        option_binding = Some(handle_binds_option_of(
-                            attr,
-                            &mut method.sig,
-                            &mut method.block,
-                        )?);
-                        let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
-                        new_attrs.push(allow_dead_code);
-                    }
-                    "into_vec" => {
-                        multibinding = MultibindingType::IntoVec;
-                    }
-                    "elements_into_vec" => {
-                        multibinding = MultibindingType::ElementsIntoVec;
-                    }
-                    "qualified" => {
-                        qualifier = Some(Box::new(parsing::get_parenthesized_type(&attr.tokens)?));
-                    }
-                    _ => {
-                        new_attrs.push(attr.clone());
-                    }
-                }
-            }
-            method.attrs = new_attrs;
-            if option_binding.is_none() {
-                return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by #[provides]/#[binds]/#[binds_option_of]");
-            }
-            let mut binding = option_binding.unwrap();
-            if binding.binding_type == BindingType::Binds {
-                if multibinding == MultibindingType::ElementsIntoVec {
-                    return spanned_compile_error(
-                        method.span(),
-                        "#[elements_into_set] cannot be used on #[binds]",
-                    );
-                }
-            }
-
-            if multibinding == MultibindingType::ElementsIntoVec {
-                if binding.type_data.path.ne("std::vec::Vec") {
-                    return spanned_compile_error(
-                        method.span(),
-                        "#[elements_into_set] must return Vec<T>",
-                    );
-                }
-            }
-            binding.multibinding_type = multibinding;
-            binding.type_data.qualifier = qualifier;
-            bindings.push(binding);
+            bindings.push(parse_binding(method)?);
         }
     }
 
@@ -170,6 +99,99 @@ fn handle_module_attribute_internal(
         #item_impl
         #prologue_check
     })
+}
+
+fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
+    let mut option_binding: Option<Binding> = None;
+    let mut multibinding = MultibindingType::None;
+    let mut map_key = MultibindingMapKey::None;
+    let mut new_attrs: Vec<syn::Attribute> = Vec::new();
+    let mut qualifier: Option<Box<TypeData>> = None;
+    for attr in &method.attrs {
+        let attr_str = parsing::get_attribute(attr);
+        match attr_str.as_str() {
+            "provides" => {
+                if option_binding.is_some() {
+                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                }
+                option_binding = Some(handle_provides(attr, &mut method.sig)?);
+            }
+            "binds" => {
+                if option_binding.is_some() {
+                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                }
+                option_binding = Some(handle_binds(attr, &mut method.sig, &mut method.block)?);
+                let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
+                new_attrs.push(allow_dead_code);
+                let allow_unused: Attribute = parse_quote! {#[allow(unused)]};
+                new_attrs.push(allow_unused);
+            }
+            "binds_option_of" => {
+                if option_binding.is_some() {
+                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                }
+                option_binding = Some(handle_binds_option_of(
+                    attr,
+                    &mut method.sig,
+                    &mut method.block,
+                )?);
+                let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
+                new_attrs.push(allow_dead_code);
+            }
+            "into_vec" => {
+                multibinding = MultibindingType::IntoVec;
+            }
+            "elements_into_vec" => {
+                multibinding = MultibindingType::ElementsIntoVec;
+            }
+            "qualified" => {
+                qualifier = Some(Box::new(parsing::get_parenthesized_type(&attr.tokens)?));
+            }
+            "into_map" => {
+                multibinding = MultibindingType::IntoMap;
+                let fields = get_parenthesized_field_values(attr.tokens.clone())?;
+                if let Some(field) = fields.get("string_key") {
+                    if let FieldValue::StringLiteral(_, ref string) = field {
+                        map_key = MultibindingMapKey::String(string.clone());
+                    } else {
+                        return spanned_compile_error(
+                            attr.span(),
+                            "string literal expected for string_key",
+                        );
+                    }
+                }
+            }
+            _ => {
+                new_attrs.push(attr.clone());
+            }
+        }
+    }
+    method.attrs = new_attrs;
+    if option_binding.is_none() {
+        return spanned_compile_error(
+            method.span(),
+            "#[module] methods can only be annotated by #[provides]/#[binds]/#[binds_option_of]",
+        );
+    }
+    let mut binding = option_binding.unwrap();
+    if binding.binding_type == BindingType::Binds {
+        if multibinding == MultibindingType::ElementsIntoVec {
+            return spanned_compile_error(
+                method.span(),
+                "#[elements_into_set] cannot be used on #[binds]",
+            );
+        }
+    }
+
+    if multibinding == MultibindingType::ElementsIntoVec {
+        if binding.type_data.path.ne("std::vec::Vec") {
+            return spanned_compile_error(method.span(), "#[elements_into_set] must return Vec<T>");
+        }
+    }
+    binding.multibinding_type = multibinding;
+    binding.map_key = map_key;
+    binding.type_data.qualifier = qualifier;
+    Ok(binding)
 }
 
 fn handle_provides(
