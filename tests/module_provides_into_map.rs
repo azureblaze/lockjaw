@@ -28,6 +28,14 @@ pub struct MyModule {}
 #[qualifier]
 struct Q;
 
+#[derive(Eq, PartialEq, Hash)]
+pub enum E {
+    Foo,
+    Bar,
+}
+
+use E::Bar;
+
 #[module]
 impl MyModule {
     #[provides]
@@ -72,6 +80,18 @@ impl MyModule {
     pub fn provide_i32_string2() -> String {
         "string2".to_owned()
     }
+
+    #[provides]
+    #[into_map(enum_key: E::Foo)]
+    pub fn provide_enum_string1() -> String {
+        "string1".to_owned()
+    }
+
+    #[provides]
+    #[into_map(enum_key: Bar)]
+    pub fn provide_enum_string2() -> String {
+        "string2".to_owned()
+    }
 }
 
 #[component(modules: [MyModule])]
@@ -82,6 +102,7 @@ pub trait MyComponent {
     fn q_map_string(&self) -> HashMap<String, String>;
 
     fn map_i32_string(&self) -> HashMap<i32, String>;
+    fn map_enum_string(&self) -> HashMap<E, String>;
 }
 
 #[test]
@@ -106,6 +127,14 @@ pub fn into_map_i32_key() {
     let m = component.map_i32_string();
     assert_eq!(m.get(&1).unwrap(), "string1");
     assert_eq!(m.get(&2).unwrap(), "string2");
+}
+
+#[test]
+pub fn into_map_enum_key() {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let m = component.map_enum_string();
+    assert_eq!(m.get(&E::Foo).unwrap(), "string1");
+    assert_eq!(m.get(&Bar).unwrap(), "string2");
 }
 
 #[test]

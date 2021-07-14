@@ -39,6 +39,12 @@ struct MyModule {
     phrase: String,
 }
 
+#[derive(Eq, PartialEq, Hash, Debug)]
+pub enum E {
+    Foo,
+    Bar,
+}
+
 #[module]
 impl MyModule {
     #[provides]
@@ -47,13 +53,13 @@ impl MyModule {
     }
 
     #[provides]
-    #[into_map(i32_key: 1)]
+    #[into_map(enum_key: E::Foo)]
     pub fn map_1(&self) -> String {
         "foo".to_owned()
     }
 
     #[provides]
-    #[into_map(i32_key: 2)]
+    #[into_map(enum_key: E::Bar)]
     pub fn map_2(&self) -> String {
         "bar".to_owned()
     }
@@ -68,7 +74,7 @@ pub struct BuilderModules {
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 
-    fn i32_map(&self) -> HashMap<i32, String>;
+    fn enum_map(&self) -> HashMap<E, String>;
 }
 
 pub fn main() {
@@ -80,7 +86,7 @@ pub fn main() {
 
     component.greeter().greet();
 
-    print!("{:#?}", component.i32_map());
+    print!("{:#?}", component.enum_map());
 }
 
 #[cfg(test)]

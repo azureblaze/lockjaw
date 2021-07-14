@@ -211,7 +211,7 @@ pub enum MultibindingMapKey {
     None,
     String(String),
     I32(i32),
-    Enum(TypeData, String),
+    Enum(TypeData, TypeData),
 }
 
 impl Default for MultibindingMapKey {
