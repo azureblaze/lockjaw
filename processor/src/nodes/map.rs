@@ -59,6 +59,7 @@ fn map_type(map_key: &MultibindingMapKey, value_type: &TypeData) -> Result<TypeD
     map_type.args.push(match map_key {
         MultibindingMapKey::String(_) => string_type(),
         MultibindingMapKey::I32(_) => i32_type(),
+        MultibindingMapKey::Enum(ref enum_type, _) => enum_type.clone(),
         _ => return compile_error("unable to handle key"),
     });
     map_type.args.push(value_type.clone());
@@ -95,6 +96,10 @@ impl Node for MapNode {
                     quote! { #key.to_owned() }
                 }
                 MultibindingMapKey::I32(key) => {
+                    quote! { #key }
+                }
+                MultibindingMapKey::Enum(_, value_type) => {
+                    let key = value_type.syn_type();
                     quote! { #key }
                 }
                 _ => return compile_error(&format!("unable to handle key {:?}", binding.0)),
