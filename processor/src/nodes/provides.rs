@@ -62,16 +62,16 @@ impl ProvidesNode {
                 vec_node.add_binding(&type_, &binding.multibinding_type);
                 result.push(vec_node);
             }
-            MultibindingType::IntoMap => {
-                let mut map_node = MapNode::new(&binding.map_key, &binding.type_data)?;
-                map_node.add_binding(&binding.map_key, &type_);
-                result.push(map_node);
-            }
             MultibindingType::ElementsIntoVec => {
                 let element_type = binding.type_data.args.get(0).unwrap();
                 let mut vec_node = VecNode::new(element_type);
                 vec_node.add_binding(&type_, &binding.multibinding_type);
                 result.push(vec_node);
+            }
+            MultibindingType::IntoMap => {
+                let mut map_node = MapNode::new(&binding.map_key, &binding.type_data)?;
+                map_node.add_binding(&binding.map_key, &type_);
+                result.push(map_node);
             }
             _ => {}
         }

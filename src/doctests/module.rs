@@ -309,3 +309,37 @@ mod qualifer_not_declared {}
 ///
 /// ```
 mod into_map_string_key_collision {}
+
+/// ```compile_fail
+///#[macro_use] extern crate lockjaw_processor;
+/// lockjaw::prologue!("src/lib.rs");
+///
+/// struct Q;
+///
+///pub struct MyModule {}
+///#[module]
+///impl MyModule {
+///    #[provides]
+///    #[into_map(i32_key : 1)]
+///    pub fn provide_string_1() -> String {
+///        "1".to_owned()
+///    }
+///
+///    #[provides]
+///    #[into_map(i32_key : 1)]
+///    pub fn provide_string_2() -> String {
+///        "2".to_owned()
+///    }
+///}
+///
+///#[component(modules : MyModule)]
+///pub trait MyComponent {
+///    fn i32_map(&self) -> std::collections::HashMap<i32, String>;
+///}
+///pub fn main() {
+///    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+///}
+///epilogue!();
+///
+/// ```
+mod into_map_i32_key_collision {}

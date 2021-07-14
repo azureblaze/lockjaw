@@ -58,6 +58,7 @@ fn map_type(map_key: &MultibindingMapKey, value_type: &TypeData) -> Result<TypeD
     map_type.path = "std::collections::HashMap".to_string();
     map_type.args.push(match map_key {
         MultibindingMapKey::String(_) => string_type(),
+        MultibindingMapKey::I32(_) => i32_type(),
         _ => return compile_error("unable to handle key"),
     });
     map_type.args.push(value_type.clone());
@@ -69,6 +70,13 @@ fn string_type() -> TypeData {
     let mut string_type = TypeData::new();
     string_type.root = TypeRoot::GLOBAL;
     string_type.path = "std::string::String".to_string();
+    string_type
+}
+
+fn i32_type() -> TypeData {
+    let mut string_type = TypeData::new();
+    string_type.root = TypeRoot::PRIMITIVE;
+    string_type.path = "i32".to_string();
     string_type
 }
 
@@ -84,7 +92,10 @@ impl Node for MapNode {
         for binding in &self.bindings {
             let key = match binding.0 {
                 MultibindingMapKey::String(ref key) => {
-                    quote! {#key.to_owned()}
+                    quote! { #key.to_owned() }
+                }
+                MultibindingMapKey::I32(key) => {
+                    quote! { #key }
                 }
                 _ => return compile_error(&format!("unable to handle key {:?}", binding.0)),
             };

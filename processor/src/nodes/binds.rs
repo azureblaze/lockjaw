@@ -21,6 +21,7 @@ use crate::graph::ComponentSections;
 use crate::graph::Graph;
 use crate::manifest::{Binding, BuilderModules, MultibindingType};
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
+use crate::nodes::map::MapNode;
 use crate::nodes::node;
 use crate::nodes::node::{ModuleInstance, Node};
 use crate::nodes::vec::VecNode;
@@ -41,7 +42,7 @@ impl BindsNode {
         module_manifest: &BuilderModules,
         module_type: &TypeData,
         binding: &Binding,
-    ) -> Vec<Box<dyn Node>> {
+    ) -> Result<Vec<Box<dyn Node>>, TokenStream> {
         let dependencies = binding
             .dependencies
             .iter()
@@ -66,9 +67,14 @@ impl BindsNode {
             MultibindingType::ElementsIntoVec => {
                 panic!("unexpected #[elements_into_vec] for #[binds]")
             }
+            MultibindingType::IntoMap => {
+                let mut map_node = MapNode::new(&binding.map_key, &binding.type_data)?;
+                map_node.add_binding(&binding.map_key, &type_);
+                result.push(map_node);
+            }
             _ => {}
         }
-        result
+        Ok(result)
     }
 }
 

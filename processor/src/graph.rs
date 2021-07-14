@@ -410,7 +410,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
                         ProvidesNode::new(&result.builder_modules, &module.type_data, binding)?
                     }
                     BindingType::Binds => {
-                        BindsNode::new(&result.builder_modules, &module.type_data, binding)
+                        BindsNode::new(&result.builder_modules, &module.type_data, binding)?
                     }
                     BindingType::BindsOptionOf => BindsOptionOfNode::new(binding),
                 })?;
