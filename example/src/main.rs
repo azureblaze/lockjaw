@@ -47,13 +47,13 @@ impl MyModule {
     }
 
     #[provides]
-    #[into_map(string_key: "1")]
+    #[into_map(i32_key: 1)]
     pub fn map_1(&self) -> String {
         "foo".to_owned()
     }
 
     #[provides]
-    #[into_map(string_key: "2")]
+    #[into_map(i32_key: 2)]
     pub fn map_2(&self) -> String {
         "bar".to_owned()
     }
@@ -68,7 +68,7 @@ pub struct BuilderModules {
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 
-    fn string_map(&self) -> HashMap<String, String>;
+    fn i32_map(&self) -> HashMap<i32, String>;
 }
 
 pub fn main() {
@@ -80,7 +80,7 @@ pub fn main() {
 
     component.greeter().greet();
 
-    print!("{:#?}", component.string_map());
+    print!("{:#?}", component.i32_map());
 }
 
 #[cfg(test)]

@@ -35,6 +35,7 @@ use crate::parsing;
 use crate::parsing::{get_parenthesized_field_values, FieldValue};
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
+use std::convert::TryFrom;
 
 lazy_static! {
     static ref MODULE_METADATA_KEYS: HashSet<String> = {
@@ -157,6 +158,18 @@ fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
                         return spanned_compile_error(
                             attr.span(),
                             "string literal expected for string_key",
+                        );
+                    }
+                } else if let Some(field) = fields.get("i32_key") {
+                    if let FieldValue::IntLiteral(_, ref int) = field {
+                        map_key = MultibindingMapKey::I32(
+                            i32::try_from(*int)
+                                .map_spanned_compile_error(attr.span(), "key overflows i32")?,
+                        );
+                    } else {
+                        return spanned_compile_error(
+                            attr.span(),
+                            "i32 literal expected for i32_key",
                         );
                     }
                 }

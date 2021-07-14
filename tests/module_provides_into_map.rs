@@ -60,6 +60,18 @@ impl MyModule {
     pub fn provide_q_string2() -> String {
         "q_string2".to_owned()
     }
+
+    #[provides]
+    #[into_map(i32_key: 1)]
+    pub fn provide_i32_string1() -> String {
+        "string1".to_owned()
+    }
+
+    #[provides]
+    #[into_map(i32_key: 2)]
+    pub fn provide_i32_string2() -> String {
+        "string2".to_owned()
+    }
 }
 
 #[component(modules: [MyModule])]
@@ -68,6 +80,8 @@ pub trait MyComponent {
     fn map_string(&self) -> HashMap<String, String>;
     #[qualified(Q)]
     fn q_map_string(&self) -> HashMap<String, String>;
+
+    fn map_i32_string(&self) -> HashMap<i32, String>;
 }
 
 #[test]
@@ -84,6 +98,14 @@ pub fn into_map_qualified() {
     let m = component.q_map_string();
     assert_eq!(m.get("1").unwrap(), "q_string1");
     assert_eq!(m.get("2").unwrap(), "q_string2");
+}
+
+#[test]
+pub fn into_map_i32_key() {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let m = component.map_i32_string();
+    assert_eq!(m.get(&1).unwrap(), "string1");
+    assert_eq!(m.get(&2).unwrap(), "string2");
 }
 
 #[test]
