@@ -22,22 +22,23 @@ trait MyComponent {
 }
 
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component = MyComponentBuilder{}.build();
     let foo : Foo = component.foo();
 }
 epilogue!();
 ```
-# Generated methods
 
-# `pub fn build(modules: BUILDER_MODULES) -> impl COMPONENT`
+# Generated structs
 
-Create an instance of the component, with modules in `modules` installed.
-`BUILDER_MODULES` is the [annotated struct](builder_modules) in the
-[`builder_modules` metadata](#modules).
+# `struct [COMPONENT_NAME]Builder`
 
-# `pub fn new() -> impl COMPONENT`
+A struct that can create an instance of the component.
 
-Create an instance of the component. Only generated if `builder_modules` is not used.
+The struct will only be generated if the [`component_builder` metadata](#component_builder) is not
+assigned. Otherwise, the struct designated by `component_builder` should be used to create the
+component.
+
+See also [`#[component_builder]`](component_builder).
 
 # Metadata
 
@@ -50,7 +51,7 @@ Components accept additional metadata in the form of `#[component(key=value, key
 the dependency graph.
 
 These modules must contain no field. Modules with fields must be provided with
-[builder_modules](#builder_modules) instead.
+[component_builder](#component_builder) instead.
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
@@ -84,14 +85,14 @@ trait MyComponent {
 # epilogue!();
 ```
 
-## `builder_modules`
+## `component_builder`
 
 **Optional** path or array of path to a struct annotated by
-[`#[builder_modules]`](builder_modules), which contains
+[`#[component_builder]`](component_builder), which contains
 [`modules`](module) to be installed as fields. Bindings in listed modules will be incorporated into
 the dependency graph.
 
-If a module does not contain any field, it can be listed in [`modules`](#modules) instead.
+If a module does not contain any fields, it can be listed in [`modules`](#modules) instead.
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
@@ -107,21 +108,21 @@ impl StringModule {
     }
 }
 
-#[builder_modules]
-struct MyBuilderModules {
+#[component_builder]
+struct MyComponentBuilder {
     module : crate::StringModule,
 }
-#[component(builder_modules : crate::MyBuilderModules)]
+#[component(component_builder : crate::MyComponentBuilder)]
 trait MyComponent {
     fn string(&self) -> String;
 }
 
 fn main() {
-    let component = MyComponent::build(MyBuilderModules{
+    let component = MyComponentBuilder {
         module: StringModule{
             string: "foo".to_owned()
         }
-    });
+    }.build();
     
     assert_eq!("foo", component.string());
 }

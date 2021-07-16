@@ -39,7 +39,7 @@ mod m {
 
 #[test]
 pub fn main() {
-    let component: Box<dyn m::MyComponent> = <dyn m::MyComponent>::new();
+    let component: Box<dyn m::MyComponent> = m::MyComponentBuilder {}.build();
     component.foo();
 }
 epilogue!();

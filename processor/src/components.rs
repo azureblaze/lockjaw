@@ -21,12 +21,12 @@ use std::ops::Deref;
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::quote_spanned;
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
-use crate::manifest::{with_manifest, BuilderModules, Component, Dependency, Manifest};
+use crate::manifest::{with_manifest, Component, ComponentBuilder, Dependency, Manifest};
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
@@ -38,7 +38,7 @@ lazy_static! {
     static ref COMPONENT_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("modules".to_owned());
-        set.insert("builder_modules".to_owned());
+        set.insert("component_builder".to_owned());
         set
     };
 }
@@ -91,7 +91,7 @@ pub fn handle_component_attribute(
         }
     }
 
-    let builder_modules = if let Some(value) = attributes.get("builder_modules") {
+    let component_builder = if let Some(value) = attributes.get("component_builder") {
         if let FieldValue::Path(span, ref path) = value {
             let type_ = TypeData::from_path_with_span(path.borrow(), span.clone())?;
             type_validator.add_type(&type_, span.clone());
@@ -130,14 +130,23 @@ pub fn handle_component_attribute(
     } else {
         None
     };
-
     let mut component = Component::new();
     component.type_data =
         TypeData::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
     component.provisions.extend(provisions);
-    if let Some(ref m) = builder_modules {
-        component.builder_modules = Some(m.clone());
+    if let Some(ref m) = component_builder {
+        component.builder = Some(m.clone());
     }
+
+    let default_builder = if let Some(_) = component_builder {
+        quote! {}
+    } else {
+        let builder_name = format_ident!("{}Builder", item_trait.ident);
+        quote! {
+            pub struct #builder_name;
+        }
+    };
+
     if let Some(ref m) = modules {
         component.modules = m.clone();
     }
@@ -149,6 +158,7 @@ pub fn handle_component_attribute(
     let validate_type = type_validator.validate(identifier);
     let result = quote! {
         #item_trait
+        #default_builder
         #validate_type
         #prologue_check
     };
@@ -167,7 +177,7 @@ fn is_trait_object_without_lifetime(ty: &syn::Type) -> bool {
     !tokens.contains(&"'".to_owned())
 }
 
-pub fn handle_builder_modules_attribute(
+pub fn handle_component_builder_attribute(
     _attr: TokenStream,
     input: TokenStream,
 ) -> Result<TokenStream, TokenStream> {
@@ -188,13 +198,13 @@ pub fn handle_builder_modules_attribute(
         modules.push(dep);
     }
 
-    let mut builder_modules = BuilderModules::new();
-    builder_modules.type_data = Some(TypeData::from_local(
+    let mut component_builder = ComponentBuilder::new();
+    component_builder.type_data = Some(TypeData::from_local(
         &item_struct.ident.to_string(),
         item_struct.ident.span(),
     )?);
-    builder_modules.builder_modules.extend(modules);
-    with_manifest(|mut manifest| manifest.builder_modules.push(builder_modules));
+    component_builder.modules.extend(modules);
+    with_manifest(|mut manifest| manifest.component_builders.push(component_builder));
 
     let prologue_check = prologue_check(item_struct.ident.span());
     Ok(quote_spanned! {span=>

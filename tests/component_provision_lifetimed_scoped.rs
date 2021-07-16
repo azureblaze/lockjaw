@@ -50,7 +50,7 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    let component = <dyn MyComponent>::new();
+    let component = MyComponentBuilder {}.build();
     component.foo();
     component.bar();
 }

@@ -23,13 +23,13 @@ pub trait MyComponent {
 }
 
 pub fn main() {
-    let component = <dyn MyComponent>::new();
+    let component = MyComponentBuilder{}.build();
     assert_eq!(component.string(), "foo");
 }
 epilogue!();
 ```
 
-If the module struct contains fields, it must use [`builder_modules`](builder_modules) instead.
+If the module struct contains fields, it must use [`component_builder`](component_builder) instead.
 
 ```
 # use lockjaw::*;
@@ -46,22 +46,22 @@ impl FooModule {
     }
 }
 
-#[builder_modules]
-pub struct MyBuilderModules {
+#[component_builder]
+pub struct MyComponentBuilder {
     foo : FooModule,
 }
 
-#[component(builder_modules : MyBuilderModules)]
+#[component(component_builder : MyComponentBuilder)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
 
 pub fn main() {
-    let component = MyComponent::build(MyBuilderModules {
+    let component = MyComponentBuilder {
         foo : FooModule {
             value:"bar".to_owned()
         }
-    });
+    }.build();
     assert_eq!(component.string(), "bar");
 }
 epilogue!();
@@ -108,22 +108,22 @@ impl FooModule {
     }
 }
 
-#[builder_modules]
-pub struct MyBuilderModules {
+#[component_builder]
+pub struct MyComponentBuilder {
     foo : crate::FooModule,
 }
 
-#[component(builder_modules : crate::MyBuilderModules)]
+#[component(component_builder : crate::MyComponentBuilder)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
 
 pub fn main() {
-    let component = MyComponent::build(MyBuilderModules {
+    let component = MyComponentBuilder {
         foo : FooModule {
             value:"foo".to_owned()
         }
-    });
+    }.build();
     assert_eq!(component.string(), "foo bar");
 }
 epilogue!();
@@ -182,7 +182,7 @@ pub trait MyComponent {
 }
 
 pub fn main() {
-    let component = <dyn MyComponent>::new();
+    let component = MyComponentBuilder{}.build();
     let bar1 = component.bar();
     let bar2 = component.bar();
     let bar1_ptr: *const Bar = &bar1;
@@ -249,7 +249,7 @@ pub trait MyComponent {
 }
 
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder{}.build();
     assert_eq!(component.my_trait().hello(), "hello");
 }
 epilogue!();
@@ -312,7 +312,7 @@ pub trait MyComponent {
 }
 
 pub fn main() {
-    let component = <dyn MyComponent>::new();
+    let component = MyComponentBuilder{}.build();
     let bar1 = component.bar();
     let bar2 = component.bar();
     let bar1_ptr: *const Bar = &bar1;

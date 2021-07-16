@@ -44,7 +44,7 @@ pub trait MyComponent {
 }
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     assert_eq!(component.string(), "string");
     assert_eq!(component.named_string(), "named_string");
 }

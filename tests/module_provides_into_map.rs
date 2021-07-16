@@ -107,7 +107,7 @@ pub trait MyComponent {
 
 #[test]
 pub fn into_map_string_key() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let m = component.map_string();
     assert_eq!(m.get("1").unwrap(), "string1");
     assert_eq!(m.get("2").unwrap(), "string2");
@@ -115,7 +115,7 @@ pub fn into_map_string_key() {
 
 #[test]
 pub fn into_map_qualified() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let m = component.q_map_string();
     assert_eq!(m.get("1").unwrap(), "q_string1");
     assert_eq!(m.get("2").unwrap(), "q_string2");
@@ -123,7 +123,7 @@ pub fn into_map_qualified() {
 
 #[test]
 pub fn into_map_i32_key() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let m = component.map_i32_string();
     assert_eq!(m.get(&1).unwrap(), "string1");
     assert_eq!(m.get(&2).unwrap(), "string2");
@@ -131,7 +131,7 @@ pub fn into_map_i32_key() {
 
 #[test]
 pub fn into_map_enum_key() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let m = component.map_enum_string();
     assert_eq!(m.get(&E::Foo).unwrap(), "string1");
     assert_eq!(m.get(&Bar).unwrap(), "string2");
@@ -139,7 +139,7 @@ pub fn into_map_enum_key() {
 
 #[test]
 pub fn regular_provision_not_affected() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     assert_eq!(component.string(), "string");
 }
 

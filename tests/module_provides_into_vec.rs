@@ -123,7 +123,7 @@ pub trait MyComponent {
 
 #[test]
 pub fn into_vec() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let v = component.vec_string();
     assert!(v.contains(&"string1".to_owned()));
     assert!(v.contains(&"string2".to_owned()));
@@ -136,7 +136,7 @@ pub fn into_vec() {
 
 #[test]
 pub fn into_vec_qualified() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let v = component.q_vec_string();
     assert!(v.contains(&"q_string1".to_owned()));
     assert!(v.contains(&"q_string2".to_owned()));
@@ -147,7 +147,7 @@ pub fn into_vec_qualified() {
 
 #[test]
 pub fn bind_into_vec() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let v = component
         .vec_foo()
         .iter()
@@ -159,7 +159,7 @@ pub fn bind_into_vec() {
 
 #[test]
 pub fn regular_provision_not_affected() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     assert_eq!(component.string(), "string");
 }
 

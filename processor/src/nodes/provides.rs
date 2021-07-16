@@ -18,7 +18,7 @@ use quote::{format_ident, quote};
 
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::{Binding, BuilderModules, MultibindingType};
+use crate::manifest::{Binding, ComponentBuilder, MultibindingType};
 use crate::nodes::map::MapNode;
 use crate::nodes::node;
 use crate::nodes::node::{ModuleInstance, Node};
@@ -37,7 +37,7 @@ pub struct ProvidesNode {
 
 impl ProvidesNode {
     pub fn new(
-        module_manifest: &BuilderModules,
+        module_manifest: &ComponentBuilder,
         module_type: &TypeData,
         binding: &Binding,
     ) -> Result<Vec<Box<dyn Node>>, TokenStream> {

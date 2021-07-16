@@ -18,7 +18,7 @@ limitations under the License.
 
 lockjaw::prologue!("tests/component_module_builder_build.rs");
 
-use lockjaw::{builder_modules, component, epilogue, module};
+use lockjaw::{component, component_builder, epilogue, module};
 
 pub struct Foo {}
 
@@ -34,22 +34,23 @@ impl MyModule {
     }
 }
 
-#[builder_modules]
+#[component_builder]
 pub struct MyModuleManifest {
     my_module: crate::MyModule,
 }
 
-#[component(builder_modules: crate::MyModuleManifest)]
+#[component(component_builder: crate::MyModuleManifest)]
 pub trait MyComponent {
     fn string(&self) -> String;
 }
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::build(MyModuleManifest {
+    let component = MyModuleManifest {
         my_module: MyModule {
             string: "foo".to_owned(),
         },
-    });
+    }
+    .build();
     assert_eq!(component.string(), "foo");
 }
 epilogue!();

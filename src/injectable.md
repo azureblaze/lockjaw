@@ -33,7 +33,7 @@ trait MyComponent {
 }
 
 pub fn main() {
-    let component = <dyn MyComponent>::new();
+    let component = MyComponentBuilder{}.build();
     let foo = component.foo();
 }
 epilogue!();
@@ -98,7 +98,7 @@ pub trait MyComponent {
 }
 
 pub fn main() {
-    let component = <dyn MyComponent>::new();
+    let component = MyComponentBuilder{}.build();
     let bar1 = component.bar();
     let bar2 = component.bar();
     let bar1_ptr: *const Bar = &bar1;

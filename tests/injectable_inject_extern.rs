@@ -37,7 +37,7 @@ pub trait MyComponent {
 
 #[test]
 fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let _bar = component.bar();
 }
 

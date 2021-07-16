@@ -81,7 +81,7 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    let component = <dyn MyComponent>::new();
+    let component = MyComponentBuilder {}.build();
 
     assert_eq!(component.greeter().greet(), "helloworld 1");
     assert_eq!(component.greeter().greet(), "helloworld 2");

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{builder_modules, component, injectable, module, prologue, ComponentLifetime};
+use lockjaw::{component, component_builder, injectable, module, prologue, ComponentLifetime};
 use printer::Printer;
 
 prologue!("src/main.rs");
@@ -65,12 +65,12 @@ impl MyModule {
     }
 }
 
-#[builder_modules]
-pub struct BuilderModules {
+#[component_builder]
+pub struct MyComponentBuilder {
     my_module: MyModule,
 }
 
-#[component(modules: [printer_impl::Module], builder_modules: BuilderModules)]
+#[component(modules: [printer_impl::Module], component_builder: MyComponentBuilder)]
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 
@@ -78,11 +78,12 @@ pub trait MyComponent {
 }
 
 pub fn main() {
-    let component = <dyn MyComponent>::build(BuilderModules {
+    let component = MyComponentBuilder {
         my_module: MyModule {
             phrase: "helloworld".to_owned(),
         },
-    });
+    }
+    .build();
 
     component.greeter().greet();
 
@@ -94,7 +95,13 @@ use printer_test::TestPrinter;
 use std::collections::HashMap;
 
 #[cfg(test)]
-#[component(modules: [::printer_test::Module], builder_modules: BuilderModules)]
+#[component_builder]
+pub struct TestComponentBuilder {
+    my_module: MyModule,
+}
+
+#[cfg(test)]
+#[component(modules: [::printer_test::Module], component_builder: TestComponentBuilder)]
 pub trait TestComponent {
     fn greeter(&self) -> Greeter;
 
@@ -103,11 +110,12 @@ pub trait TestComponent {
 
 #[test]
 fn test_greeter() {
-    let component = <dyn TestComponent>::build(BuilderModules {
+    let component = TestComponentBuilder {
         my_module: MyModule {
             phrase: "helloworld".to_owned(),
         },
-    });
+    }
+    .build();
     component.greeter().greet();
 
     assert_eq!(

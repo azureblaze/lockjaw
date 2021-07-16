@@ -41,7 +41,7 @@ pub struct Manifest {
     pub components: Vec<Component>,
     pub merged_crates: Vec<::std::string::String>,
     pub modules: Vec<Module>,
-    pub builder_modules: Vec<BuilderModules>,
+    pub component_builders: Vec<ComponentBuilder>,
     pub qualifiers: Vec<TypeData>,
 }
 
@@ -55,7 +55,7 @@ impl Manifest {
         self.components.clear();
         self.merged_crates.clear();
         self.modules.clear();
-        self.builder_modules.clear();
+        self.component_builders.clear();
         self.qualifiers.clear();
     }
 
@@ -67,8 +67,8 @@ impl Manifest {
         self.merged_crates
             .extend_from_slice(other.merged_crates.as_slice());
         self.modules.extend_from_slice(other.modules.as_slice());
-        self.builder_modules
-            .extend_from_slice(other.builder_modules.as_slice());
+        self.component_builders
+            .extend_from_slice(other.component_builders.as_slice());
         self.qualifiers
             .extend_from_slice(other.qualifiers.as_slice());
     }
@@ -98,7 +98,7 @@ pub struct Field {
 pub struct Component {
     pub type_data: TypeData,
     pub provisions: Vec<Dependency>,
-    pub builder_modules: Option<TypeData>,
+    pub builder: Option<TypeData>,
     pub modules: Vec<TypeData>,
 }
 
@@ -109,12 +109,12 @@ impl Component {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
-pub struct BuilderModules {
+pub struct ComponentBuilder {
     pub type_data: Option<TypeData>,
-    pub builder_modules: Vec<Dependency>,
+    pub modules: Vec<Dependency>,
 }
 
-impl BuilderModules {
+impl ComponentBuilder {
     pub fn new() -> Self {
         Default::default()
     }

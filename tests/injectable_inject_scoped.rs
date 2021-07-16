@@ -60,7 +60,7 @@ pub trait MyComponent {
 }
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let bar1 = component.bar();
     let bar2 = component.bar();
     assert_eq!(bar1.foo.count(), 0);

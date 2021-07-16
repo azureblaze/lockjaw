@@ -69,14 +69,14 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
 
     assert_eq!(component.foo().get().i, 1);
 }
 
 #[test]
 pub fn before_get_not_created() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let _foo = component.foo();
 
     assert_eq!(component.counter().get(), 0);
@@ -84,7 +84,7 @@ pub fn before_get_not_created() {
 
 #[test]
 pub fn multiple_get_same_instance() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let lazy = component.foo();
     assert_eq!(lazy.get().i, 1);
     assert_eq!(lazy.get().i, 1);

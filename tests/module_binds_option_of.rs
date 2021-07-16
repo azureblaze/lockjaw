@@ -46,13 +46,13 @@ pub trait MyComponent {
 
 #[test]
 pub fn provided_value_returned() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     assert_eq!(component.option_string(), Some("string".to_owned()));
 }
 
 #[test]
 pub fn not_provided_empty() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     assert_eq!(component.option_i32(), None);
 }
 epilogue!(debug_output);

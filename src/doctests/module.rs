@@ -268,7 +268,7 @@ mod provides_elements_into_vec_not_vec {}
 ///}
 ///#[test]
 ///pub fn main() {
-///    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+///    let component: Box<dyn MyComponent> = MyComponentBuilder{}.build();
 ///    component.string();
 ///}
 ///epilogue!();
@@ -303,7 +303,7 @@ mod qualifer_not_declared {}
 ///    fn string_map(&self) -> std::collections::HashMap<String, String>;
 ///}
 ///pub fn main() {
-///    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+///    let component: Box<dyn MyComponent> = MyComponentBuilder{}.build();
 ///}
 ///epilogue!();
 ///
@@ -337,7 +337,7 @@ mod into_map_string_key_collision {}
 ///    fn i32_map(&self) -> std::collections::HashMap<i32, String>;
 ///}
 ///pub fn main() {
-///    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+///    let component: Box<dyn MyComponent> = MyComponentBuilder{}.build();
 ///}
 ///epilogue!();
 ///

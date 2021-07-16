@@ -23,7 +23,7 @@ use quote::format_ident;
 use quote::quote;
 
 use crate::error::{compile_error, CompileError};
-use crate::manifest::{BindingType, BuilderModules, Component, Manifest, TypeRoot};
+use crate::manifest::{BindingType, Component, ComponentBuilder, Manifest, TypeRoot};
 use crate::nodes::binds::BindsNode;
 use crate::nodes::binds_option_of::BindsOptionOfNode;
 use crate::nodes::injectable::InjectableNode;
@@ -38,7 +38,7 @@ use std::iter::FromIterator;
 pub struct Graph {
     map: HashMap<Ident, Box<dyn Node>>,
     modules: Vec<TypeData>,
-    builder_modules: BuilderModules,
+    component_builder: ComponentBuilder,
     provisions: Vec<Box<ProvisionNode>>,
 }
 
@@ -151,28 +151,20 @@ pub fn generate_component(
             #trait_methods
         }
     };
-    let mut builder = quote! {};
-    if graph.builder_modules.type_data.is_some() {
-        let module_manifest_name = graph.builder_modules.type_data.unwrap().syn_type();
-        builder = quote! {
-            impl dyn #component_name {
-                #[allow(unused)]
-                pub fn build (param : #module_manifest_name) -> Box<dyn #component_name>{
-                   Box::new(#component_impl_name{#ctor_params})
-                }
+    let component_builder_name = if let Some(_) = graph.component_builder.type_data {
+        graph.component_builder.type_data.unwrap().syn_type()
+    } else {
+        let mut builder_type = component.type_data.clone();
+        builder_type.path.push_str("Builder");
+        builder_type.syn_type()
+    };
+    let builder = quote! {
+        impl #component_builder_name {
+            pub fn build (self) -> Box<dyn #component_name>{
+               Box::new(#component_impl_name{#ctor_params})
             }
-        };
-    }
-    if graph.builder_modules.builder_modules.is_empty() {
-        builder = quote! {
-            #builder
-            impl dyn #component_name {
-                pub fn new () -> Box<dyn #component_name>{
-                   Box::new(#component_impl_name{#ctor_params})
-                }
-            }
-        };
-    }
+        }
+    };
 
     Ok((
         quote! {
@@ -224,14 +216,14 @@ impl Graph {
             });
         }
 
-        for module in &self.builder_modules.builder_modules {
+        for module in &self.component_builder.modules {
             let name = format_ident!("{}", module.name);
             let path = module.type_data.syn_type();
             result.add_fields(quote! {
                 #name : #path,
             });
             result.add_ctor_params(quote! {
-                #name : param.#name,
+                #name : self.#name,
             });
         }
 
@@ -322,17 +314,17 @@ impl Graph {
 fn get_module_manifest(
     manifest: &Manifest,
     component: &Component,
-) -> Result<BuilderModules, TokenStream> {
-    if component.builder_modules.is_none() {
-        return Ok(BuilderModules::new());
+) -> Result<ComponentBuilder, TokenStream> {
+    if component.builder.is_none() {
+        return Ok(ComponentBuilder::new());
     }
-    for module_manifest in &manifest.builder_modules {
+    for module_manifest in &manifest.component_builders {
         if module_manifest
             .type_data
             .as_ref()
             .unwrap()
             .identifier()
-            .eq(&component.builder_modules.as_ref().unwrap().identifier())
+            .eq(&component.builder.as_ref().unwrap().identifier())
         {
             return Ok(module_manifest.clone());
         }
@@ -340,11 +332,7 @@ fn get_module_manifest(
     log!("{:#?}", manifest);
     compile_error(&format!(
         "cannot find module manifest {}, used by {}",
-        component
-            .builder_modules
-            .as_ref()
-            .unwrap()
-            .canonical_string_path(),
+        component.builder.as_ref().unwrap().canonical_string_path(),
         component.type_data.canonical_string_path()
     ))
 }
@@ -361,7 +349,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
         }
     }
     let mut installed_modules = HashSet::<Ident>::new();
-    result.builder_modules = get_module_manifest(manifest, component)?;
+    result.component_builder = get_module_manifest(manifest, component)?;
     result.modules = component.modules.clone();
 
     let available_modules: HashSet<Ident> = manifest
@@ -379,7 +367,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
         }
     }
 
-    for module in &result.builder_modules.builder_modules {
+    for module in &result.component_builder.modules {
         if !available_modules.contains(&module.type_data.identifier()) {
             return compile_error(&format!(
                 "module {} not found, required by {}",
@@ -393,7 +381,7 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
         installed_modules.insert(module.identifier());
     }
 
-    for module in &result.builder_modules.builder_modules {
+    for module in &result.component_builder.modules {
         installed_modules.insert(module.type_data.identifier());
     }
     for module in &manifest.modules {
@@ -407,10 +395,10 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
             {
                 result.add_nodes(match &binding.binding_type {
                     BindingType::Provides => {
-                        ProvidesNode::new(&result.builder_modules, &module.type_data, binding)?
+                        ProvidesNode::new(&result.component_builder, &module.type_data, binding)?
                     }
                     BindingType::Binds => {
-                        BindsNode::new(&result.builder_modules, &module.type_data, binding)?
+                        BindsNode::new(&result.component_builder, &module.type_data, binding)?
                     }
                     BindingType::BindsOptionOf => BindsOptionOfNode::new(binding),
                 })?;

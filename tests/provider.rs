@@ -70,21 +70,21 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
 
     assert_eq!(component.foo().get().i, 1);
 }
 
 #[test]
 pub fn nested_provider() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
 
     assert_eq!(component.foo2().get().get().i, 1);
 }
 
 #[test]
 pub fn before_get_not_created() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
     let _foo = component.foo();
 
     assert_eq!(component.counter().get(), 0);
@@ -92,7 +92,7 @@ pub fn before_get_not_created() {
 
 #[test]
 pub fn multiple_get_multiple_instance() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn MyComponent> = MyComponentBuilder {}.build();
 
     assert_eq!(component.foo().get().i, 1);
     assert_eq!(component.foo().get().i, 2);
