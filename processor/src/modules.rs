@@ -40,7 +40,7 @@ use std::convert::TryFrom;
 lazy_static! {
     static ref MODULE_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
-        set.insert("path".to_owned());
+        set.insert("subcomponents".to_owned());
         set
     };
 }
@@ -86,6 +86,9 @@ fn handle_module_attribute_internal(
     let mut module = Module::new();
     module.type_data = TypeData::from_local(&module_path.to_owned(), item_impl.span())?;
     module.bindings.extend(bindings);
+    if let Some(subcomponents) = attributes.get("subcomponents") {
+        module.subcomponents = subcomponents.get_types()?
+    }
     with_manifest(|mut manifest| {
         for existing_module in &manifest.modules {
             if existing_module.type_data.eq(&module.type_data) {

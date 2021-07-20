@@ -22,31 +22,33 @@ use proc_macro2::{Ident, TokenStream};
 use quote::format_ident;
 use quote::quote;
 
-use crate::error::{compile_error, CompileError};
-use crate::manifest::{BindingType, BuilderModules, Component, Manifest, TypeRoot};
+use crate::error::compile_error;
+use crate::manifest::{BindingType, BuilderModules, Component, ComponentType, Manifest, TypeRoot};
 use crate::nodes::binds::BindsNode;
 use crate::nodes::binds_option_of::BindsOptionOfNode;
 use crate::nodes::injectable::InjectableNode;
 use crate::nodes::node::Node;
+use crate::nodes::parent::ParentNode;
 use crate::nodes::provides::ProvidesNode;
 use crate::nodes::provision::ProvisionNode;
+use crate::nodes::subcomponent::SubcomponentNode;
 use crate::type_data::TypeData;
 use std::iter::FromIterator;
 
 /// Dependency graph and other related data
 #[derive(Default, Debug)]
 pub struct Graph {
-    map: HashMap<Ident, Box<dyn Node>>,
-    modules: Vec<TypeData>,
-    builder_modules: BuilderModules,
-    provisions: Vec<Box<ProvisionNode>>,
+    pub map: HashMap<Ident, Box<dyn Node>>,
+    pub modules: Vec<TypeData>,
+    pub builder_modules: BuilderModules,
+    pub provisions: Vec<Box<ProvisionNode>>,
 }
 
 pub struct ComponentSections {
-    fields: TokenStream,
-    ctor_params: TokenStream,
-    methods: TokenStream,
-    trait_methods: TokenStream,
+    pub fields: TokenStream,
+    pub ctor_params: TokenStream,
+    pub methods: TokenStream,
+    pub trait_methods: TokenStream,
 }
 
 impl Debug for ComponentSections {
@@ -115,7 +117,27 @@ pub fn generate_component(
     component: &Component,
     manifest: &Manifest,
 ) -> Result<(TokenStream, String), TokenStream> {
-    let graph = crate::graph::build_graph(manifest, component)?;
+    let (graph, missing_deps) = build_graph(manifest, component)?;
+    if !missing_deps.is_empty() {
+        let mut error = quote! {};
+        for dep in missing_deps {
+            let msg = &format!(
+                "missing bindings for {}\nrequested by: {} ",
+                dep.type_data.readable(),
+                dep.ancestors
+                    .iter()
+                    .rev()
+                    .map(|s| s.clone())
+                    .collect::<Vec<String>>()
+                    .join("\nrequested by: ")
+            );
+            error = quote! {
+                #error
+                compile_error!(#msg);
+            }
+        }
+        return Err(error);
+    }
     let component_name = component.type_data.syn_type();
     let component_impl_name = format_ident!(
         "{}Impl",
@@ -210,7 +232,7 @@ impl Graph {
         Ok(())
     }
 
-    fn generate_modules(&self) -> ComponentSections {
+    pub fn generate_modules(&self) -> ComponentSections {
         let mut result = ComponentSections::new();
 
         for module in &self.modules {
@@ -238,7 +260,10 @@ impl Graph {
         result
     }
 
-    fn generate_provisions(&self, component: &Component) -> Result<ComponentSections, TokenStream> {
+    pub fn generate_provisions(
+        &self,
+        component: &Component,
+    ) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         let mut generated_nodes = HashSet::<Ident>::new();
         for provision in &self.provisions {
@@ -349,7 +374,15 @@ fn get_module_manifest(
     ))
 }
 
-fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, TokenStream> {
+pub struct MissingDependency {
+    pub type_data: TypeData,
+    pub ancestors: Vec<String>,
+}
+
+pub fn build_graph(
+    manifest: &Manifest,
+    component: &Component,
+) -> Result<(Graph, Vec<MissingDependency>), TokenStream> {
     let mut result = Graph::default();
     let singleton = singleton_type();
     for injectable in &manifest.injectables {
@@ -416,20 +449,33 @@ fn build_graph(manifest: &Manifest, component: &Component) -> Result<Graph, Toke
                 })?;
             }
         }
+        for subcomponent in &module.subcomponents {
+            result.add_node(SubcomponentNode::new(
+                manifest,
+                subcomponent,
+                &component.type_data,
+            )?)?;
+        }
     }
     let mut resolved_nodes = HashSet::<Ident>::new();
+    let mut missing_deps = Vec::new();
     for provision in &component.provisions {
         let provision = Box::new(ProvisionNode::new(provision.clone(), component.clone()));
-        resolve_dependencies(
+        missing_deps.extend(resolve_dependencies(
             provision.as_ref(),
             &mut result.map,
             &mut vec![],
             &mut resolved_nodes,
-        )?;
+        )?);
         result.provisions.push(provision);
     }
+    if component.component_type == ComponentType::Subcomponent {
+        for missing_dep in &missing_deps {
+            result.add_node(ParentNode::new(&missing_dep.type_data)?)?;
+        }
+    }
     validate_graph(manifest, &result)?;
-    Ok(result)
+    Ok((result, missing_deps))
 }
 
 fn singleton_type() -> TypeData {
@@ -444,42 +490,44 @@ fn resolve_dependencies(
     node: &dyn Node,
     map: &mut HashMap<Ident, Box<dyn Node>>,
     ancestors: &mut Vec<String>,
-    resovled_nodes: &mut HashSet<Ident>,
-) -> Result<(), TokenStream> {
+    resolved_nodes: &mut HashSet<Ident>,
+) -> Result<Vec<MissingDependency>, TokenStream> {
     if ancestors.contains(&node.get_name()) {
         return cyclic_dependency(node, ancestors);
     }
 
-    if resovled_nodes.contains(&node.get_identifier()) {
-        return Ok(());
+    if resolved_nodes.contains(&node.get_identifier()) {
+        return Ok(Vec::new());
     }
 
-    resovled_nodes.insert(node.get_identifier());
+    resolved_nodes.insert(node.get_identifier());
+    let mut missing_deps = Vec::<MissingDependency>::new();
 
     ancestors.push(node.get_name());
     for dependency in node.get_dependencies() {
         let mut dependency_node = map.get(&dependency.identifier());
 
         if dependency_node.is_none() {
-            let generated_node =
-                <dyn Node>::generate_node(&dependency).map_compile_error(&format!(
-                    "missing bindings for {}\n{:#?}\nrequested by: {} ",
-                    dependency.readable(),
-                    &dependency,
-                    ancestors
-                        .iter()
-                        .rev()
-                        .map(|s| s.clone())
-                        .collect::<Vec<String>>()
-                        .join("\nrequested by: ")
-                ))?;
-            let identifier = generated_node.get_identifier();
-            map.insert(identifier.clone(), generated_node);
-            dependency_node = map.get(&identifier);
+            if let Some(generated_node) = <dyn Node>::generate_node(&dependency) {
+                let identifier = generated_node.get_identifier();
+                map.insert(identifier.clone(), generated_node);
+                dependency_node = map.get(&identifier);
+            } else {
+                missing_deps.push(MissingDependency {
+                    type_data: dependency.clone(),
+                    ancestors: ancestors.clone(),
+                });
+                continue;
+            }
         }
         let cloned_node = dependency_node.unwrap().clone_box();
         node.can_depend(cloned_node.as_ref(), ancestors)?;
-        resolve_dependencies(cloned_node.as_ref(), map, ancestors, resovled_nodes)?;
+        missing_deps.extend(resolve_dependencies(
+            cloned_node.as_ref(),
+            map,
+            ancestors,
+            resolved_nodes,
+        )?);
     }
     for dependency in node.get_optional_dependencies() {
         let mut dependency_node = map.get(&dependency.identifier());
@@ -494,13 +542,18 @@ fn resolve_dependencies(
         }
         let cloned_node = dependency_node.unwrap().clone_box();
         node.can_depend(cloned_node.as_ref(), ancestors)?;
-        resolve_dependencies(cloned_node.as_ref(), map, ancestors, resovled_nodes)?;
+        missing_deps.extend(resolve_dependencies(
+            cloned_node.as_ref(),
+            map,
+            ancestors,
+            resolved_nodes,
+        )?);
     }
     ancestors.pop();
-    Ok(())
+    Ok(missing_deps)
 }
 
-fn cyclic_dependency(node: &dyn Node, ancestors: &mut Vec<String>) -> Result<(), TokenStream> {
+fn cyclic_dependency<T>(node: &dyn Node, ancestors: &mut Vec<String>) -> Result<T, TokenStream> {
     ancestors.push(node.get_name());
     ancestors.reverse();
     let mut iter = ancestors.iter();
