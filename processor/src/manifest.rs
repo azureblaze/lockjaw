@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+use std::cell::{RefCell, RefMut};
+
 use serde::{Deserialize, Serialize};
 
 use crate::manifest::BindingType::Provides;
 use crate::manifest::TypeRoot::UNSPECIFIED;
 use crate::type_data::TypeData;
-use std::cell::{RefCell, RefMut};
 
 thread_local! {
     static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
@@ -94,9 +95,22 @@ pub struct Field {
     pub injected: bool,
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub enum ComponentType {
+    Component,
+    Subcomponent,
+}
+
+impl Default for ComponentType {
+    fn default() -> Self {
+        ComponentType::Component
+    }
+}
+
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Component {
     pub type_data: TypeData,
+    pub component_type: ComponentType,
     pub provisions: Vec<Dependency>,
     pub builder_modules: Option<TypeData>,
     pub modules: Vec<TypeData>,
@@ -150,6 +164,7 @@ impl Default for TypeRoot {
 pub struct Module {
     pub type_data: TypeData,
     pub bindings: Vec<Binding>,
+    pub subcomponents: Vec<TypeData>,
 }
 
 impl Module {

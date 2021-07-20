@@ -100,6 +100,25 @@ impl FieldValue {
             FieldValue::FieldValues(ref span, _) => span.clone(),
         }
     }
+
+    pub fn get_types(&self) -> Result<Vec<TypeData>, TokenStream> {
+        match self {
+            FieldValue::Path(ref span, ref path) => {
+                Ok(vec![TypeData::from_path_with_span(path, span.clone())?])
+            }
+            FieldValue::Array(_, ref array) => array
+                .iter()
+                .map(|f| {
+                    if let FieldValue::Path(ref span, ref path) = f {
+                        TypeData::from_path_with_span(path, span.clone())
+                    } else {
+                        spanned_compile_error(self.span(), "path expected")
+                    }
+                })
+                .collect(),
+            _ => spanned_compile_error(self.span(), "path expected"),
+        }
+    }
 }
 
 /// Converts #[attr(key1 : "value1", key2 : value2)] to key-value map.

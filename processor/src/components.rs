@@ -21,18 +21,20 @@ use std::ops::Deref;
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::quote_spanned;
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
+use syn::Attribute;
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
-use crate::manifest::{with_manifest, BuilderModules, Component, Dependency, Manifest};
+use crate::manifest::{
+    with_manifest, BuilderModules, Component, ComponentType, Dependency, Manifest,
+};
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use crate::type_validator::TypeValidator;
 use crate::{environment, parsing};
-use syn::Attribute;
 
 lazy_static! {
     static ref COMPONENT_METADATA_KEYS: HashSet<String> = {
@@ -46,6 +48,7 @@ lazy_static! {
 pub fn handle_component_attribute(
     attr: TokenStream,
     input: TokenStream,
+    component_type: ComponentType,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
     let mut item_trait: syn::ItemTrait =
@@ -134,6 +137,7 @@ pub fn handle_component_attribute(
     let mut component = Component::new();
     component.type_data =
         TypeData::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
+    component.component_type = component_type;
     component.provisions.extend(provisions);
     if let Some(ref m) = builder_modules {
         component.builder_modules = Some(m.clone());
@@ -143,12 +147,31 @@ pub fn handle_component_attribute(
     }
     let identifier = component.type_data.identifier().to_string();
 
+    let subcomponent_builder = if component.component_type == ComponentType::Subcomponent {
+        let subcomponent_name = item_trait.ident.clone();
+        let builder_name = format_ident!("{}Builder", subcomponent_name);
+        let args = if builder_modules.is_some() {
+            let args_type = builder_modules.as_ref().unwrap().syn_type();
+            quote! {builder_modules: #args_type}
+        } else {
+            quote! {}
+        };
+        quote! {
+            pub trait #builder_name<'a> {
+                fn build(&self, #args) -> ::lockjaw::ComponentLifetime<'a, dyn #subcomponent_name<'a>>;
+            }
+        }
+    } else {
+        quote! {}
+    };
+
     with_manifest(|mut manifest| manifest.components.push(component));
 
     let prologue_check = prologue_check(item_trait.span());
     let validate_type = type_validator.validate(identifier);
     let result = quote! {
         #item_trait
+        #subcomponent_builder
         #validate_type
         #prologue_check
     };
@@ -212,6 +235,9 @@ pub fn generate_components(manifest: &Manifest) -> Result<(TokenStream, Vec<Stri
             .field_crate
             .ne(&environment::current_crate())
         {
+            continue;
+        }
+        if component.component_type != ComponentType::Component {
             continue;
         }
         let (tokens, message) = graph::generate_component(&component, manifest)?;

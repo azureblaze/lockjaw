@@ -41,7 +41,7 @@ impl BoxedNode {
         }))
     }
 
-    fn boxed_type(type_: &TypeData) -> TypeData {
+    pub fn boxed_type(type_: &TypeData) -> TypeData {
         let mut boxed_type = TypeData::new();
         boxed_type.root = TypeRoot::GLOBAL;
         boxed_type.path = "std::boxed::Box".to_string();

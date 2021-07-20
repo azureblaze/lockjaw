@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{builder_modules, component, injectable, module, prologue, ComponentLifetime};
+use lockjaw::{
+    builder_modules, component, injectable, module, prologue, subcomponent, ComponentLifetime,
+};
 use printer::Printer;
 
 prologue!("src/main.rs");
@@ -45,7 +47,35 @@ pub enum E {
     Bar,
 }
 
+pub struct Baz {
+    pub i: i32,
+    pub s: String,
+}
+
+#[injectable]
+impl Baz {
+    #[inject]
+    pub fn new(i: i32, s: String) -> Self {
+        Baz { i, s }
+    }
+}
+
+struct BazModule {}
+
 #[module]
+impl BazModule {
+    #[provides]
+    pub fn provide_i32() -> i32 {
+        42
+    }
+}
+
+#[subcomponent(modules: [BazModule])]
+pub trait MySubcomponent<'a> {
+    fn baz(&self) -> Baz;
+}
+
+#[module(subcomponents: [MySubcomponent])]
 impl MyModule {
     #[provides]
     pub fn provide_string(&self) -> String {
@@ -75,10 +105,12 @@ pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 
     fn enum_map(&self) -> HashMap<E, String>;
+
+    fn sub(&'_ self) -> ComponentLifetime<dyn MySubcomponentBuilder<'_>>;
 }
 
 pub fn main() {
-    let component = <dyn MyComponent>::build(BuilderModules {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::build(BuilderModules {
         my_module: MyModule {
             phrase: "helloworld".to_owned(),
         },
@@ -86,7 +118,12 @@ pub fn main() {
 
     component.greeter().greet();
 
-    print!("{:#?}", component.enum_map());
+    print!("{:#?}\n", component.enum_map());
+
+    let sub: ComponentLifetime<dyn MySubcomponent> = component.sub().build();
+
+    print!("{}\n", sub.baz().i);
+    print!("{}\n", sub.baz().s);
 }
 
 #[cfg(test)]

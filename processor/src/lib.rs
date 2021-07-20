@@ -30,6 +30,7 @@ use crate::manifest::Manifest;
 use error::handle_error;
 
 use crate::error::CompileError;
+use manifest::ComponentType;
 use proc_macro2::Span;
 use syn::spanned::Spanned;
 
@@ -61,7 +62,20 @@ pub fn builder_modules(attr: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn component(attr: TokenStream, input: TokenStream) -> TokenStream {
-    handle_error(|| components::handle_component_attribute(attr.into(), input.into()))
+    handle_error(|| {
+        components::handle_component_attribute(attr.into(), input.into(), ComponentType::Component)
+    })
+}
+
+#[proc_macro_attribute]
+pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
+    handle_error(|| {
+        components::handle_component_attribute(
+            attr.into(),
+            input.into(),
+            ComponentType::Subcomponent,
+        )
+    })
 }
 
 #[proc_macro_attribute]
