@@ -32,7 +32,7 @@ impl ParentNode {
     pub fn new(parent_dep: &MissingDependency) -> Result<Box<Self>, TokenStream> {
         let mut type_ = parent_dep.type_data.clone();
         if parent_dep.multibinding_type != MultibindingType::None {
-            type_.identifier_suffix = "parent".to_owned();
+            type_.identifier_suffix.push_str("_parent");
         }
         Ok(Box::new(ParentNode {
             type_,
