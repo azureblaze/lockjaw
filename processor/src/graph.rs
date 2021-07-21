@@ -23,7 +23,9 @@ use quote::format_ident;
 use quote::quote;
 
 use crate::error::compile_error;
-use crate::manifest::{BindingType, BuilderModules, Component, ComponentType, Manifest, TypeRoot};
+use crate::manifest::{
+    BindingType, BuilderModules, Component, ComponentType, Manifest, MultibindingType, TypeRoot,
+};
 use crate::nodes::binds::BindsNode;
 use crate::nodes::binds_option_of::BindsOptionOfNode;
 use crate::nodes::injectable::InjectableNode;
@@ -32,6 +34,7 @@ use crate::nodes::parent::ParentNode;
 use crate::nodes::provides::ProvidesNode;
 use crate::nodes::provision::ProvisionNode;
 use crate::nodes::subcomponent::SubcomponentNode;
+use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
 use std::iter::FromIterator;
 
@@ -377,6 +380,7 @@ fn get_module_manifest(
 pub struct MissingDependency {
     pub type_data: TypeData,
     pub ancestors: Vec<String>,
+    pub multibinding_type: MultibindingType,
 }
 
 pub fn build_graph(
@@ -450,7 +454,7 @@ pub fn build_graph(
             }
         }
         for subcomponent in &module.subcomponents {
-            result.add_node(SubcomponentNode::new(
+            result.add_nodes(SubcomponentNode::new(
                 manifest,
                 subcomponent,
                 &component.type_data,
@@ -470,8 +474,21 @@ pub fn build_graph(
         result.provisions.push(provision);
     }
     if component.component_type == ComponentType::Subcomponent {
+        for (_, v) in &mut result.map {
+            if let Some(vec_node) = v.as_mut_any().downcast_mut::<VecNode>() {
+                missing_deps.push(MissingDependency {
+                    type_data: vec_node.type_.clone(),
+                    ancestors: vec![format!("({} into_vec)", component.type_data.readable())],
+                    multibinding_type: MultibindingType::IntoVec,
+                });
+                let mut parent_type = vec_node.type_.clone();
+                parent_type.identifier_suffix = "parent".to_owned();
+                vec_node.add_binding(&parent_type, &MultibindingType::ElementsIntoVec);
+            }
+        }
+
         for missing_dep in &missing_deps {
-            result.add_node(ParentNode::new(&missing_dep.type_data)?)?;
+            result.add_node(ParentNode::new(&missing_dep)?)?;
         }
     }
     validate_graph(manifest, &result)?;
@@ -516,6 +533,7 @@ fn resolve_dependencies(
                 missing_deps.push(MissingDependency {
                     type_data: dependency.clone(),
                     ancestors: ancestors.clone(),
+                    multibinding_type: MultibindingType::None,
                 });
                 continue;
             }

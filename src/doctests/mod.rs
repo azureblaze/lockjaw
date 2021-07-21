@@ -20,3 +20,4 @@ mod graph;
 mod injectable;
 mod module;
 mod root;
+mod subcomponent;
