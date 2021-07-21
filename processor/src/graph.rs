@@ -29,6 +29,7 @@ use crate::manifest::{
 use crate::nodes::binds::BindsNode;
 use crate::nodes::binds_option_of::BindsOptionOfNode;
 use crate::nodes::injectable::InjectableNode;
+use crate::nodes::map::MapNode;
 use crate::nodes::node::Node;
 use crate::nodes::parent::ParentNode;
 use crate::nodes::provides::ProvidesNode;
@@ -120,7 +121,7 @@ pub fn generate_component(
     component: &Component,
     manifest: &Manifest,
 ) -> Result<(TokenStream, String), TokenStream> {
-    let (graph, missing_deps) = build_graph(manifest, component)?;
+    let (graph, missing_deps) = build_graph(manifest, component, &Vec::new())?;
     if !missing_deps.is_empty() {
         let mut error = quote! {};
         for dep in missing_deps {
@@ -386,9 +387,14 @@ pub struct MissingDependency {
 pub fn build_graph(
     manifest: &Manifest,
     component: &Component,
+    parent_multibinding_nodes: &Vec<Box<dyn Node>>,
 ) -> Result<(Graph, Vec<MissingDependency>), TokenStream> {
     let mut result = Graph::default();
     let singleton = singleton_type();
+    for node in parent_multibinding_nodes {
+        result.add_node(node.clone_box())?;
+    }
+
     for injectable in &manifest.injectables {
         if injectable.type_data.scopes.is_empty()
             || injectable.type_data.scopes.contains(&component.type_data)
@@ -453,14 +459,53 @@ pub fn build_graph(
                 })?;
             }
         }
+    }
+    let mut multibinding_nodes: Vec<Box<dyn Node>> = Vec::new();
+
+    for (_, v) in result.map.iter() {
+        if let Some(vec_node) = v.as_any().downcast_ref::<VecNode>() {
+            let mut sub_vec_node = VecNode::new(&vec_node.type_.args[0]);
+            for binding in &vec_node.bindings {
+                let parent_node = ParentNode::new(&MissingDependency {
+                    type_data: binding.type_data.clone(),
+                    ancestors: Vec::new(),
+                    multibinding_type: binding.multibinding_type.clone(),
+                })?;
+                sub_vec_node.add_binding(&binding.type_data, &binding.multibinding_type);
+                log!("{:?}", sub_vec_node.type_);
+                multibinding_nodes.push(parent_node);
+            }
+            multibinding_nodes.push(sub_vec_node);
+        } else if let Some(map_node) = v.as_any().downcast_ref::<MapNode>() {
+            let mut sub_map_node =
+                MapNode::with_key_type(&map_node.type_.args[0], &map_node.type_.args[1])?;
+            for (key, binding) in &map_node.bindings {
+                let parent_node = ParentNode::new(&MissingDependency {
+                    type_data: binding.clone(),
+                    ancestors: Vec::new(),
+                    multibinding_type: MultibindingType::IntoMap,
+                })?;
+                sub_map_node.add_binding(key, parent_node.get_type());
+                multibinding_nodes.push(parent_node);
+            }
+            multibinding_nodes.push(sub_map_node);
+        }
+    }
+
+    for module in &manifest.modules {
+        if !installed_modules.contains(&module.type_data.identifier()) {
+            continue;
+        }
         for subcomponent in &module.subcomponents {
             result.add_nodes(SubcomponentNode::new(
                 manifest,
                 subcomponent,
                 &component.type_data,
+                &multibinding_nodes,
             )?)?;
         }
     }
+
     let mut resolved_nodes = HashSet::<Ident>::new();
     let mut missing_deps = Vec::new();
     for provision in &component.provisions {
@@ -481,9 +526,12 @@ pub fn build_graph(
                     ancestors: vec![format!("({} into_vec)", component.type_data.readable())],
                     multibinding_type: MultibindingType::IntoVec,
                 });
-                let mut parent_type = vec_node.type_.clone();
-                parent_type.identifier_suffix = "parent".to_owned();
-                vec_node.add_binding(&parent_type, &MultibindingType::ElementsIntoVec);
+            } else if let Some(map_node) = v.as_mut_any().downcast_mut::<MapNode>() {
+                missing_deps.push(MissingDependency {
+                    type_data: map_node.type_.clone(),
+                    ancestors: vec![format!("({} into_map)", component.type_data.readable())],
+                    multibinding_type: MultibindingType::IntoMap,
+                });
             }
         }
 

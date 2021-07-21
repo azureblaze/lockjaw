@@ -24,15 +24,15 @@ use std::any::{Any, TypeId};
 use std::iter::Extend;
 
 #[derive(Debug, Clone)]
-struct VecBinding {
-    type_data: TypeData,
-    multibinding_type: MultibindingType,
+pub struct VecBinding {
+    pub type_data: TypeData,
+    pub multibinding_type: MultibindingType,
 }
 
 #[derive(Debug, Clone)]
 pub struct VecNode {
     pub type_: TypeData,
-    bindings: Vec<VecBinding>,
+    pub bindings: Vec<VecBinding>,
 }
 
 impl VecNode {

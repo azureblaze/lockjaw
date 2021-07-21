@@ -28,7 +28,7 @@ use std::iter::Extend;
 #[derive(Debug, Clone)]
 pub struct MapNode {
     pub type_: TypeData,
-    bindings: HashMap<MultibindingMapKey, TypeData>,
+    pub bindings: HashMap<MultibindingMapKey, TypeData>,
 }
 
 impl MapNode {
@@ -37,7 +37,17 @@ impl MapNode {
         value_type: &TypeData,
     ) -> Result<Box<MapNode>, TokenStream> {
         Ok(Box::new(MapNode {
-            type_: map_type(map_key, value_type)?,
+            type_: map_type(&key_type(&map_key)?, value_type)?,
+            bindings: HashMap::new(),
+        }))
+    }
+
+    pub fn with_key_type(
+        map_key: &TypeData,
+        value_type: &TypeData,
+    ) -> Result<Box<MapNode>, TokenStream> {
+        Ok(Box::new(MapNode {
+            type_: map_type(&map_key, value_type)?,
             bindings: HashMap::new(),
         }))
     }
@@ -52,16 +62,20 @@ impl MapNode {
     }
 }
 
-fn map_type(map_key: &MultibindingMapKey, value_type: &TypeData) -> Result<TypeData, TokenStream> {
-    let mut map_type = TypeData::new();
-    map_type.root = TypeRoot::GLOBAL;
-    map_type.path = "std::collections::HashMap".to_string();
-    map_type.args.push(match map_key {
+fn key_type(map_key: &MultibindingMapKey) -> Result<TypeData, TokenStream> {
+    Ok(match map_key {
         MultibindingMapKey::String(_) => string_type(),
         MultibindingMapKey::I32(_) => i32_type(),
         MultibindingMapKey::Enum(ref enum_type, _) => enum_type.clone(),
         _ => return compile_error("unable to handle key"),
-    });
+    })
+}
+
+fn map_type(key_type: &TypeData, value_type: &TypeData) -> Result<TypeData, TokenStream> {
+    let mut map_type = TypeData::new();
+    map_type.root = TypeRoot::GLOBAL;
+    map_type.path = "std::collections::HashMap".to_string();
+    map_type.args.push(key_type.clone());
     map_type.args.push(value_type.clone());
     map_type.qualifier = value_type.qualifier.clone();
     Ok(map_type)

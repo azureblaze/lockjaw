@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/// ```compile_file
+/// ```compile_fail
 /// #[macro_use] extern crate lockjaw_processor;
 /// lockjaw::prologue!("src/lib.rs");
 /// struct BazModule {}
@@ -51,3 +51,44 @@ limitations under the License.
 /// lockjaw::epilogue!(debug_output);
 /// ```
 mod subcomponent_multibinding_conflicts_with_parent_collection_binding {}
+
+/// ```compile_fail
+/// #[macro_use] extern crate lockjaw_processor;
+/// use std::collections::HashMap;
+/// lockjaw::prologue!("src/lib.rs");
+/// struct BazModule {}
+///
+/// #[module]
+/// impl BazModule {
+///     #[provides]
+///     #[into_map(i32_key: 1)]
+///     pub fn provide_i32() -> i32 {
+///         32
+///     }
+/// }
+///
+/// #[subcomponent(modules: [BazModule])]
+/// pub trait MySubcomponent<'a> {
+///     fn mi32(&self) -> HashMap<i32,i32>;
+/// }
+///
+/// struct MyModule {}
+///
+/// #[module(subcomponents: [MySubcomponent])]
+/// impl MyModule {
+///
+///     #[provides]
+///     #[into_map(i32_key: 1)]
+///     pub fn provide_i32() -> i32 {
+///         32
+///     }
+/// }
+///
+/// #[component(modules:  [MyModule])]
+/// pub trait MyComponent {
+///     fn sub(&'_ self) -> lockjaw::ComponentLifetime<dyn MySubcomponentBuilder<'_>>;
+/// }
+///
+/// lockjaw::epilogue!(debug_output);
+/// ```
+mod subcomponent_map_keyconflicts_with_parent_map_key {}
