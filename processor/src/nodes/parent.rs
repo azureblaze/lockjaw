@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::graph::{ComponentSections, Graph};
+use crate::graph::{ComponentSections, Graph, MissingDependency};
+use crate::manifest::MultibindingType;
 use crate::nodes::node::Node;
 use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
@@ -24,12 +25,18 @@ use std::any::Any;
 #[derive(Debug, Clone)]
 pub struct ParentNode {
     pub type_: TypeData,
+    pub parent_type: TypeData,
 }
 
 impl ParentNode {
-    pub fn new(type_: &TypeData) -> Result<Box<Self>, TokenStream> {
+    pub fn new(parent_dep: &MissingDependency) -> Result<Box<Self>, TokenStream> {
+        let mut type_ = parent_dep.type_data.clone();
+        if parent_dep.multibinding_type != MultibindingType::None {
+            type_.identifier_suffix = "parent".to_owned();
+        }
         Ok(Box::new(ParentNode {
-            type_: type_.clone(),
+            type_,
+            parent_type: parent_dep.type_data.clone(),
         }))
     }
 }
@@ -41,13 +48,14 @@ impl Node for ParentNode {
 
     fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let name_ident = self.get_identifier();
+        let parent_ident = self.parent_type.identifier();
         let syn_type = self.type_.syn_type();
 
         let mut result = ComponentSections::new();
 
         result.add_methods(quote! {
             fn #name_ident(&'_ self) -> #syn_type{
-                self.parent.#name_ident()
+                self.parent.#parent_ident()
             }
         });
 
@@ -63,6 +71,9 @@ impl Node for ParentNode {
     }
 
     fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn as_mut_any(&mut self) -> &mut dyn Any {
         self
     }
 }

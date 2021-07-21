@@ -64,6 +64,7 @@ pub trait Node: Debug + Any {
 
     fn clone_box(&self) -> Box<dyn Node>;
     fn as_any(&self) -> &dyn Any;
+    fn as_mut_any(&mut self) -> &mut dyn Any;
 }
 
 impl dyn Node {

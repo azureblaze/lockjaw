@@ -68,11 +68,19 @@ impl BazModule {
     pub fn provide_i32() -> i32 {
         42
     }
+
+    #[provides]
+    #[into_vec]
+    pub fn provide_i64() -> i64 {
+        64
+    }
 }
 
 #[subcomponent(modules: [BazModule])]
 pub trait MySubcomponent<'a> {
     fn baz(&self) -> Baz;
+
+    fn vi64(&self) -> Vec<i64>;
 }
 
 #[module(subcomponents: [MySubcomponent])]
@@ -92,6 +100,12 @@ impl MyModule {
     #[into_map(enum_key: E::Bar)]
     pub fn map_2(&self) -> String {
         "bar".to_owned()
+    }
+
+    #[provides]
+    #[into_vec]
+    pub fn provide_i64() -> i64 {
+        32
     }
 }
 
@@ -124,6 +138,7 @@ pub fn main() {
 
     print!("{}\n", sub.baz().i);
     print!("{}\n", sub.baz().s);
+    print!("{:?}\n", sub.vi64());
 }
 
 #[cfg(test)]

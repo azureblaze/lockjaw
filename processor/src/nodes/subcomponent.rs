@@ -16,9 +16,10 @@ limitations under the License.
 
 use crate::error::CompileError;
 use crate::graph::{build_graph, ComponentSections, Graph};
-use crate::manifest::{Component, Manifest};
+use crate::manifest::{Component, Manifest, MultibindingType};
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::node::Node;
+use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -37,7 +38,7 @@ impl SubcomponentNode {
         manifest: &Manifest,
         component_type: &TypeData,
         parent_component_type: &TypeData,
-    ) -> Result<Box<Self>, TokenStream> {
+    ) -> Result<Vec<Box<dyn Node>>, TokenStream> {
         let subcomponent = find_component(manifest, component_type).map_compile_error(&format!(
             "unable to find component {}",
             component_type.readable()
@@ -48,7 +49,8 @@ impl SubcomponentNode {
         let type_ = ComponentLifetimeNode::component_lifetime_type(&builder_type);
         let (graph, missing_deps) = build_graph(manifest, &subcomponent)?;
 
-        Ok(Box::new(SubcomponentNode {
+        let mut nodes: Vec<Box<dyn Node>> = Vec::new();
+        nodes.push(Box::new(SubcomponentNode {
             type_,
             builder_type: builder_type.clone(),
             dependencies: missing_deps.iter().map(|md| md.type_data.clone()).collect(),
@@ -58,7 +60,15 @@ impl SubcomponentNode {
                 parent_component_type,
                 &builder_type,
             )?,
-        }))
+        }));
+        for dep in missing_deps.iter() {
+            match dep.multibinding_type {
+                MultibindingType::IntoVec => nodes.push(VecNode::new(&dep.type_data.args[0])),
+                _ => {}
+            }
+        }
+
+        Ok(nodes)
     }
 }
 
@@ -185,6 +195,10 @@ impl Node for SubcomponentNode {
     }
 
     fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_mut_any(&mut self) -> &mut dyn Any {
         self
     }
 }

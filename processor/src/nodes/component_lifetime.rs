@@ -121,4 +121,7 @@ impl Node for ComponentLifetimeNode {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    fn as_mut_any(&mut self) -> &mut dyn Any {
+        self
+    }
 }
