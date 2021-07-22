@@ -47,8 +47,6 @@ pub use lockjaw_processor::private_root_epilogue;
 #[doc(hidden)]
 pub use lockjaw_processor::private_test_epilogue;
 
-mod doctests;
-
 #[cfg(nightly)]
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("../README.md")))]
 pub mod readme {}
