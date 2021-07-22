@@ -21,7 +21,7 @@ use crate::graph::Graph;
 use crate::manifest::{Binding, BuilderModules, MultibindingType};
 use crate::nodes::map::MapNode;
 use crate::nodes::node;
-use crate::nodes::node::{ModuleInstance, Node};
+use crate::nodes::node::{DependencyData, ModuleInstance, Node};
 use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
 use std::any::Any;
@@ -123,8 +123,8 @@ impl Node for ProvidesNode {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> Vec<TypeData> {
-        self.dependencies.clone()
+    fn get_dependencies(&self) -> Vec<DependencyData> {
+        DependencyData::from_type_vec(&self.dependencies)
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

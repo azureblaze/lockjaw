@@ -19,7 +19,7 @@ use quote::{format_ident, quote};
 
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{Component, Dependency};
-use crate::nodes::node::Node;
+use crate::nodes::node::{DependencyData, Node};
 use crate::type_data::TypeData;
 use std::any::Any;
 
@@ -70,8 +70,8 @@ impl Node for ProvisionNode {
         format_ident!("{}", self.dependency.name)
     }
 
-    fn get_dependencies(&self) -> Vec<TypeData> {
-        self.dependencies.clone()
+    fn get_dependencies(&self) -> Vec<DependencyData> {
+        DependencyData::from_type_vec(&self.dependencies)
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

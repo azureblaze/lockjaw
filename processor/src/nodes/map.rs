@@ -17,7 +17,7 @@ limitations under the License.
 use crate::error::compile_error;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{MultibindingMapKey, TypeRoot};
-use crate::nodes::node::Node;
+use crate::nodes::node::{DependencyData, Node};
 use crate::type_data::TypeData;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
@@ -174,10 +174,10 @@ impl Node for MapNode {
         self.type_.identifier()
     }
 
-    fn get_dependencies(&self) -> Vec<TypeData> {
+    fn get_dependencies(&self) -> Vec<DependencyData> {
         self.bindings
             .iter()
-            .map(|binding| binding.1.clone())
+            .map(|binding| DependencyData::from_type(binding.1))
             .collect()
     }
 

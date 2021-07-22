@@ -125,15 +125,10 @@ pub fn generate_component(
     if !missing_deps.is_empty() {
         let mut error = quote! {};
         for dep in missing_deps {
-            let msg = &format!(
-                "missing bindings for {}\nrequested by: {} ",
+            let msg = format!(
+                "missing bindings for {}\n{}",
                 dep.type_data.readable(),
-                dep.ancestors
-                    .iter()
-                    .rev()
-                    .map(|s| s.clone())
-                    .collect::<Vec<String>>()
-                    .join("\nrequested by: ")
+                dep.to_message()
             );
             error = quote! {
                 #error
@@ -303,8 +298,8 @@ impl Graph {
         for dependency in node.get_dependencies() {
             let dependency_node = self
                 .map
-                .get(&dependency.identifier())
-                .expect(&format!("missing node for {}", dependency.readable()));
+                .get(&dependency.type_.identifier())
+                .expect(&format!("missing node for {}", dependency.type_.readable()));
             result.merge(self.generate_provision(
                 dependency_node.borrow(),
                 component,
@@ -335,12 +330,12 @@ impl Graph {
         for dep in node.get_dependencies() {
             let dep_node = self
                 .map
-                .get(&dep.identifier())
-                .expect(&format!("missing node for {}", dep.readable()));
+                .get(&dep.type_.identifier())
+                .expect(&format!("missing node for {}", dep.type_.readable()));
             if !dep_node.get_type().scopes.is_empty() {
                 return Ok(true);
             }
-            if self.has_scoped_deps(&dep.identifier())? {
+            if self.has_scoped_deps(&dep.type_.identifier())? {
                 return Ok(true);
             }
         }
@@ -382,6 +377,35 @@ pub struct MissingDependency {
     pub type_data: TypeData,
     pub ancestors: Vec<String>,
     pub multibinding_type: MultibindingType,
+    pub message: String,
+}
+
+impl MissingDependency {
+    pub fn to_message(&self) -> String {
+        if self.message.is_empty() {
+            format!(
+                "requested by: {} ",
+                self.ancestors
+                    .iter()
+                    .rev()
+                    .map(|s| s.clone())
+                    .collect::<Vec<String>>()
+                    .join("\nrequested by: ")
+            )
+        } else {
+            format!(
+                "from: \n\t{}\n\
+                requested by: {} ",
+                self.message.replace("\n", "\n\t"),
+                self.ancestors
+                    .iter()
+                    .rev()
+                    .map(|s| s.clone())
+                    .collect::<Vec<String>>()
+                    .join("\nrequested by: ")
+            )
+        }
+    }
 }
 
 pub fn build_graph(
@@ -469,6 +493,7 @@ pub fn build_graph(
                 let parent_node = ParentNode::new(&MissingDependency {
                     type_data: binding.type_data.clone(),
                     ancestors: Vec::new(),
+                    message: String::new(),
                     multibinding_type: binding.multibinding_type.clone(),
                 })?;
                 sub_vec_node.add_binding(&binding.type_data, &binding.multibinding_type);
@@ -482,6 +507,7 @@ pub fn build_graph(
             for (key, binding) in &map_node.bindings {
                 let parent_node = ParentNode::new(&MissingDependency {
                     type_data: binding.clone(),
+                    message: String::new(),
                     ancestors: Vec::new(),
                     multibinding_type: MultibindingType::IntoMap,
                 })?;
@@ -523,12 +549,14 @@ pub fn build_graph(
             if let Some(vec_node) = v.as_mut_any().downcast_mut::<VecNode>() {
                 missing_deps.push(MissingDependency {
                     type_data: vec_node.type_.clone(),
+                    message: String::new(),
                     ancestors: vec![format!("({} into_vec)", component.type_data.readable())],
                     multibinding_type: MultibindingType::IntoVec,
                 });
             } else if let Some(map_node) = v.as_mut_any().downcast_mut::<MapNode>() {
                 missing_deps.push(MissingDependency {
                     type_data: map_node.type_.clone(),
+                    message: String::new(),
                     ancestors: vec![format!("({} into_map)", component.type_data.readable())],
                     multibinding_type: MultibindingType::IntoMap,
                 });
@@ -570,16 +598,17 @@ fn resolve_dependencies(
 
     ancestors.push(node.get_name());
     for dependency in node.get_dependencies() {
-        let mut dependency_node = map.get(&dependency.identifier());
+        let mut dependency_node = map.get(&dependency.type_.identifier());
 
         if dependency_node.is_none() {
-            if let Some(generated_node) = <dyn Node>::generate_node(&dependency) {
+            if let Some(generated_node) = <dyn Node>::generate_node(&dependency.type_) {
                 let identifier = generated_node.get_identifier();
                 map.insert(identifier.clone(), generated_node);
                 dependency_node = map.get(&identifier);
             } else {
                 missing_deps.push(MissingDependency {
-                    type_data: dependency.clone(),
+                    type_data: dependency.type_.clone(),
+                    message: dependency.message,
                     ancestors: ancestors.clone(),
                     multibinding_type: MultibindingType::None,
                 });

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 use crate::graph::{ComponentSections, Graph};
-use crate::nodes::node::Node;
+use crate::nodes::node::{DependencyData, Node};
 use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -84,10 +84,9 @@ impl Node for InjectableNode {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> Vec<TypeData> {
-        self.dependencies.clone()
+    fn get_dependencies(&self) -> Vec<DependencyData> {
+        DependencyData::from_type_vec(&self.dependencies)
     }
-
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }

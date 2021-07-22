@@ -15,7 +15,7 @@ limitations under the License.
 */
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::TypeRoot;
-use crate::nodes::node::Node;
+use crate::nodes::node::{DependencyData, Node};
 use crate::nodes::provider::ProviderNode;
 use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
@@ -90,8 +90,8 @@ impl Node for LazyNode {
         &self.type_
     }
 
-    fn get_dependencies(&self) -> Vec<TypeData> {
-        self.dependencies.clone()
+    fn get_dependencies(&self) -> Vec<DependencyData> {
+        DependencyData::from_type_vec(&self.dependencies)
     }
 
     fn clone_box(&self) -> Box<dyn Node> {
