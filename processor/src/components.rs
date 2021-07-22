@@ -205,7 +205,7 @@ pub fn handle_builder_modules_attribute(
         let name = field
             .ident
             .as_ref()
-            .map_spanned_compile_error(span, "tuples module manifests cannot have builders")?;
+            .map_spanned_compile_error(span, "#[builder_modules] cannot be tuples")?;
         dep.name = name.to_string();
         dep.type_data = TypeData::from_syn_type(field.ty.borrow())?;
         modules.push(dep);
