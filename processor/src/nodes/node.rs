@@ -30,6 +30,25 @@ use crate::type_data::TypeData;
 use std::any::Any;
 use std::cell::Cell;
 
+#[derive(Clone, Debug)]
+pub struct DependencyData {
+    pub type_: TypeData,
+    pub message: String,
+}
+
+impl DependencyData {
+    pub fn from_type(type_: &TypeData) -> Self {
+        DependencyData {
+            type_: type_.clone(),
+            message: String::new(),
+        }
+    }
+
+    pub fn from_type_vec(type_vec: &Vec<TypeData>) -> Vec<Self> {
+        type_vec.iter().map(Self::from_type).collect()
+    }
+}
+
 pub trait Node: Debug + Any {
     fn get_name(&self) -> String;
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream>;
@@ -55,7 +74,7 @@ pub trait Node: Debug + Any {
     fn get_identifier(&self) -> Ident {
         self.get_type().identifier()
     }
-    fn get_dependencies(&self) -> Vec<TypeData> {
+    fn get_dependencies(&self) -> Vec<DependencyData> {
         Vec::new()
     }
     fn get_optional_dependencies(&self) -> Vec<TypeData> {

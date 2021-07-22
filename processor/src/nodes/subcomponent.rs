@@ -19,7 +19,7 @@ use crate::graph::{build_graph, ComponentSections, Graph};
 use crate::manifest::{Component, Manifest, MultibindingType};
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::map::MapNode;
-use crate::nodes::node::Node;
+use crate::nodes::node::{DependencyData, Node};
 use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
@@ -30,7 +30,7 @@ use std::any::Any;
 pub struct SubcomponentNode {
     pub type_: TypeData,
     pub builder_type: TypeData,
-    pub dependencies: Vec<TypeData>,
+    pub dependencies: Vec<DependencyData>,
     pub token_stream: TokenStream,
 }
 
@@ -56,7 +56,13 @@ impl SubcomponentNode {
         nodes.push(Box::new(SubcomponentNode {
             type_,
             builder_type: builder_type.clone(),
-            dependencies: missing_deps.iter().map(|md| md.type_data.clone()).collect(),
+            dependencies: missing_deps
+                .iter()
+                .map(|md| DependencyData {
+                    type_: md.type_data.clone(),
+                    message: md.to_message(),
+                })
+                .collect(),
             token_stream: generate_component(
                 &subcomponent,
                 &graph,
@@ -189,12 +195,12 @@ impl Node for SubcomponentNode {
         Ok(component_sections)
     }
 
-    fn get_dependencies(&self) -> Vec<TypeData> {
-        self.dependencies.clone()
-    }
-
     fn get_type(&self) -> &TypeData {
         &self.type_
+    }
+
+    fn get_dependencies(&self) -> Vec<DependencyData> {
+        self.dependencies.clone()
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

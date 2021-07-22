@@ -16,7 +16,7 @@ limitations under the License.
 
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{MultibindingType, TypeRoot};
-use crate::nodes::node::Node;
+use crate::nodes::node::{DependencyData, Node};
 use crate::type_data::TypeData;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
@@ -126,10 +126,10 @@ impl Node for VecNode {
         self.type_.identifier()
     }
 
-    fn get_dependencies(&self) -> Vec<TypeData> {
+    fn get_dependencies(&self) -> Vec<DependencyData> {
         self.bindings
             .iter()
-            .map(|binding| binding.type_data.clone())
+            .map(|binding| DependencyData::from_type(&binding.type_data))
             .collect()
     }
 
