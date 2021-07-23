@@ -37,7 +37,7 @@ fn injectable_no_inject() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(
         "tests/injectable/injectable_no_inject.rs",
-        vec!["must have one method marked with #[inject]"],
+        vec!["must have one method marked with #[inject]/#[factory]"],
     )
 }
 
@@ -46,7 +46,25 @@ fn injectable_multiple_inject() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(
         "tests/injectable/injectable_multiple_inject.rs",
-        vec!["only one method can be marked with #[inject]"],
+        vec!["only one method can be marked with #[inject]/#[factory]"],
+    )
+}
+
+#[test]
+fn injectable_multiple_factory() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_multiple_factory.rs",
+        vec!["only one method can be marked with #[inject]/#[factory]"],
+    )
+}
+
+#[test]
+fn injectable_inject_and_factory() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_inject_and_factory.rs",
+        vec!["only one method can be marked with #[inject]/#[factory]"],
     )
 }
 

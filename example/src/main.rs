@@ -41,71 +41,11 @@ struct MyModule {
     phrase: String,
 }
 
-#[derive(Eq, PartialEq, Hash, Debug)]
-pub enum E {
-    Foo,
-    Bar,
-}
-
-pub struct Baz {
-    pub i: i32,
-    pub s: String,
-}
-
-#[injectable]
-impl Baz {
-    #[inject]
-    pub fn new(i: i32, s: String) -> Self {
-        Baz { i, s }
-    }
-}
-
-struct BazModule {}
-
 #[module]
-impl BazModule {
-    #[provides]
-    pub fn provide_i32() -> i32 {
-        42
-    }
-
-    #[provides]
-    #[into_vec]
-    pub fn provide_i64() -> i64 {
-        64
-    }
-}
-
-#[subcomponent(modules: [BazModule])]
-pub trait MySubcomponent<'a> {
-    fn baz(&self) -> Baz;
-
-    fn vi64(&self) -> Vec<i64>;
-}
-
-#[module(subcomponents: [MySubcomponent])]
 impl MyModule {
     #[provides]
     pub fn provide_string(&self) -> String {
         self.phrase.clone()
-    }
-
-    #[provides]
-    #[into_map(enum_key: E::Foo)]
-    pub fn map_1(&self) -> String {
-        "foo".to_owned()
-    }
-
-    #[provides]
-    #[into_map(enum_key: E::Bar)]
-    pub fn map_2(&self) -> String {
-        "bar".to_owned()
-    }
-
-    #[provides]
-    #[into_vec]
-    pub fn provide_i64() -> i64 {
-        32
     }
 }
 
@@ -114,13 +54,25 @@ pub struct BuilderModules {
     my_module: MyModule,
 }
 
+#[derive(Debug)]
+pub struct Foo {
+    i: i32,
+    phrase: String,
+}
+
+#[injectable]
+impl Foo {
+    #[factory]
+    fn new(#[runtime] i: i32, phrase: String) -> Self {
+        Self { i, phrase }
+    }
+}
+
 #[component(modules: [printer_impl::Module], builder_modules: BuilderModules)]
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 
-    fn enum_map(&self) -> HashMap<E, String>;
-
-    fn sub(&'_ self) -> ComponentLifetime<dyn MySubcomponentBuilder<'_>>;
+    fn foo_factory(&self) -> FooFactory;
 }
 
 pub fn main() {
@@ -132,13 +84,7 @@ pub fn main() {
 
     component.greeter().greet();
 
-    print!("{:#?}\n", component.enum_map());
-
-    let sub: ComponentLifetime<dyn MySubcomponent> = component.sub().build();
-
-    print!("{}\n", sub.baz().i);
-    print!("{}\n", sub.baz().s);
-    print!("{:?}\n", sub.vi64());
+    println!("{:?}", component.foo_factory().new(42));
 }
 
 #[cfg(test)]
