@@ -18,7 +18,7 @@ use std::collections::HashSet;
 
 use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::spanned::Spanned;
 use syn::{FnArg, ImplItem, ImplItemMethod, Pat};
 
@@ -37,6 +37,12 @@ lazy_static! {
     };
 }
 
+#[derive(PartialEq)]
+enum CtorType {
+    Inject,
+    Factory,
+}
+
 pub fn handle_injectable_attribute(
     attr: TokenStream,
     input: TokenStream,
@@ -53,7 +59,29 @@ pub fn handle_injectable_attribute(
         }
     }
 
-    let ctor = get_ctor(item.span(), &mut item.items)?;
+    let (ctor_type, ctor) = get_ctor(item.span(), &mut item.items)?;
+    if ctor_type == CtorType::Factory {
+        let factory = handle_factory(item.self_ty.clone(), ctor.clone())?;
+        for arg in ctor.sig.inputs.iter_mut() {
+            if let FnArg::Receiver(ref receiver) = arg {
+                return spanned_compile_error(receiver.span(), &format!("self not allowed"));
+            }
+            if let FnArg::Typed(ref mut type_) = arg {
+                let mut new_attrs = Vec::new();
+                for attr in &type_.attrs {
+                    match parsing::get_attribute(attr).as_str() {
+                        "qualified" | "runtime" => {}
+                        _ => new_attrs.push(attr.clone()),
+                    }
+                }
+                type_.attrs = new_attrs;
+            }
+        }
+        return Ok(quote! {
+            #item
+            #factory
+        });
+    }
     let mut dependencies = Vec::<Dependency>::new();
     for arg in ctor.sig.inputs.iter_mut() {
         if let FnArg::Receiver(ref receiver) = arg {
@@ -116,23 +144,31 @@ pub fn handle_injectable_attribute(
     })
 }
 
-fn get_ctor(span: Span, items: &mut Vec<ImplItem>) -> Result<&mut ImplItemMethod, TokenStream> {
+fn get_ctor(
+    span: Span,
+    items: &mut Vec<ImplItem>,
+) -> Result<(CtorType, &mut ImplItemMethod), TokenStream> {
     let mut ctors = 0;
     for item in &mut *items {
         if let ImplItem::Method(ref mut method) = item {
-            if parsing::has_attribute(&method.attrs, "inject") {
+            if parsing::has_attribute(&method.attrs, "inject")
+                || parsing::has_attribute(&method.attrs, "factory")
+            {
                 ctors += 1;
                 if ctors == 2 {
                     return spanned_compile_error(
                         item.span(),
-                        "only one method can be marked with #[inject]",
+                        "only one method can be marked with #[inject]/#[factory]",
                     );
                 }
             }
         }
     }
     if ctors == 0 {
-        return spanned_compile_error(span, "must have one method marked with #[inject]");
+        return spanned_compile_error(
+            span,
+            "must have one method marked with #[inject]/#[factory]",
+        );
     }
     for item in items {
         if let ImplItem::Method(ref mut method) = item {
@@ -143,9 +179,97 @@ fn get_ctor(span: Span, items: &mut Vec<ImplItem>) -> Result<&mut ImplItemMethod
                     .position(|a| parsing::is_attribute(a, "inject"))
                     .unwrap();
                 method.attrs.remove(index);
-                return Ok(method);
+                return Ok((CtorType::Inject, method));
+            }
+            if parsing::has_attribute(&method.attrs, "factory") {
+                let index = method
+                    .attrs
+                    .iter()
+                    .position(|a| parsing::is_attribute(a, "factory"))
+                    .unwrap();
+                method.attrs.remove(index);
+                return Ok((CtorType::Factory, method));
             }
         }
     }
     panic!("should have ctor")
+}
+
+fn handle_factory(
+    self_ty: Box<syn::Type>,
+    method: ImplItemMethod,
+) -> Result<TokenStream, TokenStream> {
+    let mut fields = quote! {};
+    let mut fields_arg = quote! {};
+    let mut runtime_args = quote! {};
+    let mut args = quote! {};
+    for arg in method.sig.inputs.iter() {
+        if let FnArg::Receiver(ref receiver) = arg {
+            return spanned_compile_error(receiver.span(), &format!("self not allowed"));
+        }
+        if let FnArg::Typed(ref type_) = arg {
+            if let Pat::Ident(ref ident) = *type_.pat {
+                if parsing::has_attribute(&type_.attrs, "runtime") {
+                    let mut type_arg = type_.clone();
+                    type_arg.attrs = Vec::new();
+                    runtime_args = quote! {
+                        #runtime_args
+                        #type_arg,
+                    };
+                    args = quote! {
+                        #args
+                        #ident,
+                    }
+                } else {
+                    let ty = &type_.ty;
+                    fields = quote! {
+                        #fields
+                        #ident : ::lockjaw::Provider<'a, #ty>,
+                    };
+                    fields_arg = quote! {
+                        #fields_arg
+                        #ident,
+                    };
+                    args = quote! {
+                        #args
+                        self.#ident.get(),
+                    }
+                }
+            } else {
+                return spanned_compile_error(type_.span(), &format!("identifier expected"));
+            }
+        }
+    }
+    let mut factory_ty = self_ty.clone();
+    if let syn::Type::Path(ref path) = self_ty.as_ref() {
+        let ident = format_ident!("{}Factory", path.path.segments.last().unwrap().ident);
+        if let syn::Type::Path(ref mut factory_path) = factory_ty.as_mut() {
+            factory_path.path.segments.last_mut().unwrap().ident = ident;
+        }
+    } else {
+        return spanned_compile_error(self_ty.span(), &format!("path expected"));
+    }
+    let method_name = method.sig.ident;
+
+    let result = quote! {
+        pub struct #factory_ty<'a> {
+            #fields
+        }
+        #[injectable]
+        impl <'a> #factory_ty<'a> {
+            #[inject]
+            fn lockjaw_new_factory(#fields) -> Self{
+                Self{#fields_arg}
+            }
+        }
+
+        impl <'a> #factory_ty<'a> {
+            pub fn #method_name(&self,#runtime_args) -> #self_ty {
+                #self_ty::#method_name(#args)
+            }
+        }
+    };
+
+    log!("{}", result.to_string());
+    Ok(result)
 }
