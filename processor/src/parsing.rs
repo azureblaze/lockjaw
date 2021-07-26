@@ -221,7 +221,7 @@ pub fn get_crate_deps(for_test: bool) -> HashSet<String> {
             .arg("--prefix")
             .arg("depth")
             .arg("-e")
-            .arg(if for_test { "normal,dev" } else { "normal" })
+            .arg(if for_test { "dev" } else { "normal" })
             .output()
             .unwrap()
             .stdout,

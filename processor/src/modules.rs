@@ -36,11 +36,13 @@ use crate::parsing::{get_parenthesized_field_values, FieldValue};
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use std::convert::TryFrom;
+use std::iter::FromIterator;
 
 lazy_static! {
     static ref MODULE_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("subcomponents".to_owned());
+        set.insert("install_in".to_owned());
         set
     };
 }
@@ -88,6 +90,9 @@ fn handle_module_attribute_internal(
     module.bindings.extend(bindings);
     if let Some(subcomponents) = attributes.get("subcomponents") {
         module.subcomponents = subcomponents.get_types()?
+    }
+    if let Some(install_in) = attributes.get("install_in") {
+        module.install_in = HashSet::from_iter(install_in.get_types()?);
     }
     with_manifest(|mut manifest| {
         for existing_module in &manifest.modules {

@@ -73,7 +73,7 @@ impl Foo {
     }
 }
 
-#[component(modules: [printer_impl::Module], builder_modules: BuilderModules)]
+#[component(builder_modules: BuilderModules)]
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 
@@ -96,7 +96,7 @@ pub fn main() {
 use printer_test::TestPrinter;
 
 #[cfg(test)]
-#[component(modules: [::printer_test::Module], builder_modules: BuilderModules)]
+#[component(builder_modules: BuilderModules)]
 pub trait TestComponent {
     fn greeter(&self) -> Greeter;
 
@@ -118,4 +118,4 @@ fn test_greeter() {
     );
 }
 
-lockjaw::epilogue!(debug_output);
+lockjaw::epilogue!(root debug_output);

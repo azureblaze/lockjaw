@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 use crate::manifest::BindingType::Provides;
 use crate::manifest::TypeRoot::UNSPECIFIED;
 use crate::type_data::TypeData;
+use std::collections::HashSet;
 
 thread_local! {
     static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
@@ -165,6 +166,7 @@ pub struct Module {
     pub type_data: TypeData,
     pub bindings: Vec<Binding>,
     pub subcomponents: Vec<TypeData>,
+    pub install_in: HashSet<TypeData>,
 }
 
 impl Module {

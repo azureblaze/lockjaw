@@ -46,7 +46,7 @@ impl Printer for TestPrinter {
 
 pub struct Module {}
 
-#[module]
+#[module(install_in: lockjaw::Singleton)]
 impl Module {
     #[binds]
     pub fn bind_printer(_impl: &crate::TestPrinter) -> ComponentLifetime<dyn ::printer::Printer> {}

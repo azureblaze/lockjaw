@@ -14,16 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 use lockjaw;
+lockjaw::prologue!("src/lib.rs");
 
 pub struct DepInjectable {}
-
-lockjaw::prologue!("src/lib.rs");
 
 #[lockjaw::injectable]
 impl DepInjectable {
     #[inject]
     pub fn new() -> Self {
         Self {}
+    }
+}
+
+pub struct DepProvided {}
+
+pub struct DepModule {}
+
+#[lockjaw::module(install_in: ::lockjaw::Singleton)]
+impl DepModule {
+    #[provides]
+    pub fn provides_dep_provided() -> DepProvided {
+        DepProvided {}
     }
 }
 
