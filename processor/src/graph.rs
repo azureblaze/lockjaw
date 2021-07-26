@@ -43,7 +43,7 @@ use std::iter::FromIterator;
 #[derive(Default, Debug)]
 pub struct Graph {
     pub map: HashMap<Ident, Box<dyn Node>>,
-    pub modules: Vec<TypeData>,
+    pub modules: HashSet<TypeData>,
     pub builder_modules: BuilderModules,
     pub provisions: Vec<Box<ProvisionNode>>,
 }
@@ -429,7 +429,16 @@ pub fn build_graph(
     }
     let mut installed_modules = HashSet::<Ident>::new();
     result.builder_modules = get_module_manifest(manifest, component)?;
-    result.modules = component.modules.clone();
+    result.modules = HashSet::from_iter(component.modules.clone());
+
+    for module in &manifest.modules {
+        if module.install_in.contains(&component.type_data)
+            || (component.component_type == ComponentType::Component
+                && module.install_in.contains(&singleton_type()))
+        {
+            result.modules.insert(module.type_data.clone());
+        }
+    }
 
     let available_modules: HashSet<Ident> = manifest
         .modules

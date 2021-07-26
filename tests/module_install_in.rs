@@ -14,33 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{epilogue, injectable, module, ComponentLifetime};
-use printer::Printer;
+#![allow(dead_code)]
 
-lockjaw::prologue!("src/lib.rs");
+use lockjaw::{component, epilogue, module};
 
-pub struct PrinterImpl {}
+pub use String as NamedString;
 
-#[injectable]
-impl PrinterImpl {
-    #[inject]
-    pub fn new() -> Self {
-        PrinterImpl {}
+lockjaw::prologue!("tests/module_install_in.rs");
+
+pub struct MyModule {}
+
+#[module(install_in: MyComponent)]
+impl MyModule {
+    #[provides]
+    pub fn provide_string() -> String {
+        "string".to_owned()
     }
 }
 
-impl Printer for PrinterImpl {
-    fn print(&self, message: &str) {
-        println!("{}", message);
-    }
+#[component]
+pub trait MyComponent {
+    fn string(&self) -> String;
 }
 
-pub struct Module {}
-
-#[module(install_in: lockjaw::Singleton)]
-impl Module {
-    #[binds]
-    pub fn bind_printer(_impl: crate::PrinterImpl) -> ComponentLifetime<dyn ::printer::Printer> {}
+#[test]
+pub fn main() {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    assert_eq!(component.string(), "string");
 }
-
 epilogue!();

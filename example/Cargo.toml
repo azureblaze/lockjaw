@@ -30,4 +30,6 @@ lockjaw = {path = "../"}
 lockjaw = {path = "../"}
 
 [dev-dependencies]
-printer_test = {path = "printer/printer_test" }
+lockjaw = { path = "../" }
+printer = { path = "printer" }
+printer_test = { path = "printer/printer_test" }
