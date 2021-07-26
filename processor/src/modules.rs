@@ -89,7 +89,7 @@ fn handle_module_attribute_internal(
     module.type_data = TypeData::from_local(&module_path.to_owned(), item_impl.span())?;
     module.bindings.extend(bindings);
     if let Some(subcomponents) = attributes.get("subcomponents") {
-        module.subcomponents = subcomponents.get_types()?
+        module.subcomponents = HashSet::from_iter(subcomponents.get_types()?)
     }
     if let Some(install_in) = attributes.get("install_in") {
         module.install_in = HashSet::from_iter(install_in.get_types()?);
