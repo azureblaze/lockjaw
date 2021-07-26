@@ -66,4 +66,4 @@ pub fn main() {
     assert_eq!(component.q1_string(), "q1_string");
     assert_eq!(component.q2_string(), "q2_string");
 }
-epilogue!(debug_output);
+epilogue!();

@@ -163,4 +163,4 @@ pub fn regular_provision_not_affected() {
     assert_eq!(component.string(), "string");
 }
 
-epilogue!(debug_output);
+epilogue!();

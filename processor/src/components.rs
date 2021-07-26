@@ -28,7 +28,7 @@ use syn::Attribute;
 use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
 use crate::manifest::{
-    with_manifest, BuilderModules, Component, ComponentType, Dependency, Manifest,
+    with_manifest, BuilderModules, Component, ComponentType, Dependency, Manifest, TypeRoot,
 };
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
@@ -72,7 +72,7 @@ pub fn handle_component_attribute(
             method.attrs = new_attrs;
             provision.name = method.sig.ident.to_string();
             if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
-                if is_trait_object_without_lifetime(ty.deref()) {
+                if is_trait_object_without_lifetime(ty.deref())? {
                     return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
                 }
                 provision.type_data = TypeData::from_syn_type(ty.deref())?;
@@ -178,16 +178,20 @@ pub fn handle_component_attribute(
     Ok(result)
 }
 
-fn is_trait_object_without_lifetime(ty: &syn::Type) -> bool {
+fn is_trait_object_without_lifetime(ty: &syn::Type) -> Result<bool, TokenStream> {
+    let type_ = TypeData::from_syn_type(ty)?;
+    if type_.root == TypeRoot::GLOBAL && type_.path == "lockjaw::ComponentLifetime" {
+        return Ok(false);
+    }
     let tokens: Vec<String> = ty
         .to_token_stream()
         .into_iter()
         .map(|t| t.to_string())
         .collect();
     if !tokens.contains(&"dyn".to_owned()) {
-        return false;
+        return Ok(false);
     }
-    !tokens.contains(&"'".to_owned())
+    Ok(!tokens.contains(&"'".to_owned()))
 }
 
 pub fn handle_builder_modules_attribute(

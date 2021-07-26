@@ -20,11 +20,20 @@ use lockjaw::{
 };
 
 lockjaw::prologue!(
-    "../../../compile_tests/tests/injectable/injectable_unknown_metadata.rs",
+    "../../../compile_tests/tests/injectable/injectable_factory_implementing_method_return_type_mismatch.rs",
     ""
 );
 struct S;
 
-#[lockjaw::injectable(foo: "bar")]
-impl S {}
+pub trait B {
+    fn new(&self) -> String;
+}
+
+#[lockjaw::injectable]
+impl S {
+    #[factory(implementing: B)]
+    fn new() -> Self {
+        Self {}
+    }
+}
 lockjaw::epilogue!(test);

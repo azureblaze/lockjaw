@@ -55,4 +55,4 @@ pub fn not_provided_empty() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.option_i32(), None);
 }
-epilogue!(debug_output);
+epilogue!();

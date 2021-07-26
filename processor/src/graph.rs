@@ -497,7 +497,6 @@ pub fn build_graph(
                     multibinding_type: binding.multibinding_type.clone(),
                 })?;
                 sub_vec_node.add_binding(&binding.type_data, &binding.multibinding_type);
-                log!("{:?}", sub_vec_node.type_);
                 multibinding_nodes.push(parent_node);
             }
             multibinding_nodes.push(sub_vec_node);

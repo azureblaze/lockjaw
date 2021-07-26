@@ -78,6 +78,7 @@ fn strip_parentheses(attr: &TokenStream) -> Result<String, TokenStream> {
         .to_owned())
 }
 
+#[derive(Debug, Clone)]
 pub enum FieldValue {
     StringLiteral(Span, String),
     IntLiteral(Span, i64),

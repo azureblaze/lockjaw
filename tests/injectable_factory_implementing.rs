@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{builder_modules, component, epilogue, injectable, module};
+use lockjaw::{builder_modules, component, epilogue, injectable, module, ComponentLifetime};
 
 lockjaw::prologue!("tests/injectable_factory.rs");
 
@@ -30,6 +30,9 @@ impl MyModule {
     pub fn provide_string(&self) -> String {
         self.phrase.clone()
     }
+
+    #[binds]
+    pub fn bind_foo_creator(impl_: FooFactory) -> ComponentLifetime<dyn FooCreator> {}
 }
 
 #[builder_modules]
@@ -43,9 +46,13 @@ pub struct Foo {
     pub phrase: String,
 }
 
+pub trait FooCreator {
+    fn create(&self, i: i32) -> Foo;
+}
+
 #[injectable]
 impl Foo {
-    #[factory]
+    #[factory(implementing: FooCreator)]
     fn create(#[runtime] i: i32, phrase: String) -> Self {
         Self { i, phrase }
     }
@@ -53,7 +60,7 @@ impl Foo {
 
 #[component(builder_modules: BuilderModules)]
 pub trait MyComponent {
-    fn foo_factory(&self) -> FooFactory;
+    fn foo_creator(&self) -> ComponentLifetime<dyn FooCreator>;
 }
 
 #[test]
@@ -64,7 +71,7 @@ pub fn main() {
         },
     });
 
-    let foo = component.foo_factory().create(42);
+    let foo = component.foo_creator().create(42);
 
     assert_eq!(foo.i, 42);
     assert_eq!(foo.phrase, "helloworld");
