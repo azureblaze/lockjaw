@@ -95,6 +95,7 @@ impl Node for VecNode {
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
             #[allow(unused_mut)]
+            #[allow(dead_code)]
             fn #name_ident(&'_ self) -> #provides_type{
                 let mut result = vec![#into_vecs];
                 #elements_into_vecs;

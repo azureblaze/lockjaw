@@ -76,3 +76,48 @@ fn injectable_unknown_metadata() {
         vec!["unknown key: foo"],
     )
 }
+
+#[test]
+fn injectable_factory_unknown_metadata() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_factory_unknown_metadata.rs",
+        vec!["unknown key: foo"],
+    )
+}
+
+#[test]
+fn injectable_factory_implementing_not_path() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_factory_implementing_not_path.rs",
+        vec!["path expected for 'implementing'"],
+    )
+}
+
+#[test]
+fn injectable_factory_implementing_not_trait() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_factory_implementing_not_trait.rs",
+        vec!["expected trait, found struct `B`"],
+    )
+}
+
+#[test]
+fn injectable_factory_implementing_method_name_mismatch() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_factory_implementing_method_name_mismatch.rs",
+        vec!["method `new` is not a member of trait `B`"],
+    )
+}
+
+#[test]
+fn injectable_factory_implementing_method_return_type_mismatch() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_factory_implementing_method_return_type_mismatch.rs",
+        vec!["method `new` has an incompatible type for trait"],
+    )
+}

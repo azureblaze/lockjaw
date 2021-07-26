@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{
-    builder_modules, component, injectable, module, prologue, subcomponent, ComponentLifetime,
-};
+use lockjaw::{builder_modules, component, injectable, module, prologue, ComponentLifetime};
 use printer::Printer;
 
 prologue!("src/main.rs");
@@ -47,6 +45,9 @@ impl MyModule {
     pub fn provide_string(&self) -> String {
         self.phrase.clone()
     }
+
+    #[binds]
+    pub fn bind_foo_creator(impl_: FooFactory) -> ComponentLifetime<dyn FooCreator> {}
 }
 
 #[builder_modules]
@@ -60,10 +61,14 @@ pub struct Foo {
     phrase: String,
 }
 
+pub trait FooCreator {
+    fn create(&self, i: i32) -> Foo;
+}
+
 #[injectable]
 impl Foo {
-    #[factory]
-    fn new(#[runtime] i: i32, phrase: String) -> Self {
+    #[factory(implementing: FooCreator)]
+    fn create(#[runtime] i: i32, phrase: String) -> Self {
         Self { i, phrase }
     }
 }
@@ -72,7 +77,7 @@ impl Foo {
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
 
-    fn foo_factory(&self) -> FooFactory;
+    fn foo_creator(&'_ self) -> ComponentLifetime<'_, dyn FooCreator>;
 }
 
 pub fn main() {
@@ -84,12 +89,11 @@ pub fn main() {
 
     component.greeter().greet();
 
-    println!("{:?}", component.foo_factory().new(42));
+    println!("{:?}", component.foo_creator().create(42));
 }
 
 #[cfg(test)]
 use printer_test::TestPrinter;
-use std::collections::HashMap;
 
 #[cfg(test)]
 #[component(modules: [::printer_test::Module], builder_modules: BuilderModules)]

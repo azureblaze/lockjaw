@@ -73,4 +73,4 @@ pub fn into_vec_no_binding_in_parent() {
     assert!(sub.vi32().contains(&32));
 }
 
-lockjaw::epilogue!(debug_output);
+lockjaw::epilogue!();

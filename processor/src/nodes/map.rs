@@ -128,6 +128,7 @@ impl Node for MapNode {
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
             #[allow(unused_mut)]
+            #[allow(dead_code)]
             fn #name_ident(&'_ self) -> #provides_type{
                 let mut result = HashMap::new();
                 #into_maps

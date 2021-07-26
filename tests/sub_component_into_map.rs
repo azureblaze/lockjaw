@@ -74,4 +74,4 @@ pub fn into_map_no_binding_in_parent() {
     assert_eq!(*sub.mi32().get(&1).unwrap(), 11);
 }
 
-lockjaw::epilogue!(debug_output);
+lockjaw::epilogue!();

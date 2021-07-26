@@ -20,11 +20,16 @@ use lockjaw::{
 };
 
 lockjaw::prologue!(
-    "../../../compile_tests/tests/injectable/injectable_unknown_metadata.rs",
+    "../../../compile_tests/tests/injectable/injectable_factory_unknown_metadata.rs",
     ""
 );
 struct S;
 
-#[lockjaw::injectable(foo: "bar")]
-impl S {}
+#[lockjaw::injectable]
+impl S {
+    #[factory(foo: "bar")]
+    fn new() -> Self {
+        Self {}
+    }
+}
 lockjaw::epilogue!(test);

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
@@ -24,6 +24,7 @@ use syn::{FnArg, ImplItem, ImplItemMethod, Pat};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::{Dependency, Injectable};
+use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use crate::type_validator::TypeValidator;
@@ -33,6 +34,14 @@ lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("scope".to_owned());
+        set
+    };
+}
+
+lazy_static! {
+    static ref FACTORY_METADATA_KEYS: HashSet<String> = {
+        let mut set = HashSet::<String>::new();
+        set.insert("implementing".to_owned());
         set
     };
 }
@@ -59,9 +68,9 @@ pub fn handle_injectable_attribute(
         }
     }
 
-    let (ctor_type, ctor) = get_ctor(item.span(), &mut item.items)?;
+    let (ctor_type, ctor, fields) = get_ctor(item.span(), &mut item.items)?;
     if ctor_type == CtorType::Factory {
-        let factory = handle_factory(item.self_ty.clone(), ctor.clone())?;
+        let factory = handle_factory(item.self_ty.clone(), ctor.clone(), fields.clone())?;
         for arg in ctor.sig.inputs.iter_mut() {
             if let FnArg::Receiver(ref receiver) = arg {
                 return spanned_compile_error(receiver.span(), &format!("self not allowed"));
@@ -147,7 +156,7 @@ pub fn handle_injectable_attribute(
 fn get_ctor(
     span: Span,
     items: &mut Vec<ImplItem>,
-) -> Result<(CtorType, &mut ImplItemMethod), TokenStream> {
+) -> Result<(CtorType, &mut ImplItemMethod, HashMap<String, FieldValue>), TokenStream> {
     let mut ctors = 0;
     for item in &mut *items {
         if let ImplItem::Method(ref mut method) = item {
@@ -178,8 +187,10 @@ fn get_ctor(
                     .iter()
                     .position(|a| parsing::is_attribute(a, "inject"))
                     .unwrap();
+                let fields =
+                    parsing::get_parenthesized_field_values(method.attrs[index].tokens.clone())?;
                 method.attrs.remove(index);
-                return Ok((CtorType::Inject, method));
+                return Ok((CtorType::Inject, method, fields));
             }
             if parsing::has_attribute(&method.attrs, "factory") {
                 let index = method
@@ -187,8 +198,10 @@ fn get_ctor(
                     .iter()
                     .position(|a| parsing::is_attribute(a, "factory"))
                     .unwrap();
+                let fields =
+                    parsing::get_parenthesized_field_values(method.attrs[index].tokens.clone())?;
                 method.attrs.remove(index);
-                return Ok((CtorType::Factory, method));
+                return Ok((CtorType::Factory, method, fields));
             }
         }
     }
@@ -198,11 +211,18 @@ fn get_ctor(
 fn handle_factory(
     self_ty: Box<syn::Type>,
     method: ImplItemMethod,
+    metadata: HashMap<String, FieldValue>,
 ) -> Result<TokenStream, TokenStream> {
+    for (k, v) in &metadata {
+        if !FACTORY_METADATA_KEYS.contains(k) {
+            return spanned_compile_error(v.span(), &format!("unknown key: {}", k));
+        }
+    }
     let mut fields = quote! {};
     let mut fields_arg = quote! {};
     let mut runtime_args = quote! {};
     let mut args = quote! {};
+
     for arg in method.sig.inputs.iter() {
         if let FnArg::Receiver(ref receiver) = arg {
             return spanned_compile_error(receiver.span(), &format!("self not allowed"));
@@ -250,26 +270,44 @@ fn handle_factory(
         return spanned_compile_error(self_ty.span(), &format!("path expected"));
     }
     let method_name = method.sig.ident;
-
+    let viz;
+    let impl_for = if let Some(implementing) = metadata.get("implementing") {
+        let trait_ = if let FieldValue::Path(_, path) = implementing {
+            viz = quote! {};
+            quote! {#path}
+        } else {
+            return spanned_compile_error(implementing.span(), "path expected for 'implementing'");
+        };
+        quote! {
+            #trait_ for
+        }
+    } else {
+        viz = quote! {pub};
+        quote! {}
+    };
     let result = quote! {
         pub struct #factory_ty<'a> {
             #fields
+            lockjaw_phamtom_data: ::std::marker::PhantomData<&'a ::std::string::String>
         }
         #[injectable]
         impl <'a> #factory_ty<'a> {
             #[inject]
             fn lockjaw_new_factory(#fields) -> Self{
-                Self{#fields_arg}
+                Self{
+                    #fields_arg
+                    lockjaw_phamtom_data: ::std::marker::PhantomData
+                }
             }
         }
 
-        impl <'a> #factory_ty<'a> {
-            pub fn #method_name(&self,#runtime_args) -> #self_ty {
+        impl <'a> #impl_for #factory_ty<'a> {
+            #viz fn #method_name(&self,#runtime_args) -> #self_ty {
                 #self_ty::#method_name(#args)
             }
         }
     };
 
-    log!("{}", result.to_string());
+    // log!("{}", result.to_string());
     Ok(result)
 }
