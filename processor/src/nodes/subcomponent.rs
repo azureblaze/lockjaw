@@ -92,7 +92,7 @@ fn generate_component(
     builder_type: &TypeData,
 ) -> Result<TokenStream, TokenStream> {
     let component_name = component.type_data.syn_type();
-    let component_impl_name = format_ident!("SubcomponentImpl",);
+    let component_impl_name = component.impl_ident();
 
     let component_builder_impl_name = format_ident!("SubcomponentBuilderImpl",);
 
@@ -105,13 +105,8 @@ fn generate_component(
     let ctor_params = &component_sections.ctor_params;
     let methods = &component_sections.methods;
     let trait_methods = &component_sections.trait_methods;
-    let parent_impl_type = format_ident!(
-        "{}Impl",
-        parent_component_type
-            .local_string_path()
-            .replace(" ", "")
-            .replace("::", "_")
-    );
+    let items = &component_sections.items;
+    let parent_impl_type = format_ident!("{}Impl", parent_component_type.identifier().to_string());
 
     let mut builder_type_without_dyn = builder_type.clone();
     builder_type_without_dyn.trait_object = false;
@@ -140,6 +135,8 @@ fn generate_component(
         impl <'a> #component_name<'a> for #component_impl_name<'a> {
             #trait_methods
         }
+
+        #items
 
         #[allow(non_snake_case)]
         #[allow(non_camel_case_types)]
@@ -187,7 +184,7 @@ impl Node for SubcomponentNode {
         let impl_tokens = self.token_stream.clone();
 
         component_sections.add_methods(quote! {
-            fn #name_ident(&'_ self) -> ::lockjaw::ComponentLifetime<#type_path>{
+            fn #name_ident(&'_ self) -> ::lockjaw::ComponentLifetime<'_, #type_path>{
                 #impl_tokens
             }
         });

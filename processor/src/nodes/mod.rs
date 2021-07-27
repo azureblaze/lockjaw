@@ -18,6 +18,7 @@ pub mod binds;
 pub mod binds_option_of;
 pub mod boxed;
 pub mod component_lifetime;
+pub mod entry_point;
 pub mod injectable;
 pub mod lazy;
 pub mod map;

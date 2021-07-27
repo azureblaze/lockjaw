@@ -14,8 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{builder_modules, component, injectable, module, prologue, ComponentLifetime};
+use lockjaw::{
+    builder_modules, component, entry_point, injectable, module, prologue, ComponentLifetime,
+};
 use printer::Printer;
+#[cfg(test)]
+use printer_test::TestPrinter;
 
 prologue!("src/main.rs");
 
@@ -73,6 +77,13 @@ impl Foo {
     }
 }
 
+#[entry_point(install_in: MyComponent)]
+pub trait MyEntryPoint {
+    fn greeter(&self) -> Greeter;
+
+    fn foo_creator(&'_ self) -> ComponentLifetime<'_, dyn FooCreator>;
+}
+
 #[component(builder_modules: BuilderModules)]
 pub trait MyComponent {
     fn greeter(&self) -> Greeter;
@@ -87,13 +98,10 @@ pub fn main() {
         },
     });
 
-    component.greeter().greet();
-
-    println!("{:?}", component.foo_creator().create(42));
+    <dyn MyEntryPoint>::get(component.as_ref())
+        .greeter()
+        .greet();
 }
-
-#[cfg(test)]
-use printer_test::TestPrinter;
 
 #[cfg(test)]
 #[component(builder_modules: BuilderModules)]
@@ -118,4 +126,4 @@ fn test_greeter() {
     );
 }
 
-lockjaw::epilogue!(root debug_output);
+lockjaw::epilogue!(debug_output);

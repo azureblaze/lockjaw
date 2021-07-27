@@ -37,6 +37,7 @@ use syn::spanned::Spanned;
 #[macro_use]
 mod log;
 mod components;
+mod entrypoints;
 mod environment;
 mod error;
 mod graph;
@@ -76,6 +77,11 @@ pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
             ComponentType::Subcomponent,
         )
     })
+}
+
+#[proc_macro_attribute]
+pub fn entry_point(attr: TokenStream, input: TokenStream) -> TokenStream {
+    handle_error(|| entrypoints::handle_entry_point_attribute(attr.into(), input.into()))
 }
 
 #[proc_macro_attribute]

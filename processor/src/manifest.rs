@@ -21,6 +21,8 @@ use serde::{Deserialize, Serialize};
 use crate::manifest::BindingType::Provides;
 use crate::manifest::TypeRoot::UNSPECIFIED;
 use crate::type_data::TypeData;
+use proc_macro2::Ident;
+use quote::format_ident;
 use std::collections::HashSet;
 
 thread_local! {
@@ -45,6 +47,7 @@ pub struct Manifest {
     pub modules: Vec<Module>,
     pub builder_modules: Vec<BuilderModules>,
     pub qualifiers: Vec<TypeData>,
+    pub entry_points: Vec<EntryPoint>,
 }
 
 impl Manifest {
@@ -118,6 +121,23 @@ pub struct Component {
 }
 
 impl Component {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn impl_ident(&self) -> Ident {
+        format_ident!("{}Impl", self.type_data.identifier().to_string())
+    }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
+pub struct EntryPoint {
+    pub type_data: TypeData,
+    pub component: TypeData,
+    pub provisions: Vec<Dependency>,
+}
+
+impl EntryPoint {
     pub fn new() -> Self {
         Default::default()
     }
