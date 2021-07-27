@@ -23,7 +23,7 @@ use proc_macro2::TokenStream;
 use quote::quote_spanned;
 use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
-use syn::Attribute;
+use syn::{Attribute, ItemTrait};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
@@ -53,41 +53,12 @@ pub fn handle_component_attribute(
     let span = input.span();
     let mut item_trait: syn::ItemTrait =
         syn::parse2(input).map_spanned_compile_error(span, "trait expected")?;
-    let mut provisions = Vec::<Dependency>::new();
-    let mut type_validator = TypeValidator::new();
-    for item in &mut item_trait.items {
-        if let syn::TraitItem::Method(ref mut method) = item {
-            let mut provision = Dependency::new();
-            let mut qualifier: Option<TypeData> = None;
-            let mut new_attrs: Vec<Attribute> = Vec::new();
-            for attr in &method.attrs {
-                match parsing::get_attribute(attr).as_str() {
-                    "qualified" => {
-                        qualifier = Some(parsing::get_parenthesized_type(&attr.tokens)?);
-                        type_validator.add_type(qualifier.as_ref().unwrap(), attr.span());
-                    }
-                    _ => new_attrs.push(attr.clone()),
-                }
-            }
-            method.attrs = new_attrs;
-            provision.name = method.sig.ident.to_string();
-            if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
-                if is_trait_object_without_lifetime(ty.deref())? {
-                    return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
-                }
-                provision.type_data = TypeData::from_syn_type(ty.deref())?;
-                provision.type_data.qualifier = qualifier.map(Box::new);
-            } else {
-                return spanned_compile_error(
-                    method.sig.span(),
-                    "return type expected for component provisions",
-                );
-            }
-            provisions.push(provision);
-        }
-    }
-    let attributes = parsing::get_attribute_field_values(attr.clone())?;
 
+    let mut type_validator = TypeValidator::new();
+
+    let provisions = get_provisions(&mut item_trait, &mut type_validator)?;
+
+    let attributes = parsing::get_attribute_field_values(attr.clone())?;
     for key in attributes.keys() {
         if !COMPONENT_METADATA_KEYS.contains(key) {
             return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
@@ -176,6 +147,45 @@ pub fn handle_component_attribute(
         #prologue_check
     };
     Ok(result)
+}
+
+pub fn get_provisions(
+    item_trait: &mut ItemTrait,
+    type_validator: &mut TypeValidator,
+) -> Result<Vec<Dependency>, TokenStream> {
+    let mut provisions = Vec::<Dependency>::new();
+    for item in &mut item_trait.items {
+        if let syn::TraitItem::Method(ref mut method) = item {
+            let mut provision = Dependency::new();
+            let mut qualifier: Option<TypeData> = None;
+            let mut new_attrs: Vec<Attribute> = Vec::new();
+            for attr in &method.attrs {
+                match parsing::get_attribute(attr).as_str() {
+                    "qualified" => {
+                        qualifier = Some(parsing::get_parenthesized_type(&attr.tokens)?);
+                        type_validator.add_type(qualifier.as_ref().unwrap(), attr.span());
+                    }
+                    _ => new_attrs.push(attr.clone()),
+                }
+            }
+            method.attrs = new_attrs;
+            provision.name = method.sig.ident.to_string();
+            if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
+                if is_trait_object_without_lifetime(ty.deref())? {
+                    return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
+                }
+                provision.type_data = TypeData::from_syn_type(ty.deref())?;
+                provision.type_data.qualifier = qualifier.map(Box::new);
+            } else {
+                return spanned_compile_error(
+                    method.sig.span(),
+                    "return type expected for component provisions",
+                );
+            }
+            provisions.push(provision);
+        }
+    }
+    Ok(provisions)
 }
 
 fn is_trait_object_without_lifetime(ty: &syn::Type) -> Result<bool, TokenStream> {

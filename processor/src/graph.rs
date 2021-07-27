@@ -28,6 +28,7 @@ use crate::manifest::{
 };
 use crate::nodes::binds::BindsNode;
 use crate::nodes::binds_option_of::BindsOptionOfNode;
+use crate::nodes::entry_point::EntryPointNode;
 use crate::nodes::injectable::InjectableNode;
 use crate::nodes::map::MapNode;
 use crate::nodes::node::Node;
@@ -42,10 +43,11 @@ use std::iter::FromIterator;
 /// Dependency graph and other related data
 #[derive(Default, Debug)]
 pub struct Graph {
+    pub component: Component,
     pub map: HashMap<Ident, Box<dyn Node>>,
     pub modules: HashSet<TypeData>,
     pub builder_modules: BuilderModules,
-    pub provisions: Vec<Box<ProvisionNode>>,
+    pub root_nodes: Vec<Box<dyn Node>>,
 }
 
 pub struct ComponentSections {
@@ -53,6 +55,7 @@ pub struct ComponentSections {
     pub ctor_params: TokenStream,
     pub methods: TokenStream,
     pub trait_methods: TokenStream,
+    pub items: TokenStream,
 }
 
 impl Debug for ComponentSections {
@@ -65,6 +68,7 @@ impl Debug for ComponentSections {
                 "trait_methods: {}",
                 self.trait_methods.to_string()
             ))
+            .field(&format!("items: {}", self.items.to_string()))
             .finish()
     }
 }
@@ -76,6 +80,7 @@ impl ComponentSections {
             ctor_params: quote! {},
             methods: quote! {},
             trait_methods: quote! {},
+            items: quote! {},
         }
     }
 
@@ -84,16 +89,19 @@ impl ComponentSections {
         let ctor_params = &self.ctor_params;
         let methods = &self.methods;
         let trait_methods = &self.trait_methods;
+        let items = &self.items;
 
         let other_fields = &other.fields;
         let other_ctor_params = &other.ctor_params;
         let other_methods = &other.methods;
         let other_trait_methods = &other.trait_methods;
+        let other_items = &other.items;
 
         self.fields = quote! {#fields #other_fields};
         self.ctor_params = quote! {#ctor_params #other_ctor_params};
         self.methods = quote! {#methods #other_methods};
         self.trait_methods = quote! {#trait_methods #other_trait_methods};
+        self.items = quote! {#items #other_items};
     }
 
     pub fn add_fields(&mut self, new_fields: TokenStream) {
@@ -114,6 +122,11 @@ impl ComponentSections {
     pub fn add_trait_methods(&mut self, new_trait_methods: TokenStream) {
         let trait_methods = &self.trait_methods;
         self.trait_methods = quote! {#trait_methods #new_trait_methods}
+    }
+
+    pub fn add_items(&mut self, new_items: TokenStream) {
+        let items = &self.items;
+        self.items = quote! {#items #new_items}
     }
 }
 
@@ -138,14 +151,7 @@ pub fn generate_component(
         return Err(error);
     }
     let component_name = component.type_data.syn_type();
-    let component_impl_name = format_ident!(
-        "{}Impl",
-        component
-            .type_data
-            .local_string_path()
-            .replace(" ", "")
-            .replace("::", "_")
-    );
+    let component_impl_name = component.impl_ident();
 
     let mut component_sections = ComponentSections::new();
 
@@ -156,6 +162,8 @@ pub fn generate_component(
     let ctor_params = &component_sections.ctor_params;
     let methods = &component_sections.methods;
     let trait_methods = &component_sections.trait_methods;
+    let items = &component_sections.items;
+
     let component_impl = quote! {
         #[allow(non_snake_case)]
         #[allow(non_camel_case_types)]
@@ -171,6 +179,7 @@ pub fn generate_component(
         impl #component_name for #component_impl_name {
             #trait_methods
         }
+        #items
     };
     let mut builder = quote! {};
     if graph.builder_modules.type_data.is_some() {
@@ -265,7 +274,7 @@ impl Graph {
     ) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         let mut generated_nodes = HashSet::<Ident>::new();
-        for provision in &self.provisions {
+        for provision in &self.root_nodes {
             result.merge(self.generate_provision(
                 provision.deref(),
                 component,
@@ -414,6 +423,7 @@ pub fn build_graph(
     parent_multibinding_nodes: &Vec<Box<dyn Node>>,
 ) -> Result<(Graph, Vec<MissingDependency>), TokenStream> {
     let mut result = Graph::default();
+    result.component = component.clone();
     let singleton = singleton_type();
     for node in parent_multibinding_nodes {
         result.add_node(node.clone_box())?;
@@ -550,8 +560,22 @@ pub fn build_graph(
             &mut vec![],
             &mut resolved_nodes,
         )?);
-        result.provisions.push(provision);
+        result.root_nodes.push(provision);
     }
+
+    for entry_point in &manifest.entry_points {
+        if entry_point.component.identifier() == component.type_data.identifier() {
+            let node = Box::new(EntryPointNode::new(entry_point));
+            missing_deps.extend(resolve_dependencies(
+                node.as_ref(),
+                &mut result.map,
+                &mut vec![],
+                &mut resolved_nodes,
+            )?);
+            result.root_nodes.push(node);
+        }
+    }
+
     if component.component_type == ComponentType::Subcomponent {
         for (_, v) in &mut result.map {
             if let Some(vec_node) = v.as_mut_any().downcast_mut::<VecNode>() {
