@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, module, subcomponent, ComponentLifetime};
+use lockjaw::{define_component, define_subcomponent, epilogue, module, ComponentLifetime};
 
 pub use String as NamedString;
 
@@ -32,7 +32,7 @@ impl MySubmodule {
     }
 }
 
-#[subcomponent]
+#[define_subcomponent]
 pub trait MySubcomponent<'a> {
     fn string(&self) -> String;
 }
@@ -42,7 +42,7 @@ struct MyModule {}
 #[module(install_in: MyComponent, subcomponents: [MySubcomponent])]
 impl MyModule {}
 
-#[component]
+#[define_component]
 pub trait MyComponent {
     fn sub(&'_ self) -> ComponentLifetime<dyn MySubcomponentBuilder<'_>>;
 }

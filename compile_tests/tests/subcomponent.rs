@@ -31,3 +31,15 @@ fn subcomponent_map_key_conflicts_with_parent_map_key() {
         vec!["found duplicated key I32(1)"],
     )
 }
+
+#[test]
+fn subcomponent_parent_not_defined_component() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/subcomponent/subcomponent_parent_not_defined_component.rs",
+        vec![
+            "#[subcomponent]",
+            "but the component is not annotated with #[define_component] or #[define_subcomponent]",
+        ],
+    )
+}

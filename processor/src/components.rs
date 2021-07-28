@@ -19,7 +19,7 @@ use std::collections::HashSet;
 use std::ops::Deref;
 
 use lazy_static::lazy_static;
-use proc_macro2::TokenStream;
+use proc_macro2::{Ident, TokenStream};
 use quote::quote_spanned;
 use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
@@ -57,6 +57,7 @@ pub fn handle_component_attribute(
     attr: TokenStream,
     input: TokenStream,
     component_type: ComponentType,
+    definition_only: bool,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
     let mut item_trait: syn::ItemTrait =
@@ -129,9 +130,10 @@ pub fn handle_component_attribute(
     if let Some(ref m) = modules {
         component.modules = m.clone();
     }
+    component.definition_only = definition_only;
     let identifier = component.type_data.identifier().to_string();
 
-    let subcomponent_builder = if component.component_type == ComponentType::Subcomponent {
+    let component_builder = if component.component_type == ComponentType::Subcomponent {
         let subcomponent_name = item_trait.ident.clone();
         let builder_name = format_ident!("{}Builder", subcomponent_name);
         let args = if builder_modules.is_some() {
@@ -146,7 +148,39 @@ pub fn handle_component_attribute(
             }
         }
     } else {
-        quote! {}
+        let builder_name = builder_name(&component);
+        let component_name = component.type_data.syn_type();
+        if component.builder_modules.is_some() {
+            let module_manifest_name = component.builder_modules.as_ref().unwrap().syn_type();
+            quote! {
+                impl dyn #component_name {
+                    #[allow(unused)]
+                    pub fn build (param : #module_manifest_name) -> Box<dyn #component_name>{
+                        extern "Rust" {
+                            pub fn  #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>;
+                        }
+                       unsafe { #builder_name(param) }
+                    }
+                }
+            }
+        } else {
+            quote! {
+                impl dyn #component_name {
+                    pub fn build () -> Box<dyn #component_name>{
+                        extern "Rust" {
+                            pub fn  #builder_name() -> Box<dyn #component_name>;
+                        }
+                       unsafe { #builder_name() }
+                    }
+                    pub fn new () -> Box<dyn #component_name>{
+                        extern "Rust" {
+                            pub fn  #builder_name() -> Box<dyn #component_name>;
+                        }
+                       unsafe { #builder_name() }
+                    }
+                }
+            }
+        }
     };
 
     with_manifest(|mut manifest| manifest.components.push(component));
@@ -172,12 +206,24 @@ pub fn handle_component_attribute(
     let validate_type = type_validator.validate(identifier);
     let result = quote! {
         #item_trait
-        #subcomponent_builder
+        #component_builder
         #parent_module
         #validate_type
         #prologue_check
     };
     Ok(result)
+}
+
+pub fn builder_name(component: &Component) -> Ident {
+    format_ident!(
+        "lockjaw_component_builder_{}",
+        base64::encode_config(
+            format!("{}", component.type_data.identifier().to_string(),),
+            base64::Config::new(base64::CharacterSet::Standard, false)
+        )
+        .replace("+", "_P")
+        .replace("/", "_S")
+    )
 }
 
 pub fn get_provisions(
@@ -271,11 +317,18 @@ pub fn handle_builder_modules_attribute(
     })
 }
 
-pub fn generate_components(manifest: &Manifest) -> Result<(TokenStream, Vec<String>), TokenStream> {
+pub fn generate_components(
+    manifest: &Manifest,
+    root: bool,
+) -> Result<(TokenStream, Vec<String>), TokenStream> {
     let mut result = quote! {};
     let mut messages = Vec::<String>::new();
     for component in &manifest.components {
-        if component
+        if component.definition_only {
+            if !root {
+                continue;
+            }
+        } else if component
             .type_data
             .field_crate
             .ne(&environment::current_crate())

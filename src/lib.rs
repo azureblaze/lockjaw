@@ -22,6 +22,10 @@ pub use lockjaw_processor::component;
 
 pub use lockjaw_processor::subcomponent;
 
+pub use lockjaw_processor::define_component;
+
+pub use lockjaw_processor::define_subcomponent;
+
 pub use lockjaw_processor::entry_point;
 
 #[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("builder_modules.md")))]

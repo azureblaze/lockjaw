@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{define_component, entry_point, module, prologue};
+use lockjaw::{entry_point, module, prologue};
+use test_dep::DepDefinedComponent;
 
-prologue!("tests/entry_point.rs");
+prologue!("tests/define_component.rs");
 
 struct MyModule {}
 
-#[module(install_in: MyComponent)]
+#[module(install_in: DepDefinedComponent)]
 impl MyModule {
     #[provides]
     pub fn provide_i(&self) -> i32 {
@@ -28,19 +29,16 @@ impl MyModule {
     }
 }
 
-#[entry_point(install_in: MyComponent)]
+#[entry_point(install_in: DepDefinedComponent)]
 pub trait MyEntryPoint {
     fn i(&self) -> i32;
 }
 
-#[define_component]
-pub trait MyComponent {}
-
 #[test]
 pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let component: Box<dyn DepDefinedComponent> = <dyn DepDefinedComponent>::new();
 
     assert_eq!(<dyn MyEntryPoint>::get(component.as_ref()).i(), 42)
 }
 
-lockjaw::epilogue!(debug_output);
+lockjaw::epilogue!(root debug_output);

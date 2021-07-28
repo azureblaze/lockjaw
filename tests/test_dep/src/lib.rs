@@ -43,4 +43,7 @@ pub trait DepComponent {
     fn dep(&self) -> crate::DepInjectable;
 }
 
+#[lockjaw::define_component]
+pub trait DepDefinedComponent {}
+
 lockjaw::epilogue!();

@@ -24,11 +24,11 @@ impl StringModule {
 }
 
 #[builder_modules]
-struct MyBuilderModules {
+pub struct MyBuilderModules {
     module : crate::StringModule,
 }
 #[component(builder_modules : crate::MyBuilderModules)]
-trait MyComponent {
+pub trait MyComponent {
     fn string(&self) -> String;
 }
 

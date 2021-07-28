@@ -48,6 +48,7 @@ pub struct Manifest {
     pub builder_modules: Vec<BuilderModules>,
     pub qualifiers: Vec<TypeData>,
     pub entry_points: Vec<EntryPoint>,
+    pub root: bool,
 }
 
 impl Manifest {
@@ -62,6 +63,7 @@ impl Manifest {
         self.modules.clear();
         self.builder_modules.clear();
         self.qualifiers.clear();
+        self.root = false;
     }
 
     pub fn merge_from(&mut self, other: &Manifest) {
@@ -118,6 +120,7 @@ pub struct Component {
     pub provisions: Vec<Dependency>,
     pub builder_modules: Option<TypeData>,
     pub modules: Vec<TypeData>,
+    pub definition_only: bool,
 }
 
 impl Component {

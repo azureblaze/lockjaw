@@ -178,3 +178,15 @@ fn into_map_i32_key_collision() {
         vec!["found duplicated key I32(1)"],
     )
 }
+
+#[test]
+fn module_not_installed_in_defined_component() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/module/module_not_installed_in_defined_component.rs",
+        vec![
+            "#[module]",
+            "but the component is not annotated with #[define_component] or #[define_subcomponent]",
+        ],
+    )
+}

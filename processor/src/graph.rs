@@ -22,6 +22,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::format_ident;
 use quote::quote;
 
+use crate::components;
 use crate::error::compile_error;
 use crate::manifest::{
     BindingType, BuilderModules, Component, ComponentType, Manifest, MultibindingType, TypeRoot,
@@ -181,28 +182,27 @@ pub fn generate_component(
         }
         #items
     };
-    let mut builder = quote! {};
-    if graph.builder_modules.type_data.is_some() {
+
+    let builder_name = components::builder_name(component);
+
+    let builder = if graph.builder_modules.type_data.is_some() {
         let module_manifest_name = graph.builder_modules.type_data.unwrap().syn_type();
-        builder = quote! {
-            impl dyn #component_name {
-                #[allow(unused)]
-                pub fn build (param : #module_manifest_name) -> Box<dyn #component_name>{
-                   Box::new(#component_impl_name{#ctor_params})
-                }
+        quote! {
+            #[no_mangle]
+            #[allow(non_snake_case)]
+            pub fn #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>{
+               Box::new(#component_impl_name{#ctor_params})
             }
-        };
-    }
-    if graph.builder_modules.builder_modules.is_empty() {
-        builder = quote! {
-            #builder
-            impl dyn #component_name {
-                pub fn new () -> Box<dyn #component_name>{
-                   Box::new(#component_impl_name{#ctor_params})
-                }
+        }
+    } else {
+        quote! {
+            #[no_mangle]
+            #[allow(non_snake_case)]
+            pub fn #builder_name () -> Box<dyn #component_name>{
+               Box::new(#component_impl_name{#ctor_params})
             }
-        };
-    }
+        }
+    };
 
     Ok((
         quote! {
@@ -446,6 +446,23 @@ pub fn build_graph(
             || (component.component_type == ComponentType::Component
                 && module.install_in.contains(&singleton_type()))
         {
+            if !component.definition_only {
+                if module.install_in.contains(&singleton_type()) {
+                    continue;
+                }
+                if module.bindings.is_empty() && module.subcomponents.len() == 1 {
+                    return compile_error(
+                        &format!("#[subcomponent] {} has `parent` {},\
+                     but the component is not annotated with #[define_component] or #[define_subcomponent]",
+                                 module.subcomponents.iter().next().unwrap().readable(),
+                                 component.type_data.readable()));
+                }
+                return compile_error(
+                    &format!("#[module] {} is `install_in` {},\
+                     but the component is not annotated with #[define_component] or #[define_subcomponent]",
+                             module.type_data.readable(),
+                             component.type_data.readable()));
+            }
             result.modules.insert(module.type_data.clone());
         }
     }
@@ -567,7 +584,16 @@ pub fn build_graph(
     }
 
     for entry_point in &manifest.entry_points {
-        if entry_point.component.identifier() == component.type_data.identifier() {
+        if entry_point.component.canonical_string_path()
+            == component.type_data.canonical_string_path()
+        {
+            if !component.definition_only {
+                return compile_error(
+                    &format!("#[entry_point] {} is `install_in` {},\
+                     but the component is not annotated with #[define_component] or #[define_subcomponent]",
+                             entry_point.type_data.readable(),
+                             component.type_data.readable()));
+            }
             let node = Box::new(EntryPointNode::new(entry_point));
             missing_deps.extend(resolve_dependencies(
                 node.as_ref(),
