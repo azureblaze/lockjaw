@@ -535,19 +535,22 @@ pub fn build_graph(
             multibinding_nodes.push(sub_map_node);
         }
     }
-
+    let mut subcomponents = HashSet::<TypeData>::new();
     for module in &manifest.modules {
         if !installed_modules.contains(&module.type_data.identifier()) {
             continue;
         }
         for subcomponent in &module.subcomponents {
-            result.add_nodes(SubcomponentNode::new(
-                manifest,
-                subcomponent,
-                &component.type_data,
-                &multibinding_nodes,
-            )?)?;
+            subcomponents.insert(subcomponent.clone());
         }
+    }
+    for subcomponent in &subcomponents {
+        result.add_nodes(SubcomponentNode::new(
+            manifest,
+            subcomponent,
+            &component.type_data,
+            &multibinding_nodes,
+        )?)?;
     }
 
     let mut resolved_nodes = HashSet::<Ident>::new();

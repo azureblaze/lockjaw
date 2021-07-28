@@ -185,7 +185,7 @@ impl Default for TypeRoot {
 pub struct Module {
     pub type_data: TypeData,
     pub bindings: Vec<Binding>,
-    pub subcomponents: Vec<TypeData>,
+    pub subcomponents: HashSet<TypeData>,
     pub install_in: HashSet<TypeData>,
 }
 

@@ -45,6 +45,14 @@ lazy_static! {
     };
 }
 
+lazy_static! {
+    static ref SUBCOMPONENT_METADATA_KEYS: HashSet<String> = {
+        let mut set = HashSet::<String>::new();
+        set.insert("parent".to_owned());
+        set
+    };
+}
+
 pub fn handle_component_attribute(
     attr: TokenStream,
     input: TokenStream,
@@ -61,6 +69,11 @@ pub fn handle_component_attribute(
     let attributes = parsing::get_attribute_field_values(attr.clone())?;
     for key in attributes.keys() {
         if !COMPONENT_METADATA_KEYS.contains(key) {
+            if component_type == ComponentType::Subcomponent
+                && SUBCOMPONENT_METADATA_KEYS.contains(key)
+            {
+                continue;
+            }
             return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
         }
     }
@@ -138,11 +151,29 @@ pub fn handle_component_attribute(
 
     with_manifest(|mut manifest| manifest.components.push(component));
 
+    let parent_module = if let Some(parent) = attributes.get("parent") {
+        if let FieldValue::Path(_, path) = parent {
+            let module_name = format_ident!("lockjaw_parent_module_{}", identifier);
+            let subcomponent_name = item_trait.ident.clone();
+            quote! {
+                struct #module_name;
+
+                #[::lockjaw::module(install_in: #path, subcomponents: #subcomponent_name)]
+                impl #module_name{}
+            }
+        } else {
+            return spanned_compile_error(parent.span(), "path expected for parent");
+        }
+    } else {
+        quote! {}
+    };
+
     let prologue_check = prologue_check(item_trait.span());
     let validate_type = type_validator.validate(identifier);
     let result = quote! {
         #item_trait
         #subcomponent_builder
+        #parent_module
         #validate_type
         #prologue_check
     };
