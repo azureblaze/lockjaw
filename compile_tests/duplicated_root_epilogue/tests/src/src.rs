@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Google LLC
+Copyright 2021 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#![allow(dead_code)]
+lockjaw::prologue!(
+    "../../../compile_tests/duplicated_root_epilogue/tests/src/src.rs",
+    ""
+);
 
-lockjaw::prologue!("tests/extern_component.rs");
-
-#[test]
 fn main() {
-    let dep_component: Box<dyn test_dep::DepComponent> = <dyn test_dep::DepComponent>::new();
-    dep_component.dep();
+    println!("Hello, world!");
 }
 
-lockjaw::epilogue!();
+lockjaw::epilogue!(root);

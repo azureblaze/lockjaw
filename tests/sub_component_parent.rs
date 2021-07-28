@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, module, prologue, subcomponent, ComponentLifetime};
+use lockjaw::{define_component, define_subcomponent, module, prologue, ComponentLifetime};
 
 prologue!("tests/sub_component.rs");
 
@@ -27,12 +27,12 @@ impl Submodule {
     }
 }
 
-#[subcomponent(parent: MyComponent)]
+#[define_subcomponent(parent: MyComponent)]
 pub trait MySubcomponent<'a> {
     fn i32(&self) -> i32;
 }
 
-#[component]
+#[define_component]
 pub trait MyComponent {
     fn sub(&'_ self) -> ComponentLifetime<dyn MySubcomponentBuilder<'_>>;
 }

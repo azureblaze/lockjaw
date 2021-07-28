@@ -29,7 +29,7 @@ use quote::{quote, quote_spanned};
 use crate::manifest::Manifest;
 use error::handle_error;
 
-use crate::error::CompileError;
+use crate::error::{compile_error, CompileError};
 use manifest::ComponentType;
 use proc_macro2::Span;
 use syn::spanned::Spanned;
@@ -64,7 +64,12 @@ pub fn builder_modules(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn component(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| {
-        components::handle_component_attribute(attr.into(), input.into(), ComponentType::Component)
+        components::handle_component_attribute(
+            attr.into(),
+            input.into(),
+            ComponentType::Component,
+            false,
+        )
     })
 }
 
@@ -75,6 +80,31 @@ pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
             attr.into(),
             input.into(),
             ComponentType::Subcomponent,
+            false,
+        )
+    })
+}
+
+#[proc_macro_attribute]
+pub fn define_component(attr: TokenStream, input: TokenStream) -> TokenStream {
+    handle_error(|| {
+        components::handle_component_attribute(
+            attr.into(),
+            input.into(),
+            ComponentType::Component,
+            true,
+        )
+    })
+}
+
+#[proc_macro_attribute]
+pub fn define_subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
+    handle_error(|| {
+        components::handle_component_attribute(
+            attr.into(),
+            input.into(),
+            ComponentType::Subcomponent,
+            true,
         )
     })
 }
@@ -142,6 +172,7 @@ pub fn epilogue(input: TokenStream) -> TokenStream {
 struct EpilogueConfig {
     for_test: bool,
     debug_output: bool,
+    root: bool,
 }
 
 #[proc_macro]
@@ -153,6 +184,7 @@ pub fn private_root_epilogue(input: TokenStream) -> TokenStream {
         if environment::current_crate().eq("lockjaw") {
             // rustdoc --test does not run with #[cfg(test)] and will reach here.
             config.for_test = true;
+            config.root = true;
         }
 
         internal_epilogue(config)
@@ -164,6 +196,7 @@ pub fn private_test_epilogue(input: TokenStream) -> TokenStream {
     handle_error(|| {
         let config = EpilogueConfig {
             for_test: true,
+            root: true,
             ..create_epilogue_config(input)
         };
         internal_epilogue(config)
@@ -175,6 +208,7 @@ fn create_epilogue_config(input: TokenStream) -> EpilogueConfig {
     EpilogueConfig {
         debug_output: set.contains("debug_output"),
         for_test: set.contains("test"),
+        root: set.contains("root"),
         ..EpilogueConfig::default()
     }
 }
@@ -183,7 +217,7 @@ fn internal_epilogue(
     config: EpilogueConfig,
 ) -> Result<proc_macro2::TokenStream, proc_macro2::TokenStream> {
     manifest::with_manifest(|mut manifest| {
-        let merged_manifest = merge_manifest(&manifest, config.for_test);
+        let merged_manifest = merge_manifest(&manifest, &config)?;
         manifest.clear();
         if !config.for_test {
             let out_dir = environment::lockjaw_output_dir()?;
@@ -208,7 +242,8 @@ fn internal_epilogue(
             )
             .expect("cannot write manifest path");
         }
-        let (components, messages) = components::generate_components(&merged_manifest)?;
+        let (components, messages) =
+            components::generate_components(&merged_manifest, config.root)?;
 
         let path_test;
         if config.for_test {
@@ -264,11 +299,15 @@ fn internal_epilogue(
     })
 }
 
-fn merge_manifest(manifest: &Manifest, for_test: bool) -> Manifest {
-    let deps = parsing::get_crate_deps(for_test);
+fn merge_manifest(
+    manifest: &Manifest,
+    config: &EpilogueConfig,
+) -> Result<Manifest, proc_macro2::TokenStream> {
+    let deps = parsing::get_crate_deps(config.for_test);
     //log!("deps: {:?}", deps);
 
     let mut result = manifest.clone();
+    result.root = config.root;
 
     for dep in &deps {
         if result.merged_crates.contains(dep) {
@@ -285,7 +324,12 @@ fn merge_manifest(manifest: &Manifest, for_test: bool) -> Manifest {
             std::fs::read_to_string(manifest_path_file).expect("unable to read manifest path");
 
         let reader = BufReader::new(File::open(manifest_path).expect("cannot find manifest file"));
-        result.merge_from(&mut serde_json::from_reader(reader).expect("cannot read manifest"));
+        let dep_manifest: Manifest = serde_json::from_reader(reader).expect("cannot read manifest");
+        if dep_manifest.root {
+            return compile_error(&format!("crate is depending on crate '{}' which already called lockjaw::epilogue!(root).\n\
+            epilogue!(root) generates #[define_component] implementations and may only be called once in a binary, typically at the root binary crate", dep));
+        }
+        result.merge_from(&dep_manifest);
     }
-    result
+    Ok(result)
 }

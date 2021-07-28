@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, module};
+use lockjaw::{define_component, epilogue, module};
 
 pub use String as NamedString;
 
@@ -32,7 +32,7 @@ impl MyModule {
     }
 }
 
-#[component(modules: MyModule)]
+#[define_component]
 pub trait MyComponent {
     fn string(&self) -> String;
 }

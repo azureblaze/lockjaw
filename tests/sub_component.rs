@@ -17,25 +17,31 @@ use lockjaw::{component, module, prologue, subcomponent, ComponentLifetime};
 
 prologue!("tests/sub_component.rs");
 
-struct Submodule {}
+struct BazModule {}
 
 #[module]
-impl Submodule {
+impl BazModule {
     #[provides]
     pub fn provide_i32() -> i32 {
-        11
+        32
     }
 }
 
-#[subcomponent(modules: [Submodule])]
+#[subcomponent(modules: [BazModule])]
 pub trait MySubcomponent<'a> {
-    fn i32(&self) -> i32;
+    fn fi64(&self) -> i64;
+    fn fi32(&self) -> i32;
 }
 
 struct MyModule {}
 
 #[module(subcomponents: [MySubcomponent])]
-impl MyModule {}
+impl MyModule {
+    #[provides]
+    pub fn provide_i64() -> i64 {
+        64
+    }
+}
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {
@@ -43,11 +49,19 @@ pub trait MyComponent {
 }
 
 #[test]
-pub fn main() {
+pub fn parent_binding() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let sub: ComponentLifetime<dyn MySubcomponent> = component.sub().build();
 
-    assert_eq!(sub.i32(), 11);
+    assert_eq!(sub.fi64(), 64);
+}
+
+#[test]
+pub fn sub_binding() {
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
+    let sub: ComponentLifetime<dyn MySubcomponent> = component.sub().build();
+
+    assert_eq!(sub.fi32(), 32);
 }
 
 lockjaw::epilogue!();

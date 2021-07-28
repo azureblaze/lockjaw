@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, entry_point, module, prologue, subcomponent, ComponentLifetime};
+use lockjaw::{component, define_subcomponent, entry_point, module, prologue, ComponentLifetime};
 use std::ops::Deref;
 
 prologue!("tests/sub_component_into_vec.rs");
@@ -29,7 +29,7 @@ impl BazModule {
     }
 }
 
-#[subcomponent(modules: [BazModule])]
+#[define_subcomponent(modules: [BazModule])]
 pub trait MySubcomponent<'a> {}
 
 #[entry_point(install_in: MySubcomponent)]

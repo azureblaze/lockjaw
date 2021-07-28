@@ -94,3 +94,15 @@ fn component_unknown_metadata() {
         vec!["unknown key: foo"],
     )
 }
+
+#[test]
+fn entry_point_not_installed_in_defined_component() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/component/entry_point_not_installed_in_defined_component.rs",
+        vec![
+            "#[entry_point]",
+            "the component is not annotated with #[define_component] or #[define_subcomponent]",
+        ],
+    )
+}
