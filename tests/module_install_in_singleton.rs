@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{define_component, epilogue, module};
+use lockjaw::{define_component, epilogue, module, Singleton};
 
 pub use String as NamedString;
 
@@ -24,7 +24,7 @@ lockjaw::prologue!("tests/module_install_in_singleton.rs");
 
 pub struct MyModule {}
 
-#[module(install_in: ::lockjaw::Singleton)]
+#[module(install_in: Singleton)]
 impl MyModule {
     #[provides]
     pub fn provide_string() -> String {

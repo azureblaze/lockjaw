@@ -29,9 +29,29 @@ impl TypeValidator {
         }
     }
 
+    #[allow(dead_code)]
+    pub fn add_path(&mut self, path: &syn::Path, span: Span) {
+        let type_check = quote_spanned! {span => _ : Box<#path>, };
+        let tokens = self.token_stream.clone();
+        self.token_stream = quote! { #tokens #type_check}
+    }
+
+    pub fn add_dyn_path(&mut self, path: &syn::Path, span: Span) {
+        let type_check = quote_spanned! {span => _ : Box<dyn #path>, };
+        let tokens = self.token_stream.clone();
+        self.token_stream = quote! { #tokens #type_check}
+    }
+
     pub fn add_type(&mut self, type_data: &TypeData, span: Span) {
         let path = type_data.syn_type();
         let type_check = quote_spanned! {span => _ : Box<#path>, };
+        let tokens = self.token_stream.clone();
+        self.token_stream = quote! { #tokens #type_check}
+    }
+
+    pub fn add_dyn_type(&mut self, type_data: &TypeData, span: Span) {
+        let path = type_data.syn_type();
+        let type_check = quote_spanned! {span => _ : Box<dyn #path>, };
         let tokens = self.token_stream.clone();
         self.token_stream = quote! { #tokens #type_check}
     }

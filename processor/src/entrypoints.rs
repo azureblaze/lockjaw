@@ -59,11 +59,13 @@ pub fn handle_entry_point_attribute(
             attr.span(),
             "install_in metadata expected for #[entry_point]",
         )? {
-        TypeData::from_path_with_span(path, span.clone())?
+        let c = TypeData::from_path_with_span(path, span.clone())?;
+        type_validator.add_dyn_type(&c, span.clone());
+        type_validator.add_dyn_path(path, span.clone());
+        c
     } else {
         return spanned_compile_error(attr.span(), "path expected for install_in");
     };
-
     let mut entry_point = EntryPoint::new();
     entry_point.type_data =
         TypeData::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;

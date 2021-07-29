@@ -35,6 +35,7 @@ use crate::parsing;
 use crate::parsing::{get_parenthesized_field_values, FieldValue};
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
+use crate::type_validator::TypeValidator;
 use std::convert::TryFrom;
 use std::iter::FromIterator;
 
@@ -86,14 +87,33 @@ fn handle_module_attribute_internal(
     }
 
     let mut module = Module::new();
+    let mut type_validator = TypeValidator::new();
     module.type_data = TypeData::from_local(&module_path.to_owned(), item_impl.span())?;
     module.bindings.extend(bindings);
     if let Some(subcomponents) = attributes.get("subcomponents") {
-        module.subcomponents = HashSet::from_iter(subcomponents.get_types()?)
+        let types = subcomponents.get_types()?;
+        for type_ in &types {
+            type_validator.add_dyn_type(type_, attr.span());
+        }
+        let paths = subcomponents.get_paths()?;
+        for (path, span) in &paths {
+            type_validator.add_dyn_path(path, span.clone());
+        }
+        module.subcomponents = HashSet::from_iter(types);
     }
     if let Some(install_in) = attributes.get("install_in") {
-        module.install_in = HashSet::from_iter(install_in.get_types()?);
+        let types = install_in.get_types()?;
+        for type_ in &types {
+            type_validator.add_dyn_type(type_, attr.span());
+        }
+        let paths = install_in.get_paths()?;
+        for (path, span) in &paths {
+            type_validator.add_dyn_path(path, span.clone());
+        }
+        module.install_in = HashSet::from_iter(types);
     }
+
+    let validate_type = type_validator.validate(module.type_data.identifier().to_string());
     with_manifest(|mut manifest| {
         for existing_module in &manifest.modules {
             if existing_module.type_data.eq(&module.type_data) {
@@ -104,10 +124,12 @@ fn handle_module_attribute_internal(
     })?;
 
     let prologue_check = prologue_check(item_impl.span());
-    Ok(quote! {
+    let result = quote! {
         #item_impl
+        #validate_type
         #prologue_check
-    })
+    };
+    Ok(result)
 }
 
 fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
