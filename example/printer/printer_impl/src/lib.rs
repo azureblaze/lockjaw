@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{epilogue, injectable, module, ComponentLifetime};
+use lockjaw::{epilogue, injectable, module, ComponentLifetime, Singleton};
 use printer::Printer;
 
 lockjaw::prologue!("src/lib.rs");
@@ -37,7 +37,7 @@ impl Printer for PrinterImpl {
 
 pub struct Module {}
 
-#[module(install_in: lockjaw::Singleton)]
+#[module(install_in: Singleton)]
 impl Module {
     #[binds]
     pub fn bind_printer(_impl: crate::PrinterImpl) -> ComponentLifetime<dyn ::printer::Printer> {}

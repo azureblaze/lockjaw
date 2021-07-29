@@ -102,16 +102,14 @@ impl FieldValue {
         }
     }
 
-    pub fn get_types(&self) -> Result<Vec<TypeData>, TokenStream> {
+    pub fn get_paths(&self) -> Result<Vec<(syn::Path, Span)>, TokenStream> {
         match self {
-            FieldValue::Path(ref span, ref path) => {
-                Ok(vec![TypeData::from_path_with_span(path, span.clone())?])
-            }
+            FieldValue::Path(ref span, ref path) => Ok(vec![(path.clone(), span.clone())]),
             FieldValue::Array(_, ref array) => array
                 .iter()
                 .map(|f| {
                     if let FieldValue::Path(ref span, ref path) = f {
-                        TypeData::from_path_with_span(path, span.clone())
+                        Ok((path.clone(), span.clone()))
                     } else {
                         spanned_compile_error(self.span(), "path expected")
                     }
@@ -119,6 +117,14 @@ impl FieldValue {
                 .collect(),
             _ => spanned_compile_error(self.span(), "path expected"),
         }
+    }
+
+    pub fn get_types(&self) -> Result<Vec<TypeData>, TokenStream> {
+        let mut result = Vec::new();
+        for (path, span) in self.get_paths()? {
+            result.push(TypeData::from_path_with_span(&path, span.clone())?)
+        }
+        Ok(result)
     }
 }
 
@@ -242,5 +248,6 @@ pub fn get_crate_deps(for_test: bool) -> HashSet<String> {
         }
         deps.insert(captures["crate"].replace("-", "_").to_string());
     }
+    deps.insert("lockjaw".to_owned());
     deps
 }
