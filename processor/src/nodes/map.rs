@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+use crate::component_visibles;
 use crate::error::compile_error;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{MultibindingMapKey, TypeRoot};
@@ -100,9 +101,10 @@ impl Node for MapNode {
         return format!("{} (multibinding)", self.type_.readable());
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let name_ident = self.get_identifier();
-        let provides_type = self.type_.syn_type();
+        let provides_type =
+            component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
         let mut into_maps = quote! {};
         for binding in &self.bindings {
             let key = match binding.0 {
@@ -113,7 +115,8 @@ impl Node for MapNode {
                     quote! { #key }
                 }
                 MultibindingMapKey::Enum(_, value_type) => {
-                    let key = value_type.syn_type();
+                    let key =
+                        component_visibles::visible_type(graph.manifest, &value_type).syn_type();
                     quote! { #key }
                 }
                 _ => return compile_error(&format!("unable to handle key {:?}", binding.0)),

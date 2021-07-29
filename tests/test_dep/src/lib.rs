@@ -16,24 +16,36 @@ limitations under the License.
 use lockjaw;
 lockjaw::prologue!("src/lib.rs");
 
-pub struct DepInjectable {}
+#[lockjaw::component_visible]
+struct DepPrivate {}
 
 #[lockjaw::injectable]
-impl DepInjectable {
+impl DepPrivate {
     #[inject]
     pub fn new() -> Self {
         Self {}
     }
 }
 
+pub struct DepInjectable {}
+
+#[lockjaw::injectable]
+impl DepInjectable {
+    #[inject]
+    pub fn new(_p: DepPrivate) -> Self {
+        Self {}
+    }
+}
+
 pub struct DepProvided {}
 
-pub struct DepModule {}
+#[lockjaw::component_visible]
+struct DepModule {}
 
 #[lockjaw::module(install_in: ::lockjaw::Singleton)]
 impl DepModule {
     #[provides]
-    pub fn provides_dep_provided() -> DepProvided {
+    pub fn provides_dep_provided(_p: DepPrivate) -> DepProvided {
         DepProvided {}
     }
 }

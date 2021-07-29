@@ -17,6 +17,7 @@ limitations under the License.
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 
+use crate::component_visibles;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{Component, Dependency};
 use crate::nodes::node::{DependencyData, Node};
@@ -49,10 +50,11 @@ impl Node for ProvisionNode {
         )
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
         let dependency_name = self.get_identifier();
-        let dependency_path = self.dependency.type_data.syn_type();
+        let dependency_path =
+            component_visibles::visible_type(graph.manifest, &self.dependency.type_data).syn_type();
         let provider_name = self.dependency.type_data.identifier();
         result.add_trait_methods(quote! {
            fn #dependency_name(&self) -> #dependency_path {

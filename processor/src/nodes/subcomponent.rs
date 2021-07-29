@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+use crate::component_visibles;
 use crate::error::CompileError;
 use crate::graph::{build_graph, ComponentSections, Graph};
 use crate::manifest::{Component, Manifest, MultibindingType};
@@ -64,6 +65,7 @@ impl SubcomponentNode {
                 })
                 .collect(),
             token_stream: generate_component(
+                manifest,
                 &subcomponent,
                 &graph,
                 parent_component_type,
@@ -86,19 +88,21 @@ impl SubcomponentNode {
 }
 
 fn generate_component(
+    manifest: &Manifest,
     component: &Component,
     graph: &Graph,
     parent_component_type: &TypeData,
     builder_type: &TypeData,
 ) -> Result<TokenStream, TokenStream> {
-    let component_name = component.type_data.syn_type();
+    let component_name =
+        component_visibles::visible_type(graph.manifest, &component.type_data).syn_type();
     let component_impl_name = component.impl_ident();
 
     let component_builder_impl_name = format_ident!("SubcomponentBuilderImpl",);
 
     let mut component_sections = ComponentSections::new();
 
-    component_sections.merge(graph.generate_modules());
+    component_sections.merge(graph.generate_modules(manifest));
     component_sections.merge(graph.generate_provisions(component)?);
 
     let fields = &component_sections.fields;
@@ -108,12 +112,14 @@ fn generate_component(
     let items = &component_sections.items;
     let parent_impl_type = format_ident!("{}Impl", parent_component_type.identifier().to_string());
 
-    let mut builder_type_without_dyn = builder_type.clone();
+    let mut builder_type_without_dyn =
+        component_visibles::visible_type(graph.manifest, &builder_type).clone();
     builder_type_without_dyn.trait_object = false;
     let builder_syn_type = builder_type_without_dyn.syn_type();
 
     let builder_param = if let Some(ref builder_modules) = component.builder_modules {
-        let param_type = builder_modules.syn_type();
+        let param_type =
+            component_visibles::visible_type(graph.manifest, &builder_modules).syn_type();
         quote! {param: #param_type}
     } else {
         quote! {}
@@ -175,11 +181,12 @@ impl Node for SubcomponentNode {
         format!("{} (subcomponent builder)", self.type_.readable())
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut component_sections = ComponentSections::new();
 
         let name_ident = self.get_identifier();
-        let type_path = self.builder_type.syn_type();
+        let type_path =
+            component_visibles::visible_type(graph.manifest, &self.builder_type).syn_type();
 
         let impl_tokens = self.token_stream.clone();
 

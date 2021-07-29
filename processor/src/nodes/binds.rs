@@ -17,6 +17,7 @@ limitations under the License.
 use proc_macro2::TokenStream;
 use quote::quote;
 
+use crate::component_visibles;
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
 use crate::manifest::{Binding, BuilderModules, MultibindingType};
@@ -87,7 +88,7 @@ impl Node for BindsNode {
         )
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg = self
             .binding
             .dependencies
@@ -96,7 +97,7 @@ impl Node for BindsNode {
         let arg_provider_name = arg.type_data.identifier();
 
         let name_ident = self.get_identifier();
-        let type_path = self.type_.syn_type();
+        let type_path = component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
 
         let mut result = ComponentSections::new();
         if arg.type_data.field_ref {

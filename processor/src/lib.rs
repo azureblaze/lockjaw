@@ -36,6 +36,7 @@ use syn::spanned::Spanned;
 
 #[macro_use]
 mod log;
+mod component_visibles;
 mod components;
 mod entrypoints;
 mod environment;
@@ -125,8 +126,10 @@ pub fn qualifier(attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn provides(_attr: TokenStream, input: TokenStream) -> TokenStream {
-    input
+pub fn component_visible(attr: TokenStream, input: TokenStream) -> TokenStream {
+    handle_error(|| {
+        component_visibles::handle_component_visible_attribute(attr.into(), input.into())
+    })
 }
 
 #[proc_macro]
@@ -217,7 +220,12 @@ fn internal_epilogue(
     config: EpilogueConfig,
 ) -> Result<proc_macro2::TokenStream, proc_macro2::TokenStream> {
     manifest::with_manifest(|mut manifest| {
+        let expanded_visibilities = component_visibles::expand_visibilities(&manifest)?;
+
         let merged_manifest = merge_manifest(&manifest, &config)?;
+
+        //log!("{:#?}", merged_manifest);
+
         manifest.clear();
         if !config.for_test {
             let out_dir = environment::lockjaw_output_dir()?;
@@ -264,6 +272,7 @@ fn internal_epilogue(
         }
 
         let result = quote! {
+            #expanded_visibilities
             #components
             #path_test
         };

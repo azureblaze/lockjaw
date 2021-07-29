@@ -18,10 +18,21 @@ pub struct InjectableFromOtherFile {}
 
 lockjaw::prologue!("tests/other_file/mod.rs", "other_file");
 
+#[lockjaw::component_visible]
+struct OtherFilePrivate {}
+
+#[lockjaw::injectable]
+impl OtherFilePrivate {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 #[lockjaw::injectable]
 impl InjectableFromOtherFile {
     #[inject]
-    pub fn new() -> Self {
+    pub fn new(_p: OtherFilePrivate) -> Self {
         Self {}
     }
 }

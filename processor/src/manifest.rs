@@ -23,7 +23,7 @@ use crate::manifest::TypeRoot::UNSPECIFIED;
 use crate::type_data::TypeData;
 use proc_macro2::Ident;
 use quote::format_ident;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 thread_local! {
     static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
@@ -49,6 +49,7 @@ pub struct Manifest {
     pub qualifiers: Vec<TypeData>,
     pub entry_points: Vec<EntryPoint>,
     pub root: bool,
+    pub expanded_visibilities: HashMap<String, ExpandedVisibility>,
 }
 
 impl Manifest {
@@ -64,6 +65,7 @@ impl Manifest {
         self.builder_modules.clear();
         self.qualifiers.clear();
         self.root = false;
+        self.expanded_visibilities.clear();
     }
 
     pub fn merge_from(&mut self, other: &Manifest) {
@@ -78,6 +80,12 @@ impl Manifest {
             .extend_from_slice(other.builder_modules.as_slice());
         self.qualifiers
             .extend_from_slice(other.qualifiers.as_slice());
+        self.expanded_visibilities.extend(
+            other
+                .expanded_visibilities
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone())),
+        )
     }
 }
 
@@ -258,4 +266,10 @@ impl Default for MultibindingMapKey {
     fn default() -> Self {
         MultibindingMapKey::None
     }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Hash, Eq)]
+pub struct ExpandedVisibility {
+    pub exported_name: TypeData,
+    pub crate_local_name: TypeData,
 }

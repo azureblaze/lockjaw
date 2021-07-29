@@ -89,7 +89,7 @@ pub fn handle_entry_point_attribute(
         impl dyn #item_ident {
             fn get<'a>(component: &'a dyn #component_type) -> &'a dyn #item_ident {
                 extern "Rust"{
-                    pub fn #getter_name(component: &dyn #component_type) -> &'static dyn #item_ident;
+                    fn #getter_name(component: &dyn #component_type) -> &'static dyn #item_ident;
                 }
 
                 unsafe { #getter_name(component) }

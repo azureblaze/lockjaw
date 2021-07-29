@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+use crate::component_visibles;
 use crate::graph::{ComponentSections, Graph};
 use crate::nodes::node::{DependencyData, Node};
 use crate::type_data::TypeData;
@@ -69,7 +70,8 @@ impl Node for InjectableNode {
         }
 
         let name_ident = self.get_identifier();
-        let injectable_path = self.type_.syn_type();
+        let injectable_path =
+            component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
         let ctor_name = format_ident!("{}", self.injectable.ctor_name);
         let mut result = ComponentSections::new();
         result.add_methods(quote! {
