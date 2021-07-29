@@ -132,6 +132,7 @@ pub fn handle_component_attribute(
     }
     component.definition_only = definition_only;
     let identifier = component.type_data.identifier().to_string();
+    let component_vis = item_trait.vis.clone();
 
     let component_builder = if component.component_type == ComponentType::Subcomponent {
         let subcomponent_name = item_trait.ident.clone();
@@ -143,7 +144,7 @@ pub fn handle_component_attribute(
             quote! {}
         };
         quote! {
-            pub trait #builder_name<'a> {
+            #component_vis trait #builder_name<'a> {
                 fn build(&self, #args) -> ::lockjaw::ComponentLifetime<'a, dyn #subcomponent_name<'a>>;
             }
         }
@@ -157,7 +158,7 @@ pub fn handle_component_attribute(
                     #[allow(unused)]
                     pub fn build (param : #module_manifest_name) -> Box<dyn #component_name>{
                         extern "Rust" {
-                            pub fn  #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>;
+                            fn  #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>;
                         }
                        unsafe { #builder_name(param) }
                     }
@@ -168,13 +169,13 @@ pub fn handle_component_attribute(
                 impl dyn #component_name {
                     pub fn build () -> Box<dyn #component_name>{
                         extern "Rust" {
-                            pub fn  #builder_name() -> Box<dyn #component_name>;
+                            fn  #builder_name() -> Box<dyn #component_name>;
                         }
                        unsafe { #builder_name() }
                     }
                     pub fn new () -> Box<dyn #component_name>{
                         extern "Rust" {
-                            pub fn  #builder_name() -> Box<dyn #component_name>;
+                            fn  #builder_name() -> Box<dyn #component_name>;
                         }
                        unsafe { #builder_name() }
                     }

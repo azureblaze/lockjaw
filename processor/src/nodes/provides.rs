@@ -16,6 +16,7 @@ limitations under the License.
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
+use crate::component_visibles;
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
 use crate::manifest::{Binding, BuilderModules, MultibindingType};
@@ -88,7 +89,7 @@ impl Node for ProvidesNode {
         )
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut args = quote! {};
         for arg in &self.binding.dependencies {
             let arg_provider_name = arg.type_data.identifier();
@@ -97,14 +98,16 @@ impl Node for ProvidesNode {
             }
         }
 
-        let type_path = self.type_.syn_type();
+        let type_path = component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
 
         let name_ident = self.get_identifier();
         let module_method = format_ident!("{}", self.binding.name);
         let invoke_module;
 
         if self.binding.field_static {
-            let module_path = self.module_instance.type_.syn_type();
+            let module_path =
+                component_visibles::visible_type(graph.manifest, &self.module_instance.type_)
+                    .syn_type();
             invoke_module = quote! {#module_path::#module_method(#args)}
         } else {
             let module_name = self.module_instance.name.clone();

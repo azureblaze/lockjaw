@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+use crate::component_visibles;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::TypeRoot;
 use crate::nodes::node::{DependencyData, Node};
@@ -65,15 +66,14 @@ impl Node for LazyNode {
         return format!("Lazy<{}>", self.dependencies[0].readable());
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.target.identifier();
         let name_ident = self.get_identifier();
-        let lazy_type = self
-            .type_
-            .args
-            .get(0)
-            .expect("missing T dep for Lazy<T>")
-            .syn_type();
+        let lazy_type = component_visibles::visible_type(
+            graph.manifest,
+            &self.type_.args.get(0).expect("missing T dep for Lazy<T>"),
+        )
+        .syn_type();
 
         let mut result = ComponentSections::new();
 

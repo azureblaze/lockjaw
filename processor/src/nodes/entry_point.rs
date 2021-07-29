@@ -17,11 +17,11 @@ limitations under the License.
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 
-use crate::entrypoints;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{ComponentType, EntryPoint};
 use crate::nodes::node::{DependencyData, Node};
 use crate::type_data::TypeData;
+use crate::{component_visibles, entrypoints};
 use std::any::Any;
 
 #[derive(Debug, Clone)]
@@ -58,7 +58,8 @@ impl Node for EntryPointNode {
         let mut provisions = quote! {};
         for provision in &self.entry_point.provisions {
             let dependency_name = format_ident!("{}", provision.name);
-            let dependency_path = provision.type_data.syn_type();
+            let dependency_path =
+                component_visibles::visible_type(graph.manifest, &provision.type_data).syn_type();
             let provider_name = provision.type_data.identifier();
             provisions = quote! {
                 #provisions
@@ -68,7 +69,9 @@ impl Node for EntryPointNode {
             }
         }
 
-        let entry_point_syn_type = self.entry_point.type_data.syn_type();
+        let entry_point_syn_type =
+            component_visibles::visible_type(graph.manifest, &self.entry_point.type_data)
+                .syn_type();
 
         let getter_name = entrypoints::getter_name(&self.entry_point);
 
@@ -79,7 +82,8 @@ impl Node for EntryPointNode {
         } else {
             quote! {}
         };
-        let component_name = graph.component.type_data.syn_type();
+        let component_name =
+            component_visibles::visible_type(graph.manifest, &graph.component.type_data).syn_type();
 
         result.add_items(quote! {
             impl #lifetime #entry_point_syn_type for #component_impl_name #lifetime {
@@ -88,7 +92,7 @@ impl Node for EntryPointNode {
 
             #[no_mangle]
             #[allow(non_snake_case)]
-            pub fn #getter_name<'a>(component: &'a dyn #component_name) -> &'a dyn #entry_point_syn_type {
+            fn #getter_name<'a>(component: &'a dyn #component_name) -> &'a dyn #entry_point_syn_type {
                 unsafe {
                     &*(component as *const dyn #component_name
                         as *const #component_impl_name

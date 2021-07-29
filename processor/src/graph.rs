@@ -22,7 +22,6 @@ use proc_macro2::{Ident, TokenStream};
 use quote::format_ident;
 use quote::quote;
 
-use crate::components;
 use crate::error::compile_error;
 use crate::manifest::{
     BindingType, BuilderModules, Component, ComponentType, Manifest, MultibindingType, TypeRoot,
@@ -39,16 +38,18 @@ use crate::nodes::provision::ProvisionNode;
 use crate::nodes::subcomponent::SubcomponentNode;
 use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
+use crate::{component_visibles, components};
 use std::iter::FromIterator;
 
 /// Dependency graph and other related data
-#[derive(Default, Debug)]
-pub struct Graph {
+#[derive(Debug)]
+pub struct Graph<'a> {
     pub component: Component,
     pub map: HashMap<Ident, Box<dyn Node>>,
     pub modules: HashSet<TypeData>,
     pub builder_modules: BuilderModules,
     pub root_nodes: Vec<Box<dyn Node>>,
+    pub manifest: &'a Manifest,
 }
 
 pub struct ComponentSections {
@@ -156,7 +157,7 @@ pub fn generate_component(
 
     let mut component_sections = ComponentSections::new();
 
-    component_sections.merge(graph.generate_modules());
+    component_sections.merge(graph.generate_modules(&manifest));
     component_sections.merge(graph.generate_provisions(component)?);
 
     let fields = &component_sections.fields;
@@ -190,7 +191,7 @@ pub fn generate_component(
         quote! {
             #[no_mangle]
             #[allow(non_snake_case)]
-            pub fn #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>{
+            fn #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>{
                Box::new(#component_impl_name{#ctor_params})
             }
         }
@@ -198,7 +199,7 @@ pub fn generate_component(
         quote! {
             #[no_mangle]
             #[allow(non_snake_case)]
-            pub fn #builder_name () -> Box<dyn #component_name>{
+            fn #builder_name () -> Box<dyn #component_name>{
                Box::new(#component_impl_name{#ctor_params})
             }
         }
@@ -213,7 +214,7 @@ pub fn generate_component(
     ))
 }
 
-impl Graph {
+impl<'a> Graph<'a> {
     pub fn has_node(&self, type_data: &TypeData) -> bool {
         self.map.contains_key(&type_data.identifier())
     }
@@ -240,12 +241,12 @@ impl Graph {
         Ok(())
     }
 
-    pub fn generate_modules(&self) -> ComponentSections {
+    pub fn generate_modules(&self, manifest: &Manifest) -> ComponentSections {
         let mut result = ComponentSections::new();
 
         for module in &self.modules {
             let name = module.identifier();
-            let path = module.syn_type();
+            let path = component_visibles::visible_type(manifest, &module).syn_type();
             result.add_fields(quote! {
                 #name : #path,
             });
@@ -256,7 +257,7 @@ impl Graph {
 
         for module in &self.builder_modules.builder_modules {
             let name = format_ident!("{}", module.name);
-            let path = module.type_data.syn_type();
+            let path = component_visibles::visible_type(manifest, &module.type_data).syn_type();
             result.add_fields(quote! {
                 #name : #path,
             });
@@ -417,12 +418,19 @@ impl MissingDependency {
     }
 }
 
-pub fn build_graph(
-    manifest: &Manifest,
+pub fn build_graph<'a>(
+    manifest: &'a Manifest,
     component: &Component,
     parent_multibinding_nodes: &Vec<Box<dyn Node>>,
-) -> Result<(Graph, Vec<MissingDependency>), TokenStream> {
-    let mut result = Graph::default();
+) -> Result<(Graph<'a>, Vec<MissingDependency>), TokenStream> {
+    let mut result = Graph {
+        component: Default::default(),
+        map: Default::default(),
+        modules: Default::default(),
+        builder_modules: Default::default(),
+        root_nodes: vec![],
+        manifest,
+    };
     result.component = component.clone();
     let singleton = singleton_type();
     for node in parent_multibinding_nodes {

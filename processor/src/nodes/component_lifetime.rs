@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+use crate::component_visibles;
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
 use crate::manifest::TypeRoot;
@@ -65,10 +66,10 @@ impl Node for ComponentLifetimeNode {
         format!("ComponentLifetime{}", self.type_.canonical_string_path())
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.inner.identifier();
         let name_ident = self.get_identifier();
-        let type_path = self.type_.syn_type();
+        let type_path = component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
 
         let mut result = ComponentSections::new();
         if self.inner.field_ref {

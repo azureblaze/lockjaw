@@ -234,7 +234,7 @@ impl TypeData {
     pub fn from_syn_type(syn_type: &syn::Type) -> Result<TypeData, TokenStream> {
         match syn_type {
             syn::Type::Path(ref type_path) => {
-                return TypeData::from_path(type_path.path.borrow());
+                return TypeData::from_path_with_span(type_path.path.borrow(), syn_type.span());
             }
             syn::Type::TraitObject(ref trait_object) => {
                 let mut t: TypeData =
@@ -277,7 +277,7 @@ impl TypeData {
             return spanned_compile_error(bounds.span(), "one and only one trait expected");
         }
         let trait_ = traits.get(0).unwrap();
-        return TypeData::from_path(&trait_.path);
+        return TypeData::from_path_with_span(&trait_.path, bounds.span());
     }
 
     pub fn from_str_with_span(string: &str, span: Span) -> Result<TypeData, TokenStream> {
@@ -285,10 +285,6 @@ impl TypeData {
             &syn::parse_str(string).map_compile_error("path expected")?,
             span,
         )
-    }
-
-    pub fn from_path(syn_path: &syn::Path) -> Result<TypeData, TokenStream> {
-        TypeData::from_path_with_span(syn_path, syn_path.span())
     }
 
     pub fn from_path_with_span(syn_path: &syn::Path, span: Span) -> Result<TypeData, TokenStream> {

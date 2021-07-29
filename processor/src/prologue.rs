@@ -88,7 +88,11 @@ impl SourceData {
                 let mut result = TypeData::new();
                 result.field_crate = current_crate();
                 result.root = TypeRoot::CRATE;
-                result.path = mod_.parents.join("::");
+                if !self.base_path.is_empty() {
+                    result.path.push_str(&self.base_path);
+                    result.path.push_str("::");
+                }
+                result.path.push_str(&mod_.parents.join("::"));
                 if mod_.name != "(src)" {
                     if !mod_.parents.is_empty() {
                         result.path.push_str("::");

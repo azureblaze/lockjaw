@@ -15,7 +15,8 @@ limitations under the License.
 */
 
 use lockjaw::{
-    builder_modules, define_component, entry_point, injectable, module, prologue, ComponentLifetime,
+    builder_modules, component_visible, define_component, entry_point, injectable, module,
+    prologue, ComponentLifetime,
 };
 use printer::Printer;
 #[cfg(test)]
@@ -23,7 +24,8 @@ use printer_test::TestPrinter;
 
 prologue!("src/main.rs");
 
-pub struct Greeter<'a> {
+#[component_visible]
+struct Greeter<'a> {
     phrase: String,
     printer: ComponentLifetime<'a, dyn Printer>,
 }
@@ -55,7 +57,7 @@ impl MyModule {
 }
 
 #[builder_modules]
-pub struct BuilderModules {
+struct BuilderModules {
     my_module: MyModule,
 }
 
@@ -78,14 +80,14 @@ impl Foo {
 }
 
 #[entry_point(install_in: MyComponent)]
-pub trait MyEntryPoint {
+trait MyEntryPoint {
     fn greeter(&self) -> Greeter;
 
     fn foo_creator(&'_ self) -> ComponentLifetime<'_, dyn FooCreator>;
 }
 
 #[define_component(builder_modules: BuilderModules)]
-pub trait MyComponent {}
+trait MyComponent {}
 
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::build(BuilderModules {
@@ -101,7 +103,7 @@ pub fn main() {
 
 #[cfg(test)]
 #[define_component(builder_modules: BuilderModules)]
-pub trait TestComponent {
+trait TestComponent {
     fn greeter(&self) -> Greeter;
 
     fn test_printer(&self) -> &TestPrinter;

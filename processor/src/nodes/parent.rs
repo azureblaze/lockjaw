@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+use crate::component_visibles;
 use crate::graph::{ComponentSections, Graph, MissingDependency};
 use crate::manifest::MultibindingType;
 use crate::nodes::node::Node;
@@ -46,10 +47,10 @@ impl Node for ParentNode {
         format!("{} (parent component access)", self.type_.readable())
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let name_ident = self.get_identifier();
         let parent_ident = self.parent_type.identifier();
-        let syn_type = self.type_.syn_type();
+        let syn_type = component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
 
         let mut result = ComponentSections::new();
 

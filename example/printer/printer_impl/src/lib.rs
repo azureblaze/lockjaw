@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{epilogue, injectable, module, ComponentLifetime, Singleton};
+use lockjaw::{component_visible, epilogue, injectable, module, ComponentLifetime, Singleton};
 use printer::Printer;
 
 lockjaw::prologue!("src/lib.rs");
-
-pub struct PrinterImpl {}
+#[component_visible]
+struct PrinterImpl {}
 
 #[injectable]
 impl PrinterImpl {
@@ -35,7 +35,8 @@ impl Printer for PrinterImpl {
     }
 }
 
-pub struct Module {}
+#[component_visible]
+struct Module {}
 
 #[module(install_in: Singleton)]
 impl Module {

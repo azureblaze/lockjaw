@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+use crate::component_visibles;
 use crate::graph::{ComponentSections, Graph};
 use crate::manifest::{MultibindingType, TypeRoot};
 use crate::nodes::node::{DependencyData, Node};
@@ -70,9 +71,10 @@ impl Node for VecNode {
         return format!("{} (multibinding)", self.type_.readable());
     }
 
-    fn generate_implementation(&self, _graph: &Graph) -> Result<ComponentSections, TokenStream> {
+    fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let name_ident = self.get_identifier();
-        let provides_type = self.type_.syn_type();
+        let provides_type =
+            component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
         let mut into_vecs = quote! {};
         let mut elements_into_vecs = quote! {};
         for dependency in &self.bindings {
