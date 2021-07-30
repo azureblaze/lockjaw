@@ -94,6 +94,7 @@ pub struct Injectable {
     pub type_data: TypeData,
     pub ctor_name: String,
     pub dependencies: Vec<Dependency>,
+    pub container: Option<TypeData>,
 }
 
 impl Injectable {

@@ -34,6 +34,7 @@ lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("scope".to_owned());
+        set.insert("container".to_owned());
         set
     };
 }
@@ -137,6 +138,7 @@ pub fn handle_injectable_attribute(
     for scope in &scopes {
         type_validator.add_type(scope, attr.span())
     }
+    injectable.container = get_container(attr.span(), &attributes, &scopes)?;
     injectable.type_data.scopes.extend(scopes);
     injectable.ctor_name = ctor.sig.ident.to_string();
     injectable.dependencies.extend(dependencies);
@@ -206,6 +208,27 @@ fn get_ctor(
         }
     }
     panic!("should have ctor")
+}
+
+fn get_container(
+    span: Span,
+    attributes: &HashMap<String, FieldValue>,
+    scopes: &Vec<TypeData>,
+) -> Result<Option<TypeData>, TokenStream> {
+    if attributes.contains_key("container") {
+        if let FieldValue::Path(span, path) = attributes.get("container").unwrap() {
+            if scopes.is_empty() {
+                return spanned_compile_error(
+                    span.clone(),
+                    "the 'container' metadata should only be used with an injectable that also has 'scope'",
+                );
+            }
+            return Ok(Some(TypeData::from_path_with_span(path, span.clone())?));
+        } else {
+            return spanned_compile_error(span, "path expected for 'container'");
+        }
+    }
+    Ok(None)
 }
 
 fn handle_factory(
