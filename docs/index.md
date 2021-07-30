@@ -95,7 +95,7 @@ as they are expected to be commonly used. Internally they are automatically expa
 name.
 
 Lockjaw runtime library types also do not need to be qualified, which are:
-* `ComponentLifetime<T>`
+* `Cl<T>`
 
 Type aliases are interpreted as completely different types, and will need their dependencies
 satisfied separately.
@@ -200,18 +200,18 @@ We can also simplify trait provisions with a `#[binds]` method:
 
 ```rust
 #[binds]
-pub fn bind_foo_impl(impl_ : FooImpl) -> impl Foo {}
+pub fn bind_foo_impl(impl_ : FooImpl) -> Cl<dyn Foo> {}
 ```
 
-Note that while `#[binds]` returns `impl Foo`, the actual binding is `ComponentLifetime<Foo>`,
-since the implementation may contain a reference to a singleton (more on [scope](#scoped-bindings)
-later). Currently `#[binds]` must return `impl T`, but in the future this will be changed into
-`ComponentLifetime<T>` to make it more intuitive.
+Note that since the implementation may contain a reference to a singleton (more
+on [scope](#scoped-bindings)
+later), the return type is `Cl<T>`. `Cl<T>` (ComponentLifetime) forces the returned value to have a
+lifetime less than the component itself.
 
-Since `#[provides]` and `#[binds]` are less coupled with the type they provide, and users might
-want to swap out implementations (like use a `FakeClient` for test that emulates talking to a 
-server without actual network operations), these bindings should not be global. They are grouped
-into a `#[module]` so they can be incorporated later into a specific dependency graph. `#[module]`
+Since `#[provides]` and `#[binds]` are less coupled with the type they provide, and users might want
+to swap out implementations (like use a `FakeClient` for test that emulates talking to a server
+without actual network operations), these bindings should not be global. They are grouped into
+a `#[module]` so they can be incorporated later into a specific dependency graph. `#[module]`
 annotates a [impl block](https://doc.rust-lang.org/std/keyword.impl.html) of a struct to define the
 bindings.
 
@@ -292,12 +292,12 @@ it to the dependency (field or method parameter). This is not always desired sin
 be used to carry some common state, and we want every type that depends on it to get a reference
 to a single instance instead (singletons).
 
-To do this, the `scope` metadata can be specified on a `#[injecatable]`, `#[provides]`, or 
-`#[binds]`, passing a component's fully qualified path as a string literal. This means there
-are only one instance of the type for objects created by the same instance of component (they
-are not global singletons, you can still have multiple instances if you have multiple components).
+To do this, the `scope` metadata can be specified on a `#[injecatable]`, `#[provides]`, or
+`#[binds]`, passing a component's fully qualified path as a string literal. This means there are
+only one instance of the type for objects created by the same instance of component (they are not
+global singletons, you can still have multiple instances if you have multiple components).
 
-Other types can depend on a scoped type as a reference (`&T`) or `ComponentLifetime<T>`
+Other types can depend on a scoped type as a reference (`&T`) or `Cl<T>`
 
 ```rust
 struct Foo {}
@@ -328,9 +328,8 @@ trait MyComponent {
 }
 ```
 
-`ComponentLifetime<T>` allows a type to decouple itself from whether the type depended on is scoped or
-not. It may be an owned instance or a shared instance, but the type does not care as it will not
-try to move it.
+`Cl<T>` allows a type to decouple itself from whether the type depended on is scoped or not. It may
+be an owned instance or a shared instance, but the type does not care as it will not try to move it.
 
 Scoped types or types that depends on them will have the same lifetime as the component.
 

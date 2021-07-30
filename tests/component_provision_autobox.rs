@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, Cl};
 
 lockjaw::prologue!("tests/component_provision_autobox.rs");
 
@@ -32,7 +32,7 @@ impl Foo {
 
 #[component]
 pub trait MyComponent {
-    fn foo(&self) -> ComponentLifetime<crate::Foo>;
+    fn foo(&self) -> Cl<crate::Foo>;
 }
 #[test]
 pub fn main() {

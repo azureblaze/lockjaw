@@ -124,7 +124,7 @@ impl dyn Node {
             "::std::boxed::Box" => BoxedNode::for_type(dependency),
             "::lockjaw::Provider" => ProviderNode::for_type(dependency),
             "::lockjaw::Lazy" => LazyNode::for_type(dependency),
-            "::lockjaw::ComponentLifetime" => ComponentLifetimeNode::for_type(dependency),
+            "::lockjaw::Cl" => ComponentLifetimeNode::for_type(dependency),
             _ => None,
         }
     }

@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, module, Cl};
 use std::cell::RefCell;
 
 lockjaw::prologue!("tests/module_bind_scoped_trait_container.rs");
@@ -46,15 +46,12 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_my_trait(
-        _impl: &RefCell<crate::MyTraitImpl>,
-    ) -> ComponentLifetime<RefCell<dyn MyTrait>> {
-    }
+    pub fn bind_my_trait(_impl: &RefCell<crate::MyTraitImpl>) -> Cl<RefCell<dyn MyTrait>> {}
 }
 
 #[component(modules: MyModule)]
 pub trait MyComponent {
-    fn my_trait(&'_ self) -> ComponentLifetime<'_, RefCell<dyn MyTrait>>;
+    fn my_trait(&'_ self) -> Cl<'_, RefCell<dyn MyTrait>>;
 }
 
 #[test]

@@ -16,8 +16,7 @@ limitations under the License.
 extern crate lockjaw;
 
 use lockjaw::{
-    builder_modules, component, entry_point, injectable, module, qualifier, subcomponent,
-    ComponentLifetime,
+    builder_modules, component, entry_point, injectable, module, qualifier, subcomponent, Cl,
 };
 
 lockjaw::prologue!(

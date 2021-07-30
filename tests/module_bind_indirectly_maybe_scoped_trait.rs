@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, module, Cl};
 
 lockjaw::prologue!("tests/module_bind_indirectly_maybe_scoped_trait.rs");
 
@@ -35,13 +35,13 @@ pub trait MyTrait {
 }
 
 pub struct MyTraitImpl<'a> {
-    foo: ComponentLifetime<'a, crate::Foo>,
+    foo: Cl<'a, crate::Foo>,
 }
 
 #[injectable]
 impl MyTraitImpl<'_> {
     #[inject]
-    pub fn new(foo: ComponentLifetime<'_, crate::Foo>) -> MyTraitImpl {
+    pub fn new(foo: Cl<'_, crate::Foo>) -> MyTraitImpl {
         MyTraitImpl { foo }
     }
 }
@@ -56,12 +56,12 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> ComponentLifetime<dyn crate::MyTrait> {}
+    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> Cl<dyn crate::MyTrait> {}
 }
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {
-    fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
+    fn my_trait(&'_ self) -> Cl<'_, dyn crate::MyTrait>;
 }
 #[test]
 pub fn main() {

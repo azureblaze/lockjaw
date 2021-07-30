@@ -16,7 +16,7 @@ limitations under the License.
 
 use lockjaw::{
     builder_modules, component_visible, define_component, entry_point, injectable, module,
-    prologue, ComponentLifetime, Singleton,
+    prologue, Cl, Singleton,
 };
 use printer::Printer;
 #[cfg(test)]
@@ -28,13 +28,13 @@ prologue!("src/main.rs");
 #[component_visible]
 struct Greeter<'a> {
     phrase: String,
-    printer: ComponentLifetime<'a, dyn Printer>,
+    printer: Cl<'a, dyn Printer>,
 }
 
 #[injectable]
 impl Greeter<'_> {
     #[inject]
-    pub fn new<'a>(phrase: String, printer: ComponentLifetime<'a, dyn Printer>) -> Greeter<'a> {
+    pub fn new<'a>(phrase: String, printer: Cl<'a, dyn Printer>) -> Greeter<'a> {
         Greeter { phrase, printer }
     }
     pub fn greet(&self) {
@@ -54,7 +54,7 @@ impl MyModule {
     }
 
     #[binds]
-    pub fn bind_foo_creator(impl_: FooFactory) -> ComponentLifetime<dyn FooCreator> {}
+    pub fn bind_foo_creator(impl_: FooFactory) -> Cl<dyn FooCreator> {}
 }
 
 #[builder_modules]
@@ -94,7 +94,7 @@ impl RcI {
 trait MyEntryPoint {
     fn greeter(&self) -> Greeter;
 
-    fn foo_creator(&'_ self) -> ComponentLifetime<'_, dyn FooCreator>;
+    fn foo_creator(&'_ self) -> Cl<'_, dyn FooCreator>;
 
     fn rci(&self) -> &Rc<RcI>;
 }

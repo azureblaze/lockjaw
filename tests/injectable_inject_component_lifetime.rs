@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, Cl};
 
 lockjaw::prologue!("tests/injectable_inject_component_lifetime.rs");
 
@@ -31,13 +31,13 @@ impl Foo {
 }
 
 pub struct Bar<'a> {
-    foo: ComponentLifetime<'a, crate::Foo>,
+    foo: Cl<'a, crate::Foo>,
 }
 
 #[injectable]
 impl Bar<'_> {
     #[inject]
-    pub fn new(foo: ComponentLifetime<'_, crate::Foo>) -> Bar<'_> {
+    pub fn new(foo: Cl<'_, crate::Foo>) -> Bar<'_> {
         Bar { foo }
     }
 }

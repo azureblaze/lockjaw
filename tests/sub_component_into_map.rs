@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, module, prologue, subcomponent, ComponentLifetime};
+use lockjaw::{component, module, prologue, subcomponent, Cl};
 use std::collections::HashMap;
 
 prologue!("tests/sub_component_into_map.rs");
@@ -54,13 +54,13 @@ impl MyModule {
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {
-    fn sub(&'_ self) -> ComponentLifetime<dyn MySubcomponentBuilder<'_>>;
+    fn sub(&'_ self) -> Cl<dyn MySubcomponentBuilder<'_>>;
 }
 
 #[test]
 pub fn into_map_includes_parent() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
-    let sub: ComponentLifetime<dyn MySubcomponent> = component.sub().build();
+    let sub: Cl<dyn MySubcomponent> = component.sub().build();
 
     assert_eq!(*sub.mi64().get(&1).unwrap(), 111);
     assert_eq!(*sub.mi64().get(&2).unwrap(), 222);
@@ -69,7 +69,7 @@ pub fn into_map_includes_parent() {
 #[test]
 pub fn into_map_no_binding_in_parent() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
-    let sub: ComponentLifetime<dyn MySubcomponent> = component.sub().build();
+    let sub: Cl<dyn MySubcomponent> = component.sub().build();
 
     assert_eq!(*sub.mi32().get(&1).unwrap(), 11);
 }

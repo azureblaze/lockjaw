@@ -139,13 +139,13 @@ Cannot annotate a method that is already annotated with [`#[binds]`](#binds)
 
 #### scope
 
-**Optional** fully qualified path to a [`component`](component), which makes the returned object
-a scoped singleton under the `component`.
+**Optional** fully qualified path to a [`component`](component), which makes the returned object a
+scoped singleton under the `component`.
 
 The return object will only be provided in the `component`, and all objects generated from the
-same `component` instance will share the same scoped returned object. Since it is shared,
-the scoped returned object can only be depended on as  `&T` or [`ComponentLifetime<T>`](ComponentLifetime),
-and the scoped returned object or any objects that depends on it will share the lifetime of the
+same `component` instance will share the same scoped returned object. Since it is shared, the scoped
+returned object can only be depended on as  `&T` or [`Cl<T>`](ComponentLifetime), and the scoped
+returned object or any objects that depends on it will share the lifetime of the
 `component`.
 
 ```
@@ -200,16 +200,16 @@ users must implement internal mutability.
 
 ## `#[binds]`
 
-Annotates a method that binds an implementation to a trait. Whenever the trait is depended on,
-this implementation will be provided.
+Annotates a method that binds an implementation to a trait. Whenever the trait is depended on, this
+implementation will be provided.
 
 Must take the implementation as the one and only one parameter, and return
-[`ComponentLifetime<dyn T>`](#ComponentLifetime).
+[`Cl<dyn T>`](#ComponentLifetime).
 
 The method implementation must be empty. Lockjaw will generate the actual implementation.
 
-The trait can only be depended on as `ComponentLifetime<'_, dyn T>`, as there are no guaratee whether
-an implementation will depend on something that is scoped or not.
+The trait can only be depended on as `Cl<'_, dyn T>`, as there are no guarantee whether an
+implementation will depend on something that is scoped or not.
 
 Cannot annotate a method that is already annotated with [`#[provides]`](#provides)
 
@@ -240,12 +240,12 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> ComponentLifetime<dyn crate::MyTrait> {}
+    pub fn bind_my_trait(_impl: crate::MyTraitImpl) -> Cl<dyn crate::MyTrait> {}
 }
 
 #[component(modules : MyModule)]
 pub trait MyComponent {
-    fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
+    fn my_trait(&'_ self) -> Cl<'_, dyn crate::MyTrait>;
 }
 
 pub fn main() {
@@ -261,13 +261,13 @@ epilogue!();
 
 #### scope
 
-**Optional** fully qualified path to a [`component`](component), which makes the returned trait
-a scoped singleton under the `component`.
+**Optional** fully qualified path to a [`component`](component), which makes the returned trait a
+scoped singleton under the `component`.
 
 The return trait will only be provided in the `component`, and all objects generated from the
-same `component` instance will share the same scoped returned trait. Since it is shared,
-the scoped returned trait can only be depended on as  [`ComponentLifetime<T>`](ComponentLifetime),
-and the scoped returned trait or any objects that depends on it will share the lifetime of the
+same `component` instance will share the same scoped returned trait. Since it is shared, the scoped
+returned trait can only be depended on as  [`Cl<T>`](ComponentLifetime), and the scoped returned
+trait or any objects that depends on it will share the lifetime of the
 `component`.
 
 ```
@@ -292,16 +292,16 @@ pub struct FooModule {}
 #[module]
 impl FooModule {
     #[binds(scope : crate::MyComponent)]
-    pub fn binds_foo(_impl: crate::FooImpl) -> ComponentLifetime<dyn crate::Foo> {}
+    pub fn binds_foo(_impl: crate::FooImpl) -> Cl<dyn crate::Foo> {}
 }
 
 pub struct Bar<'a>{
-    foo : ComponentLifetime<'a, dyn crate::Foo>
+    foo : Cl<'a, dyn crate::Foo>
 }
 #[injectable]
 impl Bar<'_> {
     #[inject]
-    pub fn new(foo : ComponentLifetime<'_, dyn crate::Foo>) -> Bar<'_> {
+    pub fn new(foo : Cl<'_, dyn crate::Foo>) -> Bar<'_> {
         Bar { foo }
     }
 }

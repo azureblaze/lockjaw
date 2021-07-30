@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, define_subcomponent, entry_point, module, prologue, ComponentLifetime};
+use lockjaw::{component, define_subcomponent, entry_point, module, prologue, Cl};
 use std::ops::Deref;
 
 prologue!("tests/sub_component_into_vec.rs");
@@ -44,13 +44,13 @@ impl MyModule {}
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {
-    fn sub(&'_ self) -> ComponentLifetime<dyn MySubcomponentBuilder<'_>>;
+    fn sub(&'_ self) -> Cl<dyn MySubcomponentBuilder<'_>>;
 }
 
 #[test]
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
-    let sub: ComponentLifetime<dyn MySubcomponent> = component.sub().build();
+    let sub: Cl<dyn MySubcomponent> = component.sub().build();
 
     assert!(<dyn MyEntryPoint>::get(sub.deref()).vi32().contains(&32));
 }

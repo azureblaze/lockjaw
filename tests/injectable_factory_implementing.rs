@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{builder_modules, component, epilogue, injectable, module, ComponentLifetime};
+use lockjaw::{builder_modules, component, epilogue, injectable, module, Cl};
 
 lockjaw::prologue!("tests/injectable_factory.rs");
 
@@ -32,7 +32,7 @@ impl MyModule {
     }
 
     #[binds]
-    pub fn bind_foo_creator(impl_: FooFactory) -> ComponentLifetime<dyn FooCreator> {}
+    pub fn bind_foo_creator(impl_: FooFactory) -> Cl<dyn FooCreator> {}
 }
 
 #[builder_modules]
@@ -60,7 +60,7 @@ impl Foo {
 
 #[component(builder_modules: BuilderModules)]
 pub trait MyComponent {
-    fn foo_creator(&self) -> ComponentLifetime<dyn FooCreator>;
+    fn foo_creator(&self) -> Cl<dyn FooCreator>;
 }
 
 #[test]

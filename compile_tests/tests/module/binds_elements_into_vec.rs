@@ -15,9 +15,7 @@ limitations under the License.
 */
 extern crate lockjaw;
 
-use lockjaw::{
-    builder_modules, component, injectable, module, qualifier, subcomponent, ComponentLifetime,
-};
+use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/binds_elements_into_vec.rs",
@@ -33,7 +31,7 @@ impl ST for S {}
 impl S {
     #[binds]
     #[elements_into_vec]
-    pub fn bind_s(&self) -> Vec<ComponentLifetime<dyn crate::ST>> {}
+    pub fn bind_s(&self) -> Vec<Cl<dyn crate::ST>> {}
 }
 
 lockjaw::epilogue!(test);

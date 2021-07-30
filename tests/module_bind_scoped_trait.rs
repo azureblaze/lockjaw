@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, module, Cl};
 use std::ops::Deref;
 
 lockjaw::prologue!("tests/module_bind_scoped_trait.rs");
@@ -68,17 +68,18 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_my_trait(_impl: &crate::MyTraitImpl) -> ComponentLifetime<dyn crate::MyTrait> {}
+    pub fn bind_my_trait(_impl: &crate::MyTraitImpl) -> Cl<dyn crate::MyTrait> {}
 
     #[binds(scope: MyComponent)]
-    pub fn bind_my_trait2(_impl: &crate::MyTraitImpl2) -> ComponentLifetime<dyn crate::MyTrait2> {}
+    pub fn bind_my_trait2(_impl: &crate::MyTraitImpl2) -> Cl<dyn crate::MyTrait2> {}
 }
 
 #[component(modules: MyModule)]
 pub trait MyComponent {
-    fn my_trait(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait>;
-    fn my_trait2(&'_ self) -> ComponentLifetime<'_, dyn crate::MyTrait2>;
+    fn my_trait(&'_ self) -> Cl<'_, dyn crate::MyTrait>;
+    fn my_trait2(&'_ self) -> Cl<'_, dyn crate::MyTrait2>;
 }
+
 #[test]
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();

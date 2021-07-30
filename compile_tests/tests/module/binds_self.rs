@@ -15,9 +15,7 @@ limitations under the License.
 */
 extern crate lockjaw;
 
-use lockjaw::{
-    builder_modules, component, injectable, module, qualifier, subcomponent, ComponentLifetime,
-};
+use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
 lockjaw::prologue!("../../../compile_tests/tests/module/binds_self.rs", "");
 pub struct S {}
@@ -29,7 +27,7 @@ impl ST for S {}
 #[module]
 impl S {
     #[binds]
-    pub fn bind_string(self) -> ComponentLifetime<dyn crate::ST> {}
+    pub fn bind_string(self) -> Cl<dyn crate::ST> {}
 }
 
 lockjaw::epilogue!(test);

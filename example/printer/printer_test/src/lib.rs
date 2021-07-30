@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{epilogue, injectable, module, ComponentLifetime, Singleton};
+use lockjaw::{epilogue, injectable, module, Cl, Singleton};
 use printer::Printer;
 use std::cell::{Ref, RefCell};
 
@@ -49,7 +49,7 @@ pub struct Module {}
 #[module(install_in: Singleton)]
 impl Module {
     #[binds]
-    pub fn bind_printer(_impl: &crate::TestPrinter) -> ComponentLifetime<dyn ::printer::Printer> {}
+    pub fn bind_printer(_impl: &crate::TestPrinter) -> Cl<dyn ::printer::Printer> {}
 }
 
 epilogue!();

@@ -15,9 +15,7 @@ limitations under the License.
 */
 extern crate lockjaw;
 
-use lockjaw::{
-    builder_modules, component, injectable, module, qualifier, subcomponent, ComponentLifetime,
-};
+use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
 lockjaw::prologue!("../../../compile_tests/tests/subcomponent/subcomponent_multibinding_conflicts_with_parent_collection_binding.rs", "");
 struct BazModule {}
@@ -48,7 +46,7 @@ impl MyModule {
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {
-    fn sub(&'_ self) -> lockjaw::ComponentLifetime<dyn MySubcomponentBuilder<'_>>;
+    fn sub(&'_ self) -> lockjaw::Cl<dyn MySubcomponentBuilder<'_>>;
 }
 
 lockjaw::epilogue!(test);

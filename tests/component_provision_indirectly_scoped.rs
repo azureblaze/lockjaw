@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, module, Cl};
 
 lockjaw::prologue!("tests/component_provision_indirectly_scoped.rs");
 
@@ -66,7 +66,7 @@ struct MyModule {}
 #[module]
 impl MyModule {
     #[binds]
-    pub fn bind_greeter(_impl: crate::GreeterImpl) -> ComponentLifetime<dyn crate::Greeter> {}
+    pub fn bind_greeter(_impl: crate::GreeterImpl) -> Cl<dyn crate::Greeter> {}
 
     #[provides]
     pub fn provide_string() -> String {
@@ -76,7 +76,7 @@ impl MyModule {
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {
-    fn greeter(&'_ self) -> ComponentLifetime<'_, dyn crate::Greeter>;
+    fn greeter(&'_ self) -> Cl<'_, dyn crate::Greeter>;
 }
 
 #[test]
