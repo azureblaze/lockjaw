@@ -15,9 +15,8 @@ limitations under the License.
 */
 
 #![allow(stable_features)]
-#![cfg_attr(nightly, feature(extended_key_value_attributes))]
 
-#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("component.md")))]
+#[doc = include_str ! ("component.md")]
 pub use lockjaw_processor::component;
 
 pub use lockjaw_processor::subcomponent;
@@ -28,7 +27,7 @@ pub use lockjaw_processor::define_subcomponent;
 
 pub use lockjaw_processor::entry_point;
 
-#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("builder_modules.md")))]
+#[doc = include_str ! ("builder_modules.md")]
 pub use lockjaw_processor::builder_modules;
 
 pub use lockjaw_processor::component_visible;
@@ -39,13 +38,13 @@ pub use lockjaw_processor::private_prologue;
 pub use lockjaw_processor::private_test_prologue;
 pub use lockjaw_processor::prologue;
 
-#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("epilogue.md")))]
+#[doc = include_str ! ("epilogue.md")]
 pub use lockjaw_processor::epilogue;
 
-#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("injectable.md")))]
+#[doc = include_str ! ("injectable.md")]
 pub use lockjaw_processor::injectable;
 
-#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("module.md")))]
+#[doc = include_str ! ("module.md")]
 pub use lockjaw_processor::module;
 
 pub use lockjaw_processor::qualifier;
@@ -55,8 +54,7 @@ pub use lockjaw_processor::private_root_epilogue;
 #[doc(hidden)]
 pub use lockjaw_processor::private_test_epilogue;
 
-#[cfg(nightly)]
-#[cfg_attr(nightly, cfg_attr(nightly, doc = include_str ! ("../README.md")))]
+#[doc = include_str ! ("../README.md")]
 pub mod readme {}
 
 mod component_lifetime;
