@@ -16,11 +16,12 @@ limitations under the License.
 
 use lockjaw::{
     builder_modules, component_visible, define_component, entry_point, injectable, module,
-    prologue, ComponentLifetime,
+    prologue, ComponentLifetime, Singleton,
 };
 use printer::Printer;
 #[cfg(test)]
 use printer_test::TestPrinter;
+use std::rc::Rc;
 
 prologue!("src/main.rs");
 
@@ -79,11 +80,23 @@ impl Foo {
     }
 }
 
+struct RcI {}
+
+#[injectable(scope: Singleton, container: Rc)]
+impl RcI {
+    #[inject]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 #[entry_point(install_in: MyComponent)]
 trait MyEntryPoint {
     fn greeter(&self) -> Greeter;
 
     fn foo_creator(&'_ self) -> ComponentLifetime<'_, dyn FooCreator>;
+
+    fn rci(&self) -> &Rc<RcI>;
 }
 
 #[define_component(builder_modules: BuilderModules)]
@@ -99,6 +112,8 @@ pub fn main() {
     <dyn MyEntryPoint>::get(component.as_ref())
         .greeter()
         .greet();
+
+    <dyn MyEntryPoint>::get(component.as_ref()).rci();
 }
 
 #[cfg(test)]

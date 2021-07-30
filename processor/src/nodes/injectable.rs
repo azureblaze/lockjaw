@@ -33,8 +33,15 @@ pub struct InjectableNode {
 
 impl InjectableNode {
     pub fn new(injectable: &crate::manifest::Injectable) -> Box<dyn Node> {
+        let type_ = if injectable.container.is_some() {
+            let mut container = injectable.container.as_ref().unwrap().clone();
+            container.args.push(injectable.type_data.clone());
+            container
+        } else {
+            injectable.type_data.clone()
+        };
         Box::new(InjectableNode {
-            type_: injectable.type_data.clone(),
+            type_,
             dependencies: injectable
                 .dependencies
                 .iter()
@@ -71,14 +78,29 @@ impl Node for InjectableNode {
 
         let name_ident = self.get_identifier();
         let injectable_path =
-            component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
+            component_visibles::visible_type(graph.manifest, &self.injectable.type_data).syn_type();
         let ctor_name = format_ident!("{}", self.injectable.ctor_name);
         let mut result = ComponentSections::new();
-        result.add_methods(quote! {
-            fn #name_ident(&'_ self) -> #injectable_path #lifetime{
-                #injectable_path::#ctor_name(#ctor_params)
-            }
-        });
+        if self.injectable.container.is_some() {
+            let mut container = self.injectable.container.as_ref().unwrap().clone();
+            container.args.push(component_visibles::visible_type(
+                graph.manifest,
+                &self.injectable.type_data,
+            ));
+            let result_path = container.syn_type();
+            let container_type = self.injectable.container.as_ref().unwrap().syn_type();
+            result.add_methods(quote! {
+                fn #name_ident(&'_ self) -> #result_path #lifetime{
+                    #container_type::new(#injectable_path::#ctor_name(#ctor_params))
+                }
+            });
+        } else {
+            result.add_methods(quote! {
+                fn #name_ident(&'_ self) -> #injectable_path #lifetime{
+                    #injectable_path::#ctor_name(#ctor_params)
+                }
+            });
+        }
         Ok(result)
     }
 

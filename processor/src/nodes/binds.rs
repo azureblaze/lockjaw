@@ -32,7 +32,7 @@ use std::any::Any;
 #[derive(Debug, Clone)]
 pub struct BindsNode {
     pub type_: TypeData,
-    pub dependencies: Vec<TypeData>,
+    pub dependency: TypeData,
 
     pub module_instance: ModuleInstance,
     pub binding: Binding,
@@ -44,18 +44,19 @@ impl BindsNode {
         module_type: &TypeData,
         binding: &Binding,
     ) -> Result<Vec<Box<dyn Node>>, TokenStream> {
-        let dependencies = binding
-            .dependencies
-            .iter()
-            .map(|dependency| dependency.type_data.clone())
-            .collect();
         let mut type_ = ComponentLifetimeNode::component_lifetime_type(&binding.type_data);
         if binding.multibinding_type != MultibindingType::None {
             type_.identifier_suffix = format!("{}", node::get_multibinding_id());
         }
+
         let mut result: Vec<Box<dyn Node>> = vec![Box::new(BindsNode {
             type_: type_.clone(),
-            dependencies,
+            dependency: binding
+                .dependencies
+                .first()
+                .expect("binds must have one arg")
+                .type_data
+                .clone(),
             module_instance: <dyn Node>::get_module_instance(module_manifest, module_type),
             binding: binding.clone(),
         })];
@@ -89,18 +90,13 @@ impl Node for BindsNode {
     }
 
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
-        let arg = self
-            .binding
-            .dependencies
-            .first()
-            .expect("binds must have one arg");
-        let arg_provider_name = arg.type_data.identifier();
+        let arg_provider_name = self.dependency.identifier();
 
         let name_ident = self.get_identifier();
         let type_path = component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
 
         let mut result = ComponentSections::new();
-        if arg.type_data.field_ref {
+        if self.dependency.field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
                     lockjaw::ComponentLifetime::Ref(self.#arg_provider_name())
@@ -121,7 +117,7 @@ impl Node for BindsNode {
     }
 
     fn get_dependencies(&self) -> Vec<DependencyData> {
-        DependencyData::from_type_vec(&self.dependencies)
+        vec![DependencyData::from_type(&self.dependency)]
     }
 
     fn clone_box(&self) -> Box<dyn Node> {

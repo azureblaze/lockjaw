@@ -121,3 +121,23 @@ fn injectable_factory_implementing_method_return_type_mismatch() {
         vec!["method `new` has an incompatible type for trait"],
     )
 }
+
+#[test]
+fn injectable_container_not_path() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_container_not_path.rs",
+        vec!["path expected for 'container'"],
+    )
+}
+
+#[test]
+fn injectable_container_not_scoped() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/injectable/injectable_container_not_scoped.rs",
+        vec![
+            "the 'container' metadata should only be used with an injectable that also has 'scope'",
+        ],
+    )
+}
