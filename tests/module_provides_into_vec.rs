@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, module, qualifier, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, module, qualifier, Cl};
 
 pub use String as NamedString;
 
@@ -104,11 +104,11 @@ impl MyModule {
 
     #[binds]
     #[into_vec]
-    pub fn bind_bar(impl_: crate::Bar) -> ComponentLifetime<dyn crate::Foo> {}
+    pub fn bind_bar(impl_: crate::Bar) -> Cl<dyn crate::Foo> {}
 
     #[binds]
     #[into_vec]
-    pub fn bind_baz(impl_: crate::Baz) -> ComponentLifetime<dyn crate::Foo> {}
+    pub fn bind_baz(impl_: crate::Baz) -> Cl<dyn crate::Foo> {}
 }
 
 #[component(modules: [MyModule])]
@@ -118,7 +118,7 @@ pub trait MyComponent {
     #[qualified(Q)]
     fn q_vec_string(&self) -> Vec<String>;
 
-    fn vec_foo(&'_ self) -> Vec<ComponentLifetime<'_, dyn crate::Foo>>;
+    fn vec_foo(&'_ self) -> Vec<Cl<'_, dyn crate::Foo>>;
 }
 
 #[test]

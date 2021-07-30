@@ -16,12 +16,12 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, module, ComponentLifetime};
+use lockjaw::{component, epilogue, injectable, module, Cl};
 
 lockjaw::prologue!("tests/module_inject_param_autobox.rs");
 
 pub struct Foo<'a> {
-    bar: ComponentLifetime<'a, Bar>,
+    bar: Cl<'a, Bar>,
 }
 
 pub struct Bar {}
@@ -38,7 +38,7 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[provides]
-    pub fn provide_foo(bar: ComponentLifetime<'_, crate::Bar>) -> crate::Foo<'_> {
+    pub fn provide_foo(bar: Cl<'_, crate::Bar>) -> crate::Foo<'_> {
         Foo { bar }
     }
 }

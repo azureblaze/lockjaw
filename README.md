@@ -109,7 +109,7 @@ struct MyModule {}
 impl MyModule {
     // When ever someone needs a Greeter, use GreeterImpl as the actual implementation 
     #[binds]
-    pub fn bind_greeter(_impl : crate::GreeterImpl) -> ComponentLifetime<dyn crate::Greeter> {}
+    pub fn bind_greeter(_impl : crate::GreeterImpl) -> Cl<dyn crate::Greeter> {}
 
     // Called when a String is requested
     #[provides]
@@ -124,7 +124,7 @@ impl MyModule {
 trait MyComponent {
     // Allows creating a greeter with the component. The created object has the lifetime of the
     // component
-    fn greeter(&'_ self) -> ComponentLifetime<'_, dyn crate::Greeter>;
+    fn greeter(&'_ self) -> Cl<'_, dyn crate::Greeter>;
 }
 
 pub fn main() {

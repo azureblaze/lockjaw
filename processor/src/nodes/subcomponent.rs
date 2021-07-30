@@ -153,12 +153,12 @@ fn generate_component(
         #[allow(non_snake_case)]
         impl <'a> #builder_syn_type<'a> for #component_builder_impl_name<'a> {
 
-            fn build(&self, #builder_param) -> lockjaw::ComponentLifetime<'a, dyn #component_name<'a>> {
-                lockjaw::ComponentLifetime::Val(::std::boxed::Box::new(#component_impl_name{parent: self.parent, #ctor_params}))
+            fn build(&self, #builder_param) -> lockjaw::Cl<'a, dyn #component_name<'a>> {
+                lockjaw::Cl::Val(::std::boxed::Box::new(#component_impl_name{parent: self.parent, #ctor_params}))
             }
         }
 
-        lockjaw::ComponentLifetime::Val(::std::boxed::Box::new(#component_builder_impl_name {parent: self}))
+        lockjaw::Cl::Val(::std::boxed::Box::new(#component_builder_impl_name {parent: self}))
     };
 
     Ok(quote! {
@@ -191,7 +191,7 @@ impl Node for SubcomponentNode {
         let impl_tokens = self.token_stream.clone();
 
         component_sections.add_methods(quote! {
-            fn #name_ident(&'_ self) -> ::lockjaw::ComponentLifetime<'_, #type_path>{
+            fn #name_ident(&'_ self) -> ::lockjaw::Cl<'_, #type_path>{
                 #impl_tokens
             }
         });

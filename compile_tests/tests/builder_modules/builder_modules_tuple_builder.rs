@@ -15,9 +15,7 @@ limitations under the License.
 */
 extern crate lockjaw;
 
-use lockjaw::{
-    builder_modules, component, injectable, module, qualifier, subcomponent, ComponentLifetime,
-};
+use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/builder_modules/builder_module_tuple_builder.rs",

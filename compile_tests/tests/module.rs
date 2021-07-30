@@ -76,7 +76,7 @@ fn binds_return_type_not_component_lifetime() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(
         "tests/module/binds_return_type_not_component_lifetime.rs",
-        vec!["#[binds] methods must return ComponentLifetime<T>"],
+        vec!["#[binds] methods must return Cl<T>"],
     )
 }
 
@@ -139,7 +139,7 @@ fn binds_elements_into_vec() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(
         "tests/module/binds_elements_into_vec.rs",
-        vec!["#[binds] methods must return ComponentLifetime<T>"],
+        vec!["#[binds] methods must return Cl<T>"],
     )
 }
 

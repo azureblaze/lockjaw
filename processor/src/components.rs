@@ -145,7 +145,7 @@ pub fn handle_component_attribute(
         };
         quote! {
             #component_vis trait #builder_name<'a> {
-                fn build(&self, #args) -> ::lockjaw::ComponentLifetime<'a, dyn #subcomponent_name<'a>>;
+                fn build(&self, #args) -> ::lockjaw::Cl<'a, dyn #subcomponent_name<'a>>;
             }
         }
     } else {
@@ -268,7 +268,7 @@ pub fn get_provisions(
 
 fn is_trait_object_without_lifetime(ty: &syn::Type) -> Result<bool, TokenStream> {
     let type_ = TypeData::from_syn_type(ty)?;
-    if type_.root == TypeRoot::GLOBAL && type_.path == "lockjaw::ComponentLifetime" {
+    if type_.root == TypeRoot::GLOBAL && type_.path == "lockjaw::Cl" {
         return Ok(false);
     }
     let tokens: Vec<String> = ty

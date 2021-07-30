@@ -58,7 +58,8 @@ pub use lockjaw_processor::private_test_epilogue;
 pub mod readme {}
 
 mod component_lifetime;
-pub use component_lifetime::ComponentLifetime;
+
+pub use component_lifetime::Cl;
 
 mod once;
 pub use once::Once;

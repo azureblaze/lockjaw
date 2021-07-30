@@ -99,13 +99,13 @@ impl Node for BindsNode {
         if self.dependency.field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::ComponentLifetime::Ref(self.#arg_provider_name())
+                    lockjaw::Cl::Ref(self.#arg_provider_name())
                 }
             });
         } else {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::ComponentLifetime::Val(Box::new(self.#arg_provider_name()))
+                    lockjaw::Cl::Val(Box::new(self.#arg_provider_name()))
                 }
             });
         }

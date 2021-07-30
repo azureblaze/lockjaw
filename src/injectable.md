@@ -62,9 +62,9 @@ Injectables accept additional metadata in the form of
 scoped singleton under the `component`.
 
 The `injectable` will only be provided in the `component`, and all objects generated from the
-same `component` instance will share the same scoped `injecetable` instance. Since it is shared,
-the scoped `injectable` can only be depended on as  `&T` or [`ComponentLifetime<T>`](ComponentLifetime), and
-the scoped `injectable` or any objects that depends on it will share the lifetime of the
+same `component` instance will share the same scoped `injecetable` instance. Since it is shared, the
+scoped `injectable` can only be depended on as  `&T` or [`Cl<T>`](ComponentLifetime), and the
+scoped `injectable` or any objects that depends on it will share the lifetime of the
 `component`.
 
 ```

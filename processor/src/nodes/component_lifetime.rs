@@ -43,11 +43,11 @@ impl ComponentLifetimeNode {
     }
 
     pub fn component_lifetime_type(type_: &TypeData) -> TypeData {
-        let mut boxed_type = TypeData::new();
-        boxed_type.root = TypeRoot::GLOBAL;
-        boxed_type.path = "lockjaw::ComponentLifetime".to_string();
-        boxed_type.args.push(type_.clone());
-        boxed_type
+        let mut cl_type = TypeData::new();
+        cl_type.root = TypeRoot::GLOBAL;
+        cl_type.path = "lockjaw::Cl".to_string();
+        cl_type.args.push(type_.clone());
+        cl_type
     }
 }
 
@@ -63,7 +63,7 @@ impl Clone for ComponentLifetimeNode {
 
 impl Node for ComponentLifetimeNode {
     fn get_name(&self) -> String {
-        format!("ComponentLifetime{}", self.type_.canonical_string_path())
+        format!("Cl{}", self.type_.canonical_string_path())
     }
 
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
@@ -75,13 +75,13 @@ impl Node for ComponentLifetimeNode {
         if self.inner.field_ref {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::ComponentLifetime::Ref(self.#arg_provider_name())
+                    lockjaw::Cl::Ref(self.#arg_provider_name())
                 }
             });
         } else {
             result.add_methods(quote! {
                 fn #name_ident(&'_ self) -> #type_path{
-                    lockjaw::ComponentLifetime::Val(Box::new(self.#arg_provider_name()))
+                    lockjaw::Cl::Val(Box::new(self.#arg_provider_name()))
                 }
             });
         }
