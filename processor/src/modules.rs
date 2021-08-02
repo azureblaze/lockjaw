@@ -27,7 +27,7 @@ use syn::{parse_quote, ImplItemMethod};
 use syn::{Attribute, GenericArgument};
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::BindingType::{Binds, BindsOptionOf, Provides};
+use crate::manifest::BindingType::{Binds, BindsOptionOf, Multibinds, Provides};
 use crate::manifest::{
     with_manifest, Binding, BindingType, Dependency, Module, MultibindingMapKey, MultibindingType,
 };
@@ -143,13 +143,13 @@ fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
         match attr_str.as_str() {
             "provides" => {
                 if option_binding.is_some() {
-                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
                 option_binding = Some(handle_provides(attr, &mut method.sig)?);
             }
             "binds" => {
                 if option_binding.is_some() {
-                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
                 option_binding = Some(handle_binds(attr, &mut method.sig, &mut method.block)?);
                 let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
@@ -159,13 +159,21 @@ fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
             }
             "binds_option_of" => {
                 if option_binding.is_some() {
-                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]");
+                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
                 option_binding = Some(handle_binds_option_of(
                     attr,
                     &mut method.sig,
                     &mut method.block,
                 )?);
+                let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
+                new_attrs.push(allow_dead_code);
+            }
+            "multibinds" => {
+                if option_binding.is_some() {
+                    return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
+                }
+                option_binding = Some(handle_multibinds(attr, &mut method.sig, &mut method.block)?);
                 let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                 new_attrs.push(allow_dead_code);
             }
@@ -402,6 +410,47 @@ fn handle_binds_option_of(
     let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
     binds_option_of.type_data.scopes.extend(scopes);
     Ok(binds_option_of)
+}
+
+fn handle_multibinds(
+    attr: &syn::Attribute,
+    signature: &mut syn::Signature,
+    block: &mut syn::Block,
+) -> Result<Binding, TokenStream> {
+    if !block.stmts.is_empty() {
+        return spanned_compile_error(block.span(), "#[multibinds] methods must have empty body");
+    }
+    let body: syn::Stmt = syn::parse2(quote! { unimplemented!(); }).unwrap();
+    block.stmts.push(body);
+
+    let mut binds = Binding::new(Multibinds);
+    binds.name = signature.ident.to_string();
+    if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
+        let return_type = TypeData::from_syn_type(ty.deref())?;
+        match return_type.path.as_str() {
+            "std::vec::Vec" => {}
+            "std::collections::HashMap" => {}
+            _ => {
+                return spanned_compile_error(
+                    signature.span(),
+                    "#[multibinds] methods must return Vec<T> or HashMap<K,V>",
+                )
+            }
+        }
+        binds.type_data = return_type.clone();
+    } else {
+        return spanned_compile_error(signature.span(), "return type expected");
+    }
+    if !signature.inputs.is_empty() {
+        return spanned_compile_error(
+            signature.span(),
+            "#[multibinds] method must take no arguments",
+        );
+    }
+    let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
+    let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
+    binds.type_data.scopes.extend(scopes);
+    Ok(binds)
 }
 
 fn has_lifetime(args: &Punctuated<GenericArgument, Token![,]>) -> bool {

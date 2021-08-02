@@ -524,6 +524,21 @@ pub fn build_graph<'a>(
                         BindsNode::new(&result.builder_modules, &module.type_data, binding)?
                     }
                     BindingType::BindsOptionOf => BindsOptionOfNode::new(binding),
+                    BindingType::Multibinds => match binding.type_data.path.as_str() {
+                        "std::vec::Vec" => {
+                            let mut type_ = binding.type_data.args[0].clone();
+                            type_.qualifier = binding.type_data.qualifier.clone();
+                            vec![VecNode::new(&type_)]
+                        }
+                        "std::collections::HashMap" => {
+                            let mut type_ = binding.type_data.args[1].clone();
+                            type_.qualifier = binding.type_data.qualifier.clone();
+                            vec![MapNode::with_key_type(&binding.type_data.args[0], &type_)?]
+                        }
+                        _ => {
+                            panic!("unexpected type for multibinds");
+                        }
+                    },
                 })?;
             }
         }

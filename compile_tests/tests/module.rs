@@ -190,3 +190,41 @@ fn module_not_installed_in_defined_component() {
         ],
     )
 }
+
+#[test]
+fn module_multibinds_not_vec_or_hashmap() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/module/module_multibinds_not_vec_or_hashmap.rs",
+        vec!["#[multibinds] methods must return Vec<T> or HashMap<K,V>"],
+    )
+}
+
+#[test]
+fn module_multibinds_has_body() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/module/module_multibinds_has_body.rs",
+        vec!["#[multibinds] methods must have empty body"],
+    )
+}
+
+#[test]
+fn module_multibinds_has_args() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/module/module_multibinds_has_args.rs",
+        vec!["#[multibinds] method must take no arguments"],
+    )
+}
+
+#[test]
+fn module_multibinds_duplicated_binds() {
+    let t = trybuild::TestCases::new();
+    t.compile_failed_with(
+        "tests/module/module_multibinds_duplicated_binds.rs",
+        vec![
+            "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]",
+        ],
+    )
+}

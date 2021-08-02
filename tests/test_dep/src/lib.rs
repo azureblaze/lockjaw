@@ -63,4 +63,7 @@ trait DepEntryPoint {
     fn dep(&self) -> crate::DepInjectable;
 }
 
+#[allow(unused_imports)]
+use DepEntryPoint as DEP;
+
 lockjaw::epilogue!();

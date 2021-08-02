@@ -236,6 +236,7 @@ pub enum BindingType {
     Provides,
     Binds,
     BindsOptionOf,
+    Multibinds,
 }
 
 impl Default for BindingType {
