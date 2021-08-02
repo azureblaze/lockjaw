@@ -64,6 +64,7 @@ impl Manifest {
         self.modules.clear();
         self.builder_modules.clear();
         self.qualifiers.clear();
+        self.entry_points.clear();
         self.root = false;
         self.expanded_visibilities.clear();
     }
@@ -80,6 +81,8 @@ impl Manifest {
             .extend_from_slice(other.builder_modules.as_slice());
         self.qualifiers
             .extend_from_slice(other.qualifiers.as_slice());
+        self.entry_points
+            .extend_from_slice(other.entry_points.as_slice());
         self.expanded_visibilities.extend(
             other
                 .expanded_visibilities

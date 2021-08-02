@@ -80,6 +80,7 @@ impl Foo {
     }
 }
 
+#[component_visible]
 struct RcI {}
 
 #[injectable(scope: Singleton, container: Rc)]

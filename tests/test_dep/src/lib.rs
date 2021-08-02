@@ -58,4 +58,9 @@ pub trait DepComponent {
 #[lockjaw::define_component]
 pub trait DepDefinedComponent {}
 
+#[lockjaw::entry_point(install_in: DepDefinedComponent)]
+trait DepEntryPoint {
+    fn dep(&self) -> crate::DepInjectable;
+}
+
 lockjaw::epilogue!();

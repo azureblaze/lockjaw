@@ -15,17 +15,18 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::{with_manifest, EntryPoint};
+use crate::manifest::{with_manifest, EntryPoint, ExpandedVisibility, TypeRoot};
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use crate::type_validator::TypeValidator;
-use crate::{components, parsing};
+use crate::{components, environment, parsing};
 use lazy_static::lazy_static;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use std::collections::HashSet;
 use syn::spanned::Spanned;
+use syn::{VisPublic, Visibility};
 
 lazy_static! {
     static ref ENTRY_POINT_METADATA_KEYS: HashSet<String> = {
@@ -73,6 +74,33 @@ pub fn handle_entry_point_attribute(
     entry_point.provisions.extend(provisions);
     entry_point.component = component.clone();
 
+    let original_ident = item_trait.ident.clone();
+    let original_vis = item_trait.vis.clone();
+    let exported_ident = format_ident!("lockjaw_export_type_{}", original_ident);
+
+    item_trait.ident = exported_ident.clone();
+    item_trait.vis = Visibility::Public(VisPublic {
+        pub_token: syn::token::Pub(item_trait.span()),
+    });
+
+    let type_ = TypeData::from_local(&original_ident.to_string(), original_ident.span())?;
+    let crate_type = TypeData::from_local(&exported_ident.to_string(), original_ident.span())?;
+
+    with_manifest(|mut manifest| {
+        let mut exported_type = TypeData::new();
+        exported_type.root = TypeRoot::CRATE;
+        exported_type.path = type_.identifier().to_string();
+        exported_type.field_crate = environment::current_crate();
+
+        manifest.expanded_visibilities.insert(
+            type_.canonical_string_path(),
+            ExpandedVisibility {
+                crate_local_name: crate_type,
+                exported_name: exported_type,
+            },
+        );
+    });
+
     with_manifest(|mut manifest| manifest.entry_points.push(entry_point.clone()));
 
     let identifier = entry_point.type_data.identifier().to_string();
@@ -82,7 +110,9 @@ pub fn handle_entry_point_attribute(
     let validate_type = type_validator.validate(identifier);
     let getter_name = getter_name(&entry_point);
     let result = quote! {
+        #[allow(non_camel_case_types)]
         #item_trait
+        #original_vis use #exported_ident as #original_ident;
         #validate_type
         #prologue_check
 
