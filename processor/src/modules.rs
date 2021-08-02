@@ -77,17 +77,16 @@ fn handle_module_attribute_internal(
         return spanned_compile_error(item_impl.span(), "path expected");
     }
     let mut bindings: Vec<Binding> = Vec::new();
-
+    let mut type_validator = TypeValidator::new();
     for i in 0..item_impl.items.len() {
         #[allow(unused_mut)] // required
         let mut item = item_impl.items.get_mut(i).unwrap();
         if let syn::ImplItem::Method(ref mut method) = item {
-            bindings.push(parse_binding(method)?);
+            bindings.push(parse_binding(method, &mut type_validator)?);
         }
     }
 
     let mut module = Module::new();
-    let mut type_validator = TypeValidator::new();
     module.type_data = TypeData::from_local(&module_path.to_owned(), item_impl.span())?;
     module.bindings.extend(bindings);
     if let Some(subcomponents) = attributes.get("subcomponents") {
@@ -132,7 +131,10 @@ fn handle_module_attribute_internal(
     Ok(result)
 }
 
-fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
+fn parse_binding(
+    method: &mut ImplItemMethod,
+    type_validator: &mut TypeValidator,
+) -> Result<Binding, TokenStream> {
     let mut option_binding: Option<Binding> = None;
     let mut multibinding = MultibindingType::None;
     let mut map_key = MultibindingMapKey::None;
@@ -145,13 +147,18 @@ fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
                 if option_binding.is_some() {
                     return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_provides(attr, &mut method.sig)?);
+                option_binding = Some(handle_provides(attr, &mut method.sig, type_validator)?);
             }
             "binds" => {
                 if option_binding.is_some() {
                     return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_binds(attr, &mut method.sig, &mut method.block)?);
+                option_binding = Some(handle_binds(
+                    attr,
+                    &mut method.sig,
+                    &mut method.block,
+                    type_validator,
+                )?);
                 let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                 new_attrs.push(allow_dead_code);
                 let allow_unused: Attribute = parse_quote! {#[allow(unused)]};
@@ -161,11 +168,7 @@ fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
                 if option_binding.is_some() {
                     return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_binds_option_of(
-                    attr,
-                    &mut method.sig,
-                    &mut method.block,
-                )?);
+                option_binding = Some(handle_binds_option_of(&mut method.sig, &mut method.block)?);
                 let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                 new_attrs.push(allow_dead_code);
             }
@@ -173,7 +176,7 @@ fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
                 if option_binding.is_some() {
                     return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_multibinds(attr, &mut method.sig, &mut method.block)?);
+                option_binding = Some(handle_multibinds(&mut method.sig, &mut method.block)?);
                 let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                 new_attrs.push(allow_dead_code);
             }
@@ -265,6 +268,7 @@ fn parse_binding(method: &mut ImplItemMethod) -> Result<Binding, TokenStream> {
 fn handle_provides(
     attr: &syn::Attribute,
     signature: &mut syn::Signature,
+    type_validator: &mut TypeValidator,
 ) -> Result<Binding, TokenStream> {
     let mut provides = Binding::new(Provides);
     provides.name = signature.ident.to_string();
@@ -294,8 +298,16 @@ fn handle_provides(
         }
     }
     let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
-    provides.type_data.scopes.extend(scopes);
+    if let Some(scope) = provides_attr.get("scope") {
+        let scopes = parsing::get_types(Some(scope), attr.span())?;
+        for scope in &scopes {
+            type_validator.add_type(scope, attr.span());
+        }
+        for (path, span) in scope.get_paths()? {
+            type_validator.add_dyn_path(&path, span);
+        }
+        provides.type_data.scopes.extend(scopes);
+    }
     Ok(provides)
 }
 
@@ -303,6 +315,7 @@ fn handle_binds(
     attr: &syn::Attribute,
     signature: &mut syn::Signature,
     block: &mut syn::Block,
+    type_validator: &mut TypeValidator,
 ) -> Result<Binding, TokenStream> {
     if !block.stmts.is_empty() {
         return spanned_compile_error(block.span(), "#[binds] methods must have empty body");
@@ -364,13 +377,20 @@ fn handle_binds(
         }
     }
     let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
-    binds.type_data.scopes.extend(scopes);
+    if let Some(scope) = provides_attr.get("scope") {
+        let scopes = parsing::get_types(Some(scope), attr.span())?;
+        for scope in &scopes {
+            type_validator.add_type(scope, attr.span());
+        }
+        for (path, span) in scope.get_paths()? {
+            type_validator.add_dyn_path(&path, span);
+        }
+        binds.type_data.scopes.extend(scopes);
+    }
     Ok(binds)
 }
 
 fn handle_binds_option_of(
-    attr: &syn::Attribute,
     signature: &mut syn::Signature,
     block: &mut syn::Block,
 ) -> Result<Binding, TokenStream> {
@@ -406,14 +426,10 @@ fn handle_binds_option_of(
             "binds_option_of method must only take no parameter",
         );
     }
-    let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
-    binds_option_of.type_data.scopes.extend(scopes);
     Ok(binds_option_of)
 }
 
 fn handle_multibinds(
-    attr: &syn::Attribute,
     signature: &mut syn::Signature,
     block: &mut syn::Block,
 ) -> Result<Binding, TokenStream> {
@@ -447,9 +463,6 @@ fn handle_multibinds(
             "#[multibinds] method must take no arguments",
         );
     }
-    let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
-    let scopes = parsing::get_types(provides_attr.get("scope"), attr.span())?;
-    binds.type_data.scopes.extend(scopes);
     Ok(binds)
 }
 

@@ -138,6 +138,12 @@ pub fn handle_injectable_attribute(
     for scope in &scopes {
         type_validator.add_type(scope, attr.span())
     }
+    if let Some(scope) = attributes.get("scope") {
+        for (path, span) in scope.get_paths()? {
+            type_validator.add_dyn_path(&path, span);
+        }
+    }
+
     injectable.container = get_container(attr.span(), &attributes, &scopes)?;
     injectable.type_data.scopes.extend(scopes);
     injectable.ctor_name = ctor.sig.ident.to_string();
