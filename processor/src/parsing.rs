@@ -219,7 +219,7 @@ pub fn get_types(types: Option<&FieldValue>, span: Span) -> Result<Vec<TypeData>
     }
 }
 
-pub fn get_crate_deps(for_test: bool) -> HashSet<String> {
+pub fn get_crate_deps(for_test: bool, direct_only: bool) -> HashSet<String> {
     let tree = String::from_utf8(
         Command::new("cargo")
             .current_dir(std::env::var("CARGO_MANIFEST_DIR").expect("missing manifest dir"))
@@ -236,6 +236,9 @@ pub fn get_crate_deps(for_test: bool) -> HashSet<String> {
     .split("\n")
     .map(|s| s.to_string())
     .collect::<Vec<String>>();
+
+    //log!("{:#?}", tree);
+
     let mut deps = HashSet::<String>::new();
     let pattern = Regex::new(r"(?P<depth>\d+)(?P<crate>[A-Za-z_][A-Za-z0-9_\-]*).*").unwrap();
     for item in tree {
@@ -243,8 +246,14 @@ pub fn get_crate_deps(for_test: bool) -> HashSet<String> {
             continue;
         }
         let captures = pattern.captures(&item).unwrap();
-        if captures["depth"].ne("1") {
-            continue;
+        if direct_only {
+            if captures["depth"].ne("1") {
+                continue;
+            }
+        } else {
+            if captures["depth"].eq("0") {
+                continue;
+            }
         }
         deps.insert(captures["crate"].replace("-", "_").to_string());
     }

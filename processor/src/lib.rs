@@ -32,6 +32,7 @@ use error::handle_error;
 use crate::error::{compile_error, CompileError};
 use manifest::ComponentType;
 use proc_macro2::Span;
+use std::ops::Deref;
 use syn::spanned::Spanned;
 
 #[macro_use]
@@ -221,12 +222,12 @@ fn internal_epilogue(
 ) -> Result<proc_macro2::TokenStream, proc_macro2::TokenStream> {
     manifest::with_manifest(|mut manifest| {
         let expanded_visibilities = component_visibles::expand_visibilities(&manifest)?;
+        manifest.root = config.root;
 
         let merged_manifest = merge_manifest(&manifest, &config)?;
 
         //log!("{:#?}", merged_manifest);
 
-        manifest.clear();
         if !config.for_test {
             let out_dir = environment::lockjaw_output_dir()?;
             let manifest_path = format!("{}manifest.pb", out_dir);
@@ -236,7 +237,7 @@ fn internal_epilogue(
 
             std::fs::write(
                 &manifest_path,
-                serde_json::to_string_pretty(&merged_manifest).expect("cannot serialize manifest"),
+                serde_json::to_string_pretty(manifest.deref()).expect("cannot serialize manifest"),
             )
             .expect("cannot write manifest");
 
@@ -250,6 +251,8 @@ fn internal_epilogue(
             )
             .expect("cannot write manifest path");
         }
+        manifest.clear();
+
         let (components, messages) =
             components::generate_components(&merged_manifest, config.root)?;
 
@@ -312,17 +315,12 @@ fn merge_manifest(
     manifest: &Manifest,
     config: &EpilogueConfig,
 ) -> Result<Manifest, proc_macro2::TokenStream> {
-    let deps = parsing::get_crate_deps(config.for_test);
+    let deps = parsing::get_crate_deps(config.for_test, false);
     //log!("deps: {:?}", deps);
 
     let mut result = manifest.clone();
-    result.root = config.root;
 
     for dep in &deps {
-        if result.merged_crates.contains(dep) {
-            continue;
-        }
-        result.merged_crates.push(dep.clone());
         let manifest_path_file_string =
             format!("{}/{}.manifest_path", environment::proc_artifact_dir(), dep);
         let manifest_path_file = Path::new(&manifest_path_file_string);
