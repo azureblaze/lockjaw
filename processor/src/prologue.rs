@@ -455,7 +455,7 @@ fn get_uses(
     parents: &Vec<String>,
     for_test: bool,
 ) -> Result<HashMap<String, UsePath>, TokenStream> {
-    let mut deps = parsing::get_crate_deps(for_test);
+    let mut deps = parsing::get_crate_deps(for_test, true);
     // default deps
     deps.insert("std".to_owned());
     deps.insert("core".to_owned());
