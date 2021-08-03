@@ -55,4 +55,4 @@ pub fn main() {
     assert!(<dyn MyEntryPoint>::get(sub.deref()).vi32().contains(&32));
 }
 
-lockjaw::epilogue!(debug_output);
+lockjaw::epilogue!();

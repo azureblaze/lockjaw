@@ -93,7 +93,7 @@ pub fn handle_entry_point_attribute(
         exported_type.field_crate = environment::current_crate();
 
         manifest.expanded_visibilities.insert(
-            type_.canonical_string_path(),
+            type_.canonical_string_path_without_args(),
             ExpandedVisibility {
                 crate_local_name: crate_type,
                 exported_name: exported_type,

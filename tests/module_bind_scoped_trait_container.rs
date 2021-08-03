@@ -59,4 +59,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.my_trait().borrow().hello(), "hello");
 }
-epilogue!(debug_output);
+epilogue!();
