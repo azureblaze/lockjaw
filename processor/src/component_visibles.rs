@@ -21,7 +21,7 @@ use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{ItemStruct, VisPublic, Visibility};
+use syn::{ItemStruct, ItemTrait, VisPublic, Visibility};
 
 pub fn handle_component_visible_attribute(
     _attr: TokenStream,
@@ -29,6 +29,10 @@ pub fn handle_component_visible_attribute(
 ) -> Result<TokenStream, TokenStream> {
     if let Ok(item_struct) = syn::parse2::<syn::ItemStruct>(input.clone()) {
         return handle_item_struct(item_struct);
+    };
+
+    if let Ok(item_trait) = syn::parse2::<syn::ItemTrait>(input.clone()) {
+        return handle_item_trait(item_trait);
     };
     spanned_compile_error(input.span(), "unable to handle the item")
 }
@@ -69,6 +73,44 @@ fn handle_item_struct(mut item_struct: ItemStruct) -> Result<TokenStream, TokenS
     })
 }
 
+fn handle_item_trait(mut item_trait: ItemTrait) -> Result<TokenStream, TokenStream> {
+    let original_ident = item_trait.ident.clone();
+    let original_vis = item_trait.vis.clone();
+    let exported_ident = format_ident!("lockjaw_export_type_{}", original_ident);
+
+    item_trait.ident = exported_ident.clone();
+    item_trait.vis = Visibility::Public(VisPublic {
+        pub_token: syn::token::Pub(item_trait.span()),
+    });
+
+    let mut type_ = TypeData::from_local(&original_ident.to_string(), original_ident.span())?;
+    type_.trait_object = true;
+    let crate_type = TypeData::from_local(&exported_ident.to_string(), original_ident.span())?;
+
+    with_manifest(|mut manifest| {
+        let mut exported_type = TypeData::new();
+        exported_type.root = TypeRoot::CRATE;
+        exported_type.path = type_.identifier().to_string();
+        exported_type.field_crate = environment::current_crate();
+        exported_type.trait_object = true;
+
+        manifest.expanded_visibilities.insert(
+            type_.canonical_string_path(),
+            ExpandedVisibility {
+                crate_local_name: crate_type,
+                exported_name: exported_type,
+            },
+        );
+    });
+
+    Ok(quote! {
+        #[allow(non_camel_case_types)]
+        #item_trait
+
+        #original_vis use #exported_ident as #original_ident;
+    })
+}
+
 pub fn expand_visibilities(manifest: &Manifest) -> Result<TokenStream, TokenStream> {
     let mut result = quote! {};
     for expanded_visibility in &manifest.expanded_visibilities {
@@ -91,4 +133,17 @@ pub fn visible_type(manifest: &Manifest, type_: &TypeData) -> TypeData {
     } else {
         type_.clone()
     }
+}
+
+pub fn visible_nested_type(manifest: &Manifest, type_: &TypeData) -> TypeData {
+    let mut result = type_.clone();
+    result.args[0] = visible_type(manifest, &type_.args[0]);
+    result
+}
+
+pub fn visible_map_type(manifest: &Manifest, type_: &TypeData) -> TypeData {
+    let mut result = type_.clone();
+    result.args[0] = visible_type(manifest, &type_.args[0]);
+    result.args[1] = visible_type(manifest, &type_.args[1]);
+    result
 }

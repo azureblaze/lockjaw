@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, epilogue, injectable};
+use lockjaw::{epilogue, injectable};
 
 lockjaw::prologue!("tests/injectable_inject_extern.rs");
 
@@ -30,7 +30,7 @@ impl Bar {
     }
 }
 
-#[component]
+#[lockjaw::define_component]
 pub trait MyComponent {
     fn bar(&self) -> crate::Bar;
 }
@@ -41,4 +41,4 @@ fn main() {
     let _bar = component.bar();
 }
 
-epilogue!();
+epilogue!(root);

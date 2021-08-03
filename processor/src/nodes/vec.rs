@@ -74,7 +74,7 @@ impl Node for VecNode {
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let name_ident = self.get_identifier();
         let provides_type =
-            component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
+            component_visibles::visible_nested_type(graph.manifest, &self.type_).syn_type();
         let mut into_vecs = quote! {};
         let mut elements_into_vecs = quote! {};
         for dependency in &self.bindings {

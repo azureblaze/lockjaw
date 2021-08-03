@@ -69,7 +69,8 @@ impl Node for ComponentLifetimeNode {
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.inner.identifier();
         let name_ident = self.get_identifier();
-        let type_path = component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
+        let type_path =
+            component_visibles::visible_nested_type(graph.manifest, &self.type_).syn_type();
 
         let mut result = ComponentSections::new();
         if self.inner.field_ref {

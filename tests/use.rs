@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, epilogue, prologue};
+use lockjaw::{epilogue, prologue};
 
 mod other_file;
 
@@ -63,7 +63,7 @@ use foo::Inner;
 use foo::UseAs as use_as;
 use test_dep::DepInjectable;
 
-#[component]
+#[lockjaw::define_component]
 pub trait MyComponent {
     fn inner(&self) -> Inner;
     fn dep_injectable(&self) -> DepInjectable;
