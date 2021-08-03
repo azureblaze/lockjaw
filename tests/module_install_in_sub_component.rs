@@ -52,4 +52,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.sub().build().string(), "string");
 }
-epilogue!(debug_output);
+epilogue!();

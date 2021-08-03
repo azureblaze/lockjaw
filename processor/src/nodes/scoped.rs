@@ -62,7 +62,8 @@ impl Node for ScopedNode {
         let once_name = format_ident!("once_{}", self.type_.identifier());
         let once_type = component_visibles::visible_type(graph.manifest, &self.target).syn_type();
         let name_ident = self.get_identifier();
-        let type_path = component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
+        let type_path =
+            component_visibles::visible_ref_type(graph.manifest, &self.type_).syn_type();
         let mut result = ComponentSections::new();
         let has_ref = graph.has_scoped_deps(&self.target.identifier())?;
         let lifetime = if has_ref {

@@ -125,25 +125,24 @@ pub fn expand_visibilities(manifest: &Manifest) -> Result<TokenStream, TokenStre
 }
 
 pub fn visible_type(manifest: &Manifest, type_: &TypeData) -> TypeData {
-    if let Some(ev) = manifest
+    let mut result = if let Some(ev) = manifest
         .expanded_visibilities
-        .get(&type_.canonical_string_path())
+        .get(&type_.canonical_string_path_without_args())
     {
         ev.exported_name.clone()
     } else {
         type_.clone()
+    };
+    for i in 0..type_.args.len() {
+        result.args[i] = visible_type(manifest, &type_.args[i]);
     }
-}
-
-pub fn visible_nested_type(manifest: &Manifest, type_: &TypeData) -> TypeData {
-    let mut result = type_.clone();
-    result.args[0] = visible_type(manifest, &type_.args[0]);
     result
 }
 
-pub fn visible_map_type(manifest: &Manifest, type_: &TypeData) -> TypeData {
+pub fn visible_ref_type(manifest: &Manifest, type_: &TypeData) -> TypeData {
     let mut result = type_.clone();
-    result.args[0] = visible_type(manifest, &type_.args[0]);
-    result.args[1] = visible_type(manifest, &type_.args[1]);
-    result
+    result.field_ref = false;
+    result = visible_type(manifest, &result);
+    result.field_ref = true;
+    return result;
 }

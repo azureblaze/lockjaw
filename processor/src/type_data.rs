@@ -128,6 +128,18 @@ impl TypeData {
         }
     }
 
+    pub fn canonical_string_path_without_args(&self) -> String {
+        let prefix = self.get_prefix();
+        match self.root {
+            TypeRoot::GLOBAL => format!("{}::{}", prefix, self.path_with_args(false)),
+            TypeRoot::CRATE => {
+                format!("{}::{}::{}", prefix, self.field_crate, self.path)
+            }
+            TypeRoot::PRIMITIVE => format!("{}{}", prefix, self.path),
+            TypeRoot::UNSPECIFIED => panic!("canonical_string_path: root unspecified"),
+        }
+    }
+
     /// Full path of the type in local from (use crate:: within the same crate).
     ///
     /// Modifiers like & are omitted

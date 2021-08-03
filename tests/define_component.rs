@@ -41,4 +41,4 @@ pub fn main() {
     assert_eq!(<dyn MyEntryPoint>::get(component.as_ref()).i(), 42)
 }
 
-lockjaw::epilogue!(root debug_output);
+lockjaw::epilogue!(root);

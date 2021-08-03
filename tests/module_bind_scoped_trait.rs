@@ -90,4 +90,4 @@ pub fn main() {
         component.my_trait2().deref() as *const dyn MyTrait2
     );
 }
-epilogue!(debug_output);
+epilogue!();
