@@ -59,7 +59,8 @@ impl Node for BindsOptionOfNode {
         let inner_provider_name = self.inner.identifier();
 
         let name_ident = self.get_identifier();
-        let type_path = component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
+        let type_path =
+            component_visibles::visible_nested_type(graph.manifest, &self.type_).syn_type();
         let body;
         if graph.has_node(&self.inner) {
             body = quote! { Option::Some(self.#inner_provider_name()) }

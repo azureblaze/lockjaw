@@ -104,7 +104,7 @@ impl Node for MapNode {
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let name_ident = self.get_identifier();
         let provides_type =
-            component_visibles::visible_type(graph.manifest, &self.type_).syn_type();
+            component_visibles::visible_map_type(graph.manifest, &self.type_).syn_type();
         let mut into_maps = quote! {};
         for binding in &self.bindings {
             let key = match binding.0 {

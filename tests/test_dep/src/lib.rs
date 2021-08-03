@@ -27,12 +27,17 @@ impl DepPrivate {
     }
 }
 
+#[lockjaw::component_visible]
+trait DepTrait {}
+
+impl DepTrait for DepPrivate {}
+
 pub struct DepInjectable {}
 
 #[lockjaw::injectable]
 impl DepInjectable {
     #[inject]
-    pub fn new(_p: DepPrivate) -> Self {
+    pub fn new(_p: DepPrivate, _t: Cl<dyn DepTrait>) -> Self {
         Self {}
     }
 }
@@ -48,9 +53,12 @@ impl DepModule {
     pub fn provides_dep_provided(_p: DepPrivate) -> DepProvided {
         DepProvided {}
     }
+
+    #[binds]
+    pub fn bind_dep_trait(_impl: DepPrivate) -> Cl<dyn DepTrait> {}
 }
 
-#[lockjaw::component]
+#[lockjaw::component(modules: DepModule)]
 pub trait DepComponent {
     fn dep(&self) -> crate::DepInjectable;
 }
@@ -63,6 +71,7 @@ trait DepEntryPoint {
     fn dep(&self) -> crate::DepInjectable;
 }
 
+use lockjaw::Cl;
 #[allow(unused_imports)]
 use DepEntryPoint as DEP;
 
