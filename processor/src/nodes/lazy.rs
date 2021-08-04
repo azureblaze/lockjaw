@@ -93,6 +93,9 @@ impl Node for LazyNode {
     fn get_dependencies(&self) -> Vec<DependencyData> {
         DependencyData::from_type_vec(&self.dependencies)
     }
+    fn is_runtime_dependency(&self) -> bool {
+        true
+    }
 
     fn clone_box(&self) -> Box<dyn Node> {
         return Box::new(self.clone());

@@ -82,6 +82,10 @@ pub trait Node: Debug + Any {
         Vec::new()
     }
 
+    fn is_runtime_dependency(&self) -> bool {
+        false
+    }
+
     fn clone_box(&self) -> Box<dyn Node>;
     fn as_any(&self) -> &dyn Any;
     fn as_mut_any(&mut self) -> &mut dyn Any;

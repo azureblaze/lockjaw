@@ -65,10 +65,14 @@ impl Node for ScopedNode {
         let type_path =
             component_visibles::visible_ref_type(graph.manifest, &self.type_).syn_type();
         let mut result = ComponentSections::new();
-        let lifetime = if graph.has_lifetime(&self.target) {
-            quote! {<'static> /* effectively component lifetime */}
+        let lifetime;
+        let anon_lifetime;
+        if graph.has_lifetime(&self.target) {
+            lifetime = quote! {<'static> /* effectively component lifetime */};
+            anon_lifetime = quote! {<'_>};
         } else {
-            quote! {}
+            lifetime = quote! {};
+            anon_lifetime = quote! {};
         };
         result.add_fields(quote! {
             #once_name : lockjaw::Once<#once_type#lifetime>,
@@ -78,7 +82,9 @@ impl Node for ScopedNode {
             fn #name_ident(&'_ self) -> #type_path{
                 let this: *const Self = self;
                 // erases the 'static lifetime on Once, and reassign it to '_ (the component's lifetime)
-                self.#once_name.get(|| unsafe { &*this }.#arg_provider_name())
+                let result: *const #once_type#lifetime = self.#once_name.get(|| unsafe { &*this }.#arg_provider_name());
+                let raw : *const() = result as *const();
+                unsafe{&*(raw as *const #once_type#anon_lifetime)}
             }
         });
         Ok(result)

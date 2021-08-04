@@ -125,6 +125,9 @@ pub fn expand_visibilities(manifest: &Manifest) -> Result<TokenStream, TokenStre
 }
 
 pub fn visible_type(manifest: &Manifest, type_: &TypeData) -> TypeData {
+    if type_.field_ref {
+        return visible_ref_type(manifest, type_);
+    }
     let mut result = if let Some(ev) = manifest
         .expanded_visibilities
         .get(&type_.canonical_string_path_without_args())
