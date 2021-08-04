@@ -65,14 +65,11 @@ impl Node for ScopedNode {
         let type_path =
             component_visibles::visible_ref_type(graph.manifest, &self.type_).syn_type();
         let mut result = ComponentSections::new();
-        let lifetime;
-        let anon_lifetime;
-        if graph.has_lifetime(&self.target) {
-            lifetime = quote! {<'static> /* effectively component lifetime */};
-            anon_lifetime = quote! {<'_>};
+        let lifetime = if graph.has_lifetime(&self.target) {
+            //  effectively component lifetime since the component owns it.
+            quote! {<'static>}
         } else {
-            lifetime = quote! {};
-            anon_lifetime = quote! {};
+            quote! {}
         };
         result.add_fields(quote! {
             #once_name : lockjaw::Once<#once_type#lifetime>,
@@ -80,11 +77,13 @@ impl Node for ScopedNode {
         result.add_ctor_params(quote! {#once_name : lockjaw::Once::new(),});
         result.add_methods(quote! {
             fn #name_ident(&'_ self) -> #type_path{
+                // prevent self from being borrowed into once, which has 'static lifetime, but in
+                // practice limited to the component's lifetime.
+                // safe since lambda in Once.get() is invoked immediately.
                 let this: *const Self = self;
-                // erases the 'static lifetime on Once, and reassign it to '_ (the component's lifetime)
-                let result: *const #once_type#lifetime = self.#once_name.get(|| unsafe { &*this }.#arg_provider_name());
-                let raw : *const() = result as *const();
-                unsafe{&*(raw as *const #once_type#anon_lifetime)}
+                let result = self.#once_name.get(|| unsafe { &*this }.#arg_provider_name());
+                // erases the 'static lifetime on Once, and reassign it back to '_ (the component's lifetime)
+                unsafe{std::mem::transmute(result)}
             }
         });
         Ok(result)
