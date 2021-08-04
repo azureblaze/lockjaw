@@ -333,6 +333,7 @@ fn handle_factory(
         quote! {}
     };
     let result = quote! {
+        #[::lockjaw::component_visible]
         pub struct #factory_ty<'a> {
             #fields
             lockjaw_phamtom_data: ::std::marker::PhantomData<&'a ::std::string::String>
@@ -340,7 +341,7 @@ fn handle_factory(
         #[injectable]
         impl <'a> #factory_ty<'a> {
             #[inject]
-            fn lockjaw_new_factory(#fields) -> Self{
+            pub fn lockjaw_new_factory(#fields) -> Self{
                 Self{
                     #fields_arg
                     lockjaw_phamtom_data: ::std::marker::PhantomData

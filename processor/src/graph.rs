@@ -601,7 +601,7 @@ pub fn build_graph<'a>(
         missing_deps.extend(resolve_dependencies(
             provision.as_ref(),
             &mut result.map,
-            &mut vec![],
+            vec![],
             &mut resolved_nodes,
         )?);
         result.root_nodes.push(provision);
@@ -622,7 +622,7 @@ pub fn build_graph<'a>(
             missing_deps.extend(resolve_dependencies(
                 node.as_ref(),
                 &mut result.map,
-                &mut vec![],
+                vec![],
                 &mut resolved_nodes,
             )?);
             result.root_nodes.push(node);
@@ -667,11 +667,11 @@ fn singleton_type() -> TypeData {
 fn resolve_dependencies(
     node: &dyn Node,
     map: &mut HashMap<Ident, Box<dyn Node>>,
-    ancestors: &mut Vec<String>,
+    mut ancestors: Vec<String>,
     resolved_nodes: &mut HashSet<Ident>,
 ) -> Result<Vec<MissingDependency>, TokenStream> {
     if ancestors.contains(&node.get_name()) {
-        return cyclic_dependency(node, ancestors);
+        return cyclic_dependency(node, &mut ancestors);
     }
 
     if resolved_nodes.contains(&node.get_identifier()) {
@@ -681,7 +681,11 @@ fn resolve_dependencies(
     resolved_nodes.insert(node.get_identifier());
     let mut missing_deps = Vec::<MissingDependency>::new();
 
-    ancestors.push(node.get_name());
+    if node.is_runtime_dependency() {
+        ancestors.clear();
+    } else {
+        ancestors.push(node.get_name());
+    }
     for dependency in node.get_dependencies() {
         let mut dependency_node = map.get(&dependency.type_.identifier());
 
@@ -701,11 +705,11 @@ fn resolve_dependencies(
             }
         }
         let cloned_node = dependency_node.unwrap().clone_box();
-        node.can_depend(cloned_node.as_ref(), ancestors)?;
+        node.can_depend(cloned_node.as_ref(), &ancestors)?;
         missing_deps.extend(resolve_dependencies(
             cloned_node.as_ref(),
             map,
-            ancestors,
+            ancestors.clone(),
             resolved_nodes,
         )?);
     }
@@ -721,11 +725,11 @@ fn resolve_dependencies(
             dependency_node = map.get(&identifier);
         }
         let cloned_node = dependency_node.unwrap().clone_box();
-        node.can_depend(cloned_node.as_ref(), ancestors)?;
+        node.can_depend(cloned_node.as_ref(), &ancestors)?;
         missing_deps.extend(resolve_dependencies(
             cloned_node.as_ref(),
             map,
-            ancestors,
+            ancestors.clone(),
             resolved_nodes,
         )?);
     }
