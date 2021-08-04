@@ -20,7 +20,7 @@ use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{FnArg, ImplItem, ImplItemMethod, Pat};
+use syn::{FnArg, GenericArgument, ImplItem, ImplItemMethod, Pat, PathArguments};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::{Dependency, Injectable};
@@ -120,6 +120,7 @@ pub fn handle_injectable_attribute(
         }
     }
     let type_name;
+    let mut has_lifetime = false;
     if let syn::Type::Path(ref path) = *item.self_ty {
         let segments: Vec<String> = path
             .path
@@ -128,6 +129,16 @@ pub fn handle_injectable_attribute(
             .map(|segment| segment.ident.to_string())
             .collect();
         type_name = segments.join("::");
+        if let PathArguments::AngleBracketed(ref angle) =
+            path.path.segments.last().as_ref().unwrap().arguments
+        {
+            for arg in &angle.args {
+                if let GenericArgument::Lifetime(_) = arg {
+                    has_lifetime = true;
+                    break;
+                }
+            }
+        }
     } else {
         return spanned_compile_error(item.self_ty.span(), &format!("path expected"));
     }
@@ -150,7 +161,14 @@ pub fn handle_injectable_attribute(
     injectable.dependencies.extend(dependencies);
     let identifier = injectable.type_data.identifier().to_string();
 
-    manifest::with_manifest(|mut manifest| manifest.injectables.push(injectable));
+    manifest::with_manifest(|mut manifest| {
+        if has_lifetime {
+            manifest
+                .lifetimed_types
+                .insert(injectable.type_data.clone());
+        }
+        manifest.injectables.push(injectable);
+    });
 
     let type_check = type_validator.validate(identifier);
     let prologue_check = prologue_check(item.span());
