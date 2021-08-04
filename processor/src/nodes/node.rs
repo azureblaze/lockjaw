@@ -29,6 +29,7 @@ use crate::nodes::scoped::ScopedNode;
 use crate::type_data::TypeData;
 use std::any::Any;
 use std::cell::Cell;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct DependencyData {
@@ -112,9 +113,12 @@ impl dyn Node {
         ))
     }
 
-    pub fn generate_node(dependency: &TypeData) -> Option<Box<dyn Node>> {
+    pub fn generate_node(
+        map: &HashMap<Ident, Box<dyn Node>>,
+        dependency: &TypeData,
+    ) -> Option<Box<dyn Node>> {
         if dependency.field_ref {
-            return ScopedNode::for_type(dependency);
+            return Some(ScopedNode::for_type(dependency));
         }
         if dependency.root != TypeRoot::GLOBAL {
             return None;
@@ -124,7 +128,7 @@ impl dyn Node {
             "::std::boxed::Box" => BoxedNode::for_type(dependency),
             "::lockjaw::Provider" => ProviderNode::for_type(dependency),
             "::lockjaw::Lazy" => LazyNode::for_type(dependency),
-            "::lockjaw::Cl" => ComponentLifetimeNode::for_type(dependency),
+            "::lockjaw::Cl" => ComponentLifetimeNode::for_type(map, dependency),
             _ => None,
         }
     }

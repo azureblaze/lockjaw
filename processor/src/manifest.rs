@@ -50,6 +50,7 @@ pub struct Manifest {
     pub entry_points: Vec<EntryPoint>,
     pub root: bool,
     pub expanded_visibilities: HashMap<String, ExpandedVisibility>,
+    pub lifetimed_types: HashSet<TypeData>,
 }
 
 impl Manifest {
@@ -67,6 +68,7 @@ impl Manifest {
         self.entry_points.clear();
         self.root = false;
         self.expanded_visibilities.clear();
+        self.lifetimed_types.clear();
     }
 
     pub fn merge_from(&mut self, other: &Manifest) {
@@ -88,7 +90,9 @@ impl Manifest {
                 .expanded_visibilities
                 .iter()
                 .map(|(k, v)| (k.clone(), v.clone())),
-        )
+        );
+        self.lifetimed_types
+            .extend(other.lifetimed_types.iter().map(Clone::clone));
     }
 }
 

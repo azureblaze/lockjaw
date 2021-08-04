@@ -59,7 +59,6 @@ impl Node for InjectableNode {
     }
 
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
-        let has_ref = graph.has_scoped_deps(&self.type_.identifier())?;
         let mut ctor_params = quote! {};
         for dependency in &self.injectable.dependencies {
             let param_provider_name = dependency.type_data.identifier();
@@ -69,12 +68,11 @@ impl Node for InjectableNode {
             }
         }
 
-        let lifetime;
-        if has_ref {
-            lifetime = quote! {<'_>};
+        let lifetime = if graph.has_lifetime(&self.type_) {
+            quote! {<'_>}
         } else {
-            lifetime = quote! {};
-        }
+            quote! {}
+        };
 
         let name_ident = self.get_identifier();
         let injectable_path =

@@ -22,6 +22,8 @@ use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::any::Any;
+use std::collections::HashMap;
+use syn::Ident;
 
 #[derive(Debug)]
 pub struct ComponentLifetimeNode {
@@ -32,10 +34,20 @@ pub struct ComponentLifetimeNode {
 }
 
 impl ComponentLifetimeNode {
-    pub fn for_type(type_: &TypeData) -> Option<Box<dyn Node>> {
-        let inner = type_.args.get(0).unwrap();
+    pub fn for_type(
+        map: &HashMap<Ident, Box<dyn Node>>,
+        type_: &TypeData,
+    ) -> Option<Box<dyn Node>> {
+        let mut inner = type_.args[0].clone();
+        if !inner.field_ref {
+            let mut ref_type = inner.clone();
+            ref_type.field_ref = true;
+            if map.contains_key(&ref_type.identifier()) {
+                inner = ref_type;
+            }
+        }
         Some(Box::new(ComponentLifetimeNode {
-            type_: ComponentLifetimeNode::component_lifetime_type(inner),
+            type_: ComponentLifetimeNode::component_lifetime_type(&type_.args[0]),
             dependencies: vec![inner.clone()],
 
             inner: inner.clone(),

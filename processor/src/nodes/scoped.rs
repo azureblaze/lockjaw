@@ -30,15 +30,15 @@ pub struct ScopedNode {
 }
 
 impl ScopedNode {
-    pub fn for_type(type_: &TypeData) -> Option<Box<dyn Node>> {
+    pub fn for_type(type_: &TypeData) -> Box<dyn Node> {
         let mut non_ref = type_.clone();
 
         non_ref.field_ref = false;
-        return Some(Box::new(ScopedNode {
+        return Box::new(ScopedNode {
             type_: type_.clone(),
             dependencies: vec![non_ref.clone()],
             target: non_ref.clone(),
-        }));
+        });
     }
 }
 
@@ -65,8 +65,7 @@ impl Node for ScopedNode {
         let type_path =
             component_visibles::visible_ref_type(graph.manifest, &self.type_).syn_type();
         let mut result = ComponentSections::new();
-        let has_ref = graph.has_scoped_deps(&self.target.identifier())?;
-        let lifetime = if has_ref {
+        let lifetime = if graph.has_lifetime(&self.target) {
             quote! {<'static> /* effectively component lifetime */}
         } else {
             quote! {}

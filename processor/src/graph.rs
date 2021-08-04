@@ -35,6 +35,7 @@ use crate::nodes::node::Node;
 use crate::nodes::parent::ParentNode;
 use crate::nodes::provides::ProvidesNode;
 use crate::nodes::provision::ProvisionNode;
+use crate::nodes::scoped::ScopedNode;
 use crate::nodes::subcomponent::SubcomponentNode;
 use crate::nodes::vec::VecNode;
 use crate::type_data::TypeData;
@@ -309,7 +310,11 @@ impl<'a> Graph<'a> {
             let dependency_node = self
                 .map
                 .get(&dependency.type_.identifier())
-                .expect(&format!("missing node for {}", dependency.type_.readable()));
+                .expect(&format!(
+                    "missing node for {}, depended by {}",
+                    dependency.type_.identifier().to_string(),
+                    node.get_name()
+                ));
             result.merge(self.generate_provision(
                 dependency_node.borrow(),
                 component,
@@ -335,21 +340,11 @@ impl<'a> Graph<'a> {
         Ok(result)
     }
 
-    pub fn has_scoped_deps(&self, identifier: &Ident) -> Result<bool, TokenStream> {
-        let node = self.map.get(identifier).unwrap();
-        for dep in node.get_dependencies() {
-            let dep_node = self
-                .map
-                .get(&dep.type_.identifier())
-                .expect(&format!("missing node for {}", dep.type_.readable()));
-            if !dep_node.get_type().scopes.is_empty() {
-                return Ok(true);
-            }
-            if self.has_scoped_deps(&dep.type_.identifier())? {
-                return Ok(true);
-            }
+    pub fn has_lifetime(&self, type_: &TypeData) -> bool {
+        if type_.path == "lockjaw::Cl" {
+            return true;
         }
-        Ok(false)
+        return self.manifest.lifetimed_types.contains(type_);
     }
 }
 
@@ -443,6 +438,12 @@ pub fn build_graph<'a>(
             || injectable.type_data.scopes.contains(&singleton)
         {
             result.add_node(InjectableNode::new(injectable))?;
+            if !injectable.type_data.scopes.is_empty() {
+                let mut ref_type = injectable.type_data.clone();
+                ref_type.field_ref = true;
+                ref_type.scopes = HashSet::new();
+                result.add_node(ScopedNode::for_type(&ref_type))?;
+            }
         }
     }
     let mut installed_modules = HashSet::<Ident>::new();
@@ -685,7 +686,7 @@ fn resolve_dependencies(
         let mut dependency_node = map.get(&dependency.type_.identifier());
 
         if dependency_node.is_none() {
-            if let Some(generated_node) = <dyn Node>::generate_node(&dependency.type_) {
+            if let Some(generated_node) = <dyn Node>::generate_node(map, &dependency.type_) {
                 let identifier = generated_node.get_identifier();
                 map.insert(identifier.clone(), generated_node);
                 dependency_node = map.get(&identifier);
@@ -711,7 +712,7 @@ fn resolve_dependencies(
     for dependency in node.get_optional_dependencies() {
         let mut dependency_node = map.get(&dependency.identifier());
         if dependency_node.is_none() {
-            let generated_node = <dyn Node>::generate_node(&dependency);
+            let generated_node = <dyn Node>::generate_node(map, &dependency);
             if generated_node.is_none() {
                 continue;
             }
