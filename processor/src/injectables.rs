@@ -256,7 +256,7 @@ fn get_container(
 }
 
 fn handle_factory(
-    self_ty: Box<syn::Type>,
+    mut self_ty: Box<syn::Type>,
     method: ImplItemMethod,
     metadata: HashMap<String, FieldValue>,
 ) -> Result<TokenStream, TokenStream> {
@@ -307,11 +307,20 @@ fn handle_factory(
             }
         }
     }
+    let mut lifetime = quote! {};
     let mut factory_ty = self_ty.clone();
-    if let syn::Type::Path(ref path) = self_ty.as_ref() {
+    if let syn::Type::Path(ref mut path) = self_ty.as_mut() {
+        let last_segment = path.path.segments.last_mut().unwrap();
+        if last_segment.arguments != PathArguments::None {
+            lifetime = quote! {<'a>};
+            last_segment.arguments = PathArguments::None;
+        }
+
         let ident = format_ident!("{}Factory", path.path.segments.last().unwrap().ident);
         if let syn::Type::Path(ref mut factory_path) = factory_ty.as_mut() {
-            factory_path.path.segments.last_mut().unwrap().ident = ident;
+            let last_segment = factory_path.path.segments.last_mut().unwrap();
+            last_segment.ident = ident;
+            last_segment.arguments = PathArguments::None;
         }
     } else {
         return spanned_compile_error(self_ty.span(), &format!("path expected"));
@@ -350,12 +359,12 @@ fn handle_factory(
         }
 
         impl <'a> #impl_for #factory_ty<'a> {
-            #viz fn #method_name(&self,#runtime_args) -> #self_ty {
+            #viz fn #method_name(&self,#runtime_args) -> #self_ty #lifetime {
                 #self_ty::#method_name(#args)
             }
         }
     };
 
-    // log!("{}", result.to_string());
+    //log!("{}", result.to_string());
     Ok(result)
 }
