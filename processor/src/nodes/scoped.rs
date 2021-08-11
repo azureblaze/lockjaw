@@ -60,19 +60,32 @@ impl Node for ScopedNode {
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let arg_provider_name = self.target.identifier();
         let once_name = format_ident!("once_{}", self.type_.identifier());
-        let once_type = component_visibles::visible_type(graph.manifest, &self.target).syn_type();
         let name_ident = self.get_identifier();
         let type_path =
             component_visibles::visible_ref_type(graph.manifest, &self.type_).syn_type();
         let mut result = ComponentSections::new();
-        let lifetime = if graph.has_lifetime(&self.target) {
-            //  effectively component lifetime since the component owns it.
-            quote! {<'static>}
-        } else {
-            quote! {}
-        };
+        let once_inner_type =
+            if !self.target.args.is_empty() && graph.has_lifetime(&self.target.args[0]) {
+                let mut container = self.target.clone();
+                container.args = Vec::new();
+                let container_type = container.syn_type();
+                let target_type = self.target.args[0].syn_type();
+                quote! {
+                    #container_type<#target_type<'static>>
+                }
+            } else {
+                let lifetime = if graph.has_lifetime(&self.target) {
+                    //  effectively component lifetime since the component owns it.
+                    quote! {<'static>}
+                } else {
+                    quote! {}
+                };
+                let once_type =
+                    component_visibles::visible_type(graph.manifest, &self.target).syn_type();
+                quote! {#once_type#lifetime}
+            };
         result.add_fields(quote! {
-            #once_name : lockjaw::Once<#once_type#lifetime>,
+            #once_name : lockjaw::Once<#once_inner_type>,
         });
         result.add_ctor_params(quote! {#once_name : lockjaw::Once::new(),});
         result.add_methods(quote! {
