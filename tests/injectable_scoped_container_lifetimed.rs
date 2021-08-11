@@ -18,19 +18,22 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable};
 use std::cell::RefCell;
+use std::marker::PhantomData;
 
-lockjaw::prologue!("tests/injectable_scoped_container.rs");
+lockjaw::prologue!("tests/injectable_scoped_container_lifetimed.rs");
 
-pub struct Foo {
+pub struct Foo<'a> {
     pub i: u32,
+    p: PhantomData<&'a i32>,
 }
 
 #[injectable(scope: crate::MyComponent, container: RefCell)]
-impl Foo {
+impl Foo<'_> {
     #[inject]
     pub fn new() -> Self {
         Self {
             i: Default::default(),
+            p: PhantomData::default(),
         }
     }
 
