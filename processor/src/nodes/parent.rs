@@ -63,6 +63,18 @@ impl Node for ParentNode {
         Ok(result)
     }
 
+    fn merge(&self, new_node: &dyn Node) -> Result<Box<dyn Node>, TokenStream> {
+        if self.as_any().type_id() == new_node.as_any().type_id()
+            && self
+                .get_type()
+                .canonical_string_path()
+                .eq(&new_node.get_type().canonical_string_path())
+        {
+            return Ok(self.clone_box());
+        }
+        <dyn Node>::duplicated(self, new_node)
+    }
+
     fn get_type(&self) -> &TypeData {
         &self.type_
     }
