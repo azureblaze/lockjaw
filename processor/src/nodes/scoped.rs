@@ -88,15 +88,19 @@ impl Node for ScopedNode {
             #once_name : lockjaw::Once<#once_inner_type>,
         });
         result.add_ctor_params(quote! {#once_name : lockjaw::Once::new(),});
+
+        let component_name = graph.component.impl_ident();
         result.add_methods(quote! {
             fn #name_ident(&'_ self) -> #type_path{
                 // prevent self from being borrowed into once, which has 'static lifetime, but in
                 // practice limited to the component's lifetime.
                 // safe since lambda in Once.get() is invoked immediately.
-                let this: *const Self = self;
-                let result = self.#once_name.get(|| unsafe { &*this }.#arg_provider_name());
-                // erases the 'static lifetime on Once, and reassign it back to '_ (the component's lifetime)
-                unsafe{std::mem::transmute(result)}
+                unsafe{
+                    let this: *const #component_name = ::std::mem::transmute(self);
+                    let result = self.#once_name.get(|| unsafe { &*this }.#arg_provider_name());
+                    // erases the 'static lifetime on Once, and reassign it back to '_ (the component's lifetime)
+                    std::mem::transmute(result)
+                }
             }
         });
         Ok(result)
