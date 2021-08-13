@@ -602,6 +602,7 @@ pub fn build_graph<'a>(
             provision.as_ref(),
             &mut result.map,
             vec![],
+            vec![],
             &mut resolved_nodes,
         )?);
         result.root_nodes.push(provision);
@@ -622,6 +623,7 @@ pub fn build_graph<'a>(
             missing_deps.extend(resolve_dependencies(
                 node.as_ref(),
                 &mut result.map,
+                vec![],
                 vec![],
                 &mut resolved_nodes,
             )?);
@@ -668,9 +670,10 @@ fn resolve_dependencies(
     node: &dyn Node,
     map: &mut HashMap<Ident, Box<dyn Node>>,
     mut ancestors: Vec<String>,
+    mut static_ancestors: Vec<String>,
     resolved_nodes: &mut HashSet<Ident>,
 ) -> Result<Vec<MissingDependency>, TokenStream> {
-    if ancestors.contains(&node.get_name()) {
+    if static_ancestors.contains(&node.get_name()) {
         return cyclic_dependency(node, &mut ancestors);
     }
 
@@ -682,10 +685,11 @@ fn resolve_dependencies(
     let mut missing_deps = Vec::<MissingDependency>::new();
 
     if node.is_runtime_dependency() {
-        ancestors.clear();
+        static_ancestors.clear();
     } else {
-        ancestors.push(node.get_name());
+        static_ancestors.push(node.get_name());
     }
+    ancestors.push(node.get_name());
     for dependency in node.get_dependencies() {
         let mut dependency_node = map.get(&dependency.type_.identifier());
 
@@ -710,6 +714,7 @@ fn resolve_dependencies(
             cloned_node.as_ref(),
             map,
             ancestors.clone(),
+            static_ancestors.clone(),
             resolved_nodes,
         )?);
     }
@@ -730,6 +735,7 @@ fn resolve_dependencies(
             cloned_node.as_ref(),
             map,
             ancestors.clone(),
+            static_ancestors.clone(),
             resolved_nodes,
         )?);
     }
