@@ -29,9 +29,9 @@ impl TypeValidator {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn add_path(&mut self, path: &syn::Path, span: Span) {
-        let type_check = quote_spanned! {span => _ : Box<#path>, };
+    pub fn add_path(&mut self, path: &syn::Path, span: Span, arg: &TypeData) {
+        let syn_arg = arg.syn_type();
+        let type_check = quote_spanned! {span => _ : Box<#path<#syn_arg>>, };
         let tokens = self.token_stream.clone();
         self.token_stream = quote! { #tokens #type_check}
     }

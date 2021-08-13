@@ -155,7 +155,13 @@ pub fn handle_injectable_attribute(
         }
     }
 
-    injectable.container = get_container(attr.span(), &attributes, &scopes)?;
+    injectable.container = get_container(
+        attr.span(),
+        &attributes,
+        &scopes,
+        &mut type_validator,
+        &injectable.type_data,
+    )?;
     injectable.type_data.scopes.extend(scopes);
     injectable.ctor_name = ctor.sig.ident.to_string();
     injectable.dependencies.extend(dependencies);
@@ -238,6 +244,8 @@ fn get_container(
     span: Span,
     attributes: &HashMap<String, FieldValue>,
     scopes: &Vec<TypeData>,
+    type_validator: &mut TypeValidator,
+    element_type: &TypeData,
 ) -> Result<Option<TypeData>, TokenStream> {
     if attributes.contains_key("container") {
         if let FieldValue::Path(span, path) = attributes.get("container").unwrap() {
@@ -247,7 +255,9 @@ fn get_container(
                     "the 'container' metadata should only be used with an injectable that also has 'scope'",
                 );
             }
-            return Ok(Some(TypeData::from_path_with_span(path, span.clone())?));
+            type_validator.add_path(path, span.clone(), element_type);
+            let container = TypeData::from_path_with_span(path, span.clone())?;
+            return Ok(Some(container));
         } else {
             return spanned_compile_error(span, "path expected for 'container'");
         }
