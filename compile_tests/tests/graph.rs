@@ -37,7 +37,11 @@ fn graph_cyclic_dependency_after_provider() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(
         "tests/graph/graph_cyclic_dependency_after_provider.rs",
-        vec!["Cyclic dependency detected"],
+        vec![
+            "Cyclic dependency detected",
+            "Provider<::$CRATE::Foo>",
+            "::$CRATE::S.foo",
+        ],
     )
 }
 
