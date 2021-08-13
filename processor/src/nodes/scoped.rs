@@ -97,7 +97,7 @@ impl Node for ScopedNode {
                 // safe since lambda in Once.get() is invoked immediately.
                 unsafe{
                     let this: *const #component_name = ::std::mem::transmute(self);
-                    let result = self.#once_name.get(|| unsafe { &*this }.#arg_provider_name());
+                    let result = self.#once_name.get(|| (&*this).#arg_provider_name());
                     // erases the 'static lifetime on Once, and reassign it back to '_ (the component's lifetime)
                     std::mem::transmute(result)
                 }
