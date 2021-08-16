@@ -66,10 +66,11 @@ fn handle_item_struct(mut item_struct: ItemStruct) -> Result<TokenStream, TokenS
     });
 
     Ok(quote! {
+        #original_vis use #exported_ident as #original_ident;
+
+        #[doc(hidden)]
         #[allow(non_camel_case_types)]
         #item_struct
-
-        #original_vis use #exported_ident as #original_ident;
     })
 }
 
@@ -104,10 +105,11 @@ fn handle_item_trait(mut item_trait: ItemTrait) -> Result<TokenStream, TokenStre
     });
 
     Ok(quote! {
+        #original_vis use #exported_ident as #original_ident;
+
+        #[doc(hidden)]
         #[allow(non_camel_case_types)]
         #item_trait
-
-        #original_vis use #exported_ident as #original_ident;
     })
 }
 
@@ -118,6 +120,7 @@ pub fn expand_visibilities(manifest: &Manifest) -> Result<TokenStream, TokenStre
         let exported_type = format_ident!("{}", expanded_visibility.1.exported_name.path);
         result = quote! {
             #result
+            #[doc(hidden)]
             pub use #local_type as #exported_type;
         }
     }

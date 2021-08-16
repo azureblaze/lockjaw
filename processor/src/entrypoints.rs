@@ -110,9 +110,12 @@ pub fn handle_entry_point_attribute(
     let validate_type = type_validator.validate(identifier);
     let getter_name = getter_name(&entry_point);
     let result = quote! {
+        #[doc(hidden)]
         #[allow(non_camel_case_types)]
         #item_trait
+
         #original_vis use #exported_ident as #original_ident;
+
         #validate_type
         #prologue_check
 

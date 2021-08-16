@@ -168,6 +168,7 @@ pub fn generate_component(
     let items = &component_sections.items;
 
     let component_impl = quote! {
+        #[doc(hidden)]
         #[allow(non_snake_case)]
         #[allow(non_camel_case_types)]
         #[allow(dead_code)]
@@ -190,6 +191,7 @@ pub fn generate_component(
     let builder = if graph.builder_modules.type_data.is_some() {
         let module_manifest_name = graph.builder_modules.type_data.unwrap().syn_type();
         quote! {
+            #[doc(hidden)]
             #[no_mangle]
             #[allow(non_snake_case)]
             fn #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>{
@@ -198,6 +200,7 @@ pub fn generate_component(
         }
     } else {
         quote! {
+            #[doc(hidden)]
             #[no_mangle]
             #[allow(non_snake_case)]
             fn #builder_name () -> Box<dyn #component_name>{

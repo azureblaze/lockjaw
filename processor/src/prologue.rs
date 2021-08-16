@@ -259,6 +259,7 @@ pub fn handle_prologue(input: TokenStream, for_test: bool) -> Result<TokenStream
     });
 
     Ok(quote! {
+        #[doc(hidden)]
         struct lockjaw_error_call_prologue_macro_before_any_other_use;
         #[test]
         fn prologue_path_matches_macro_input(){

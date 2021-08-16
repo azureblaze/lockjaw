@@ -29,6 +29,7 @@ use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use crate::type_validator::TypeValidator;
 use crate::{manifest, parsing};
+use std::borrow::Borrow;
 
 lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
@@ -352,13 +353,13 @@ fn handle_factory(
         quote! {}
     };
     let result = quote! {
-        #[::lockjaw::component_visible]
         pub struct #factory_ty<'a> {
             #fields
             lockjaw_phamtom_data: ::std::marker::PhantomData<&'a ::std::string::String>
         }
         #[injectable]
         impl <'a> #factory_ty<'a> {
+            #[doc(hidden)]
             #[inject]
             pub fn lockjaw_new_factory(#fields) -> Self{
                 Self{

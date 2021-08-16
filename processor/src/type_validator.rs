@@ -60,6 +60,7 @@ impl TypeValidator {
         let ident = format_ident!("lockjaw_type_validator_{}", name);
         let types = self.token_stream.clone();
         quote! {
+            #[doc(hidden)]
             fn #ident(#types) {}
         }
     }
