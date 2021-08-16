@@ -20,7 +20,7 @@ use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{FnArg, GenericArgument, ImplItem, ImplItemMethod, Pat, PathArguments};
+use syn::{FnArg, GenericArgument, ImplItem, ImplItemMethod, Pat, PathArguments, Visibility};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::{Dependency, Injectable};
@@ -29,7 +29,6 @@ use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use crate::type_validator::TypeValidator;
 use crate::{manifest, parsing};
-use std::borrow::Borrow;
 
 lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
@@ -44,6 +43,7 @@ lazy_static! {
     static ref FACTORY_METADATA_KEYS: HashSet<String> = {
         let mut set = HashSet::<String>::new();
         set.insert("implementing".to_owned());
+        set.insert("visibility".to_owned());
         set
     };
 }
@@ -337,10 +337,10 @@ fn handle_factory(
         return spanned_compile_error(self_ty.span(), &format!("path expected"));
     }
     let method_name = method.sig.ident;
-    let viz;
+    let method_viz;
     let impl_for = if let Some(implementing) = metadata.get("implementing") {
         let trait_ = if let FieldValue::Path(_, path) = implementing {
-            viz = quote! {};
+            method_viz = quote! {};
             quote! {#path}
         } else {
             return spanned_compile_error(implementing.span(), "path expected for 'implementing'");
@@ -349,11 +349,33 @@ fn handle_factory(
             #trait_ for
         }
     } else {
-        viz = quote! {pub};
+        method_viz = quote! {pub};
         quote! {}
     };
+    let component_visible;
+    let factory_viz = if let Some(visibility) = metadata.get("visibility") {
+        if let FieldValue::StringLiteral(span, vis_string) = visibility {
+            let syn_visibility: Visibility = syn::parse_str(vis_string).map_spanned_compile_error(
+                span.clone(),
+                "visibility specifier string('pub', 'pub(crate)', 'pub(in some::path)') expected",
+            )?;
+            if let Visibility::Public(_) = syn_visibility {
+                component_visible = quote! {};
+            } else {
+                component_visible = quote! {#[::lockjaw::component_visible]};
+            }
+            quote! {#syn_visibility}
+        } else {
+            return spanned_compile_error(visibility.span(), "string expected for `visibility`");
+        }
+    } else {
+        component_visible = quote! {#[::lockjaw::component_visible]};
+        quote! {}
+    };
+
     let result = quote! {
-        pub struct #factory_ty<'a> {
+        #component_visible
+        #factory_viz struct #factory_ty<'a> {
             #fields
             lockjaw_phamtom_data: ::std::marker::PhantomData<&'a ::std::string::String>
         }
@@ -370,7 +392,7 @@ fn handle_factory(
         }
 
         impl <'a> #impl_for #factory_ty<'a> {
-            #viz fn #method_name(&self,#runtime_args) -> #self_ty #lifetime {
+            #method_viz fn #method_name(&self,#runtime_args) -> #self_ty #lifetime {
                 #self_ty::#method_name(#args)
             }
         }

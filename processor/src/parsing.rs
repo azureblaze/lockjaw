@@ -16,11 +16,10 @@ limitations under the License.
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::type_data::TypeData;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{Delimiter, Span, TokenStream, TokenTree};
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::process::Command;
-use std::str::FromStr;
 use syn::parse::Parser;
 #[allow(unused_imports)] // somehow rust think this is unused.
 use syn::spanned::Spanned;
@@ -54,28 +53,36 @@ pub fn get_parenthesized_field_values(
         return Ok(HashMap::new());
     }
 
-    get_attribute_field_values(
-        TokenStream::from_str(&strip_parentheses(&attr)?)
-            .map_spanned_compile_error(attr.span(), "cannot parse string to tokens")?,
-    )
+    get_attribute_field_values(strip_parentheses(attr)?)
 }
 
 pub fn get_parenthesized_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
     if attr.is_empty() {
         return spanned_compile_error(attr.span(), "path expected");
     }
-
-    TypeData::from_str_with_span(&strip_parentheses(attr)?, attr.span())
+    TypeData::from_path_with_span(
+        &syn::parse2(strip_parentheses(attr.clone())?)
+            .map_spanned_compile_error(attr.span(), "path expected")?,
+        attr.span(),
+    )
 }
 
-fn strip_parentheses(attr: &TokenStream) -> Result<String, TokenStream> {
-    Ok(attr
-        .to_string()
-        .strip_prefix("(")
-        .map_spanned_compile_error(attr.span(), "'(' expected at start")?
-        .strip_suffix(")")
-        .map_spanned_compile_error(attr.span(), "')' expected at end")?
-        .to_owned())
+fn strip_parentheses(attr: TokenStream) -> Result<TokenStream, TokenStream> {
+    let mut iter = attr.clone().into_iter();
+    let token_tree = iter
+        .next()
+        .map_spanned_compile_error(attr.span(), "tokens expected")?;
+    if let Some(tree) = iter.next() {
+        return spanned_compile_error(tree.span(), "only 1 token tree expected");
+    }
+    if let TokenTree::Group(group) = token_tree {
+        if group.delimiter() != Delimiter::Parenthesis {
+            return spanned_compile_error(group.span(), "(...)expected");
+        }
+        Ok(group.stream())
+    } else {
+        return spanned_compile_error(token_tree.span(), "(...)expected");
+    }
 }
 
 #[derive(Debug, Clone)]

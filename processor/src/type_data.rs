@@ -292,13 +292,6 @@ impl TypeData {
         return TypeData::from_path_with_span(&trait_.path, bounds.span());
     }
 
-    pub fn from_str_with_span(string: &str, span: Span) -> Result<TypeData, TokenStream> {
-        TypeData::from_path_with_span(
-            &syn::parse_str(string).map_compile_error("path expected")?,
-            span,
-        )
-    }
-
     pub fn from_path_with_span(syn_path: &syn::Path, span: Span) -> Result<TypeData, TokenStream> {
         let mut result = TypeData::new();
         let mut segment_iter = syn_path.segments.iter().peekable();
