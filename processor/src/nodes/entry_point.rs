@@ -90,6 +90,7 @@ impl Node for EntryPointNode {
                 #provisions
             }
 
+            #[doc(hidden)]
             #[no_mangle]
             #[allow(non_snake_case)]
             fn #getter_name<'a>(component: &'a dyn #component_name) -> &'a dyn #entry_point_syn_type {

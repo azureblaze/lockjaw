@@ -191,6 +191,7 @@ pub fn handle_component_attribute(
             let module_name = format_ident!("lockjaw_parent_module_{}", identifier);
             let subcomponent_name = item_trait.ident.clone();
             quote! {
+                #[doc(hidden)]
                 pub struct #module_name;
 
                 #[::lockjaw::module(install_in: #path, subcomponents: #subcomponent_name)]
