@@ -17,45 +17,43 @@ limitations under the License.
 #![allow(dead_code)]
 
 use lockjaw::{component, epilogue, injectable, Lazy};
+use std::cell::RefCell;
 
 lockjaw::prologue!("tests/lazy.rs");
 
 pub struct Counter {
-    counter: ::std::cell::RefCell<i32>,
+    counter: i32,
 }
 
-#[injectable(scope: crate::MyComponent)]
+#[injectable(scope: crate::MyComponent, container: RefCell)]
 impl Counter {
     #[inject]
     pub fn new() -> Self {
         Self {
-            counter: Default::default(),
+            counter: 0,
         }
     }
 
     pub fn get(&self) -> i32 {
-        self.counter.borrow().clone()
+        self.counter
     }
 
-    pub fn increment(&self) -> i32 {
-        let mut value = self.counter.borrow_mut();
-        *value = *value + 1;
-        *value
+    pub fn increment(&mut self) -> i32 {
+        self.counter += 1;
+        self.counter
     }
 }
 
-pub struct Foo<'a> {
+pub struct Foo {
     pub i: i32,
-    counter: &'a Counter,
 }
 
 #[injectable]
-impl Foo<'_> {
+impl Foo {
     #[inject]
-    pub fn new(counter: &'_ crate::Counter) -> Foo<'_> {
+    pub fn new(counter: &RefCell<Counter>) -> Foo {
         Foo {
-            i: counter.increment(),
-            counter,
+            i: counter.borrow_mut().increment(),
         }
     }
 }
@@ -64,7 +62,7 @@ impl Foo<'_> {
 pub trait MyComponent {
     fn foo(&self) -> Lazy<crate::Foo>;
 
-    fn counter(&self) -> &crate::Counter;
+    fn counter(&self) -> &RefCell<Counter>;
 }
 
 #[test]
@@ -79,7 +77,7 @@ pub fn before_get_not_created() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let _foo = component.foo();
 
-    assert_eq!(component.counter().get(), 0);
+    assert_eq!(component.counter().borrow().get(), 0);
 }
 
 #[test]

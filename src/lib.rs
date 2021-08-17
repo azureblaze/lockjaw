@@ -15,27 +15,35 @@ limitations under the License.
 */
 
 #![allow(stable_features)]
+#![doc = include_str ! ("../README.md")]
 
 #[doc = include_str ! ("component.md")]
 pub use lockjaw_processor::component;
 
+#[doc = include_str ! ("subcomponent.md")]
 pub use lockjaw_processor::subcomponent;
 
+#[doc = include_str ! ("define_component.md")]
 pub use lockjaw_processor::define_component;
 
+#[doc = include_str ! ("define_subcomponent.md")]
 pub use lockjaw_processor::define_subcomponent;
 
+#[doc = include_str ! ("entry_point.md")]
 pub use lockjaw_processor::entry_point;
 
 #[doc = include_str ! ("builder_modules.md")]
 pub use lockjaw_processor::builder_modules;
 
+#[doc = include_str ! ("component_visible.md")]
 pub use lockjaw_processor::component_visible;
 
 #[doc(hidden)]
 pub use lockjaw_processor::private_prologue;
 #[doc(hidden)]
 pub use lockjaw_processor::private_test_prologue;
+
+#[doc = include_str ! ("prologue.md")]
 pub use lockjaw_processor::prologue;
 
 #[doc = include_str ! ("epilogue.md")]
@@ -47,15 +55,13 @@ pub use lockjaw_processor::injectable;
 #[doc = include_str ! ("module.md")]
 pub use lockjaw_processor::module;
 
+#[doc = include_str ! ("qualifier.md")]
 pub use lockjaw_processor::qualifier;
 
 #[doc(hidden)]
 pub use lockjaw_processor::private_root_epilogue;
 #[doc(hidden)]
 pub use lockjaw_processor::private_test_epilogue;
-
-#[doc = include_str ! ("../README.md")]
-pub mod readme {}
 
 mod component_lifetime;
 

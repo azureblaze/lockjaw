@@ -40,7 +40,6 @@ pub struct BuilderModules {
     my_module: MyModule,
 }
 
-#[derive(Debug)]
 pub struct Foo {
     pub i: i32,
     pub phrase: String,
