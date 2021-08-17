@@ -14,6 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/// Creates a binding on demand
+///
+/// `T` will be created each time [`Provider.get()`](#method.get) is called, allowing multiple
+/// instances to be created.
+///
+/// This also prevents creating `T` immediately when constructing an object that depends on `T`,
+/// which allows lazy initialization and can break cyclic dependency.
+///
+/// WARNING: calling `Provider.get()` in a constructor can lead to stackoverflow, and is best
+/// avoided.
+///
+/// If only a single cached instance is needed, consider using `Lazy<T>`(Lazy) instead.
 pub struct Provider<'a, T> {
     f: Box<dyn Fn() -> T + 'a>,
 }
