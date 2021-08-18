@@ -14,6 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//! Additional nested attributes for items under a [`#[module]`](crate::module)
+//!
+//! This mod is for documentation purpose only. All nested attributes should be unqualified (always
+//! used as `#[attribute]` instead of `#[lockjaw::attribute]`).
+
 #[doc = include_str ! ("provides.md")]
 pub use lockjaw_processor::module_provides as provides;
 

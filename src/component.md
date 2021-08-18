@@ -1,5 +1,5 @@
-Annotates a trait that composes the dependency graph and provides items in
-the graph (An "injector").
+Annotates a trait that composes the dependency graph and provides items in the graph (An "injector")
+.
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
@@ -27,17 +27,31 @@ pub fn main() {
 }
 epilogue!();
 ```
-# Generated methods
 
-# `pub fn build(modules: BUILDER_MODULES) -> impl COMPONENT`
+# Component methods
 
-Create an instance of the component, with modules in `modules` installed.
+Methods on the component trait serves as entry points to the component. They can be used to retrieve
+bindings inside the component from the outside.
+
+Component methods must take only `&self` as parameter, and return a type that has bindings in the
+component. Lockjaw will generate the implementation that returns the binding.
+
+# Component builder
+
+For a trait `Foo` annotated with `#[component]`, a builder method is generated:
+
+```ignore
+impl Foo {
+    pub fn build(modules: BUILDER_MODULES) -> Box<dyn Foo>
+}
+```
+
+which an instance of the component, with modules in `modules` installed.
 `BUILDER_MODULES` is the [annotated struct](builder_modules) in the
 [`builder_modules` metadata](#modules).
 
-# `pub fn new() -> impl COMPONENT`
-
-Create an instance of the component. Only generated if `builder_modules` is not used.
+If the `builder_modules` metadata is not provided, the `modules` parameter will be omitted, and the
+signature becomes `pub fn build() -> Box<dyn Foo>`
 
 # Metadata
 
@@ -128,72 +142,11 @@ fn main() {
 epilogue!();
 ```
 
-# Component methods
-
-Methods on the component trait serves as entry points to the component. They can be used to retrieve
-bindings inside the component from the outside.
-
-Component methods must take only `&self` as parameter, and return a type that has bindings in the
-component. Lockjaw will generate the implementation that returns the binding.
-
 # Method attributes
 
 Methods in a component can have additional attributes that affects their behavior.
 
-## `#[qualified]`
+* [`#[qualified]`](component_attributes::qualified)
 
-Designates a [qualifier](qualifier) to the return type, so they can be seperated bindings of the
-same type.
-
-```
-# use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
-
-#[qualifier]
-pub struct Foo;
-
-#[qualifier]
-pub struct Bar;
-
-pub struct MyModule {}
-
-#[module]
-impl MyModule {
-    #[provides]
-    #[qualified(Foo)]
-    pub fn provide_foo_string() -> String {
-        "foo".to_owned()
-    }
-    
-    #[provides]
-    #[qualified(Bar)]
-    pub fn provide_bar_string() -> String {
-        "bar".to_owned()
-    }
-    
-    #[provides]
-    pub fn provide_regular_string() -> String {
-        "regular".to_owned()
-    }
-}
-
-#[component(modules: [MyModule])]
-pub trait MyComponent {
-
-    #[qualified(Foo)]
-    fn foo(&self) -> String;
-    
-    #[qualified(Bar)]
-    fn bar(&self) -> String;
-    
-    fn regular(&self) -> String;
-}
-
-pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
-    assert_eq!(component.foo(), "foo");
-    assert_eq!(component.bar(), "bar");
-    assert_eq!(component.regular(), "regular");
-}
-epilogue!();
-```
+Method attributes are nested under `#[component]`, and all nested attributes should be unqualified (
+always used as `#[attribute]` instead of `#[lockjaw::attribute]`).

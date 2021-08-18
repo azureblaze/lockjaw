@@ -8,6 +8,9 @@ binding with the same value it will not be deduplicated.
 The counterpart of `#[into_vec]` in Dagger is `@IntoSet`. Since `eq`/`hash` is less universally
 available in Rust `Vec<T>` is the chosen collection.
 
+If a `#[into_vec]` binding is also [`#[qualified(Q)]`](qualified), the result is collected into
+`#[qualified(Q)] Vec<T>`.
+
 ```
 # use lockjaw::*;
 # lockjaw::prologue!("src/lib.rs");

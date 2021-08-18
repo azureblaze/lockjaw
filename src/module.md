@@ -67,26 +67,6 @@ pub fn main() {
 epilogue!();
 ```
 
-# Method attributes
-
-Methods in a module must have one of the [binding type](#binding-types) attribute. It may also have
-additional [binding modifiers](#binding-modifiers)attributes that affects the behavior of the
-binding.
-
-## Binding types
-
-* [`#[provides]`](module_attributes::provides)
-* [`#[binds]`](module_attributes::binds)
-* [`#[binds_option_of]`](module_attributes::binds_option_of)
-* [`#[multibinds]`](module_attributes::multibinds)
-
-## Binding modifiers
-
-* [`#[into_vec]`](module_attributes::into_vec)
-* [`#[elements_into_vec]`](module_attributes::elements_into_vec)
-* [`#[into_map]`](module_attributes::into_map)
-* [`#[qualified]`](module_attributes::qualified)
-
 # Metadata
 
 Module additional metadata in the form of
@@ -103,9 +83,31 @@ the bindings of the component/subcomponent the module is installed in.
 **Optional** path to a [`#[define_component]`](define_component)
 /[`#[define_subcomponent]`](define_subcomponent) where the module will be automatically installed
 in, instead of having to specify the module in a component's [`modules`](component#modules)
-metadata.
-This allows a module to add bindings to a component that is defined in another crate the current
-crate is depending on, For example injecting hooks into a library that will call it.
+metadata. This allows a module to add bindings to a component that is defined in another crate the
+current crate is depending on, For example injecting hooks into a library that will call it.
 
 `install_in` is not allowed on modules with fields, as the component can't understand how to create
 the module automatically.
+
+# Method attributes
+
+Methods in a module must have one of the [binding type](#binding-types) attribute. It may also have
+additional [binding modifiers](#binding-modifiers)attributes that affects the behavior of the
+binding.
+
+Method attributes are nested under `#[module]`, and all nested attributes should be unqualified (
+always used as `#[attribute]` instead of `#[lockjaw::attribute]`).
+
+## Binding types
+
+* [`#[provides]`](module_attributes::provides)
+* [`#[binds]`](module_attributes::binds)
+* [`#[binds_option_of]`](module_attributes::binds_option_of)
+* [`#[multibinds]`](module_attributes::multibinds)
+
+## Binding modifiers
+
+* [`#[into_vec]`](module_attributes::into_vec)
+* [`#[elements_into_vec]`](module_attributes::elements_into_vec)
+* [`#[into_map]`](module_attributes::into_map)
+* [`#[qualified]`](module_attributes::qualified)

@@ -39,77 +39,17 @@ pub fn main() {
 epilogue!();
 ```
 
-# Methods
+# Method attributes
 
-## `#[inject]` methods
+Exactly one method under the `#[injectable]` should have a constructor attribute:
 
-Denotes the method as "injection constructor", which is the method lockjaw will call to create the
-object.
+* [`#[inject]`](injectable_attributes::inject)
+* [`#[factory]`](injectable_attributes::factory)
 
-An `injectble` can only have one method annotated with either `#[inject]` or `#[factory]`. The
-method must be static, and must return an instance of the struct.
+These attributes designate which method lockjaw should call to create a instance.
 
-The method can request other injectable objects with its parameters. Lockjaw will fulfil those
-objects before calling the injection constructor.
-
-## `#[factory] methods`
-
-Generate a factory that can construct the `injectable` with runtime arguments in addition to
-injected fields.
-
-Parameters in the method can be annotated with `#[runtime]`, which will be requested by the factory
-during runtime when creating the struct. Unannotated parameters will be provided with the dependency
-graph. The factory prepares the arguments, and calls the `#[factory]` method.
-
-An `injectble` can only have one method annotated with either `#[inject]` or `#[factory]`. The
-method must be static, and must return an instance of the struct.
-
-Consider using [`Provider`](Provider) instead if there are no runtime parameters, and multiple
-instances of the struct needs to be created at runtime.
-
-```
-# use lockjaw::{epilogue, injectable, module, component};
-# lockjaw::prologue!("src/lib.rs");
-
-struct MyModule;
-
-#[module]
-impl MyModule {
-    #[provides]
-    pub fn provide_string(&self) -> String {
-        "helloworld".to_owned()
-    }
-}
-
-pub struct Foo {
-    pub i: i32,
-    pub phrase: String,
-}
-
-#[injectable]
-impl Foo {
-    #[factory]
-    fn create(#[runtime] i: i32, phrase: String) -> Self {
-        Self { i, phrase }
-    }
-}
-
-#[component(modules: MyModule)]
-pub trait MyComponent {
-    fn foo_factory(&self) -> FooFactory;
-}
-
-pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::build();
-
-    let foo = component.foo_factory().create(42);
-
-    assert_eq!(foo.i, 42);
-    assert_eq!(foo.phrase, "helloworld");
-}
-
-epilogue!();
-```
+Method attributes are nested under `#[injectable]`, and all nested attributes should be
+unqualified (always used as `#[attribute]` instead of `#[lockjaw::attribute]`).
 
 ### Generated code
 

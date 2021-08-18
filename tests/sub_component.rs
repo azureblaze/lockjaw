@@ -17,33 +17,33 @@ use lockjaw::{component, module, prologue, subcomponent, Cl};
 
 prologue!("tests/sub_component.rs");
 
-struct BazModule {}
+struct SubcomponentModule {}
 
 #[module]
-impl BazModule {
+impl SubcomponentModule {
     #[provides]
     pub fn provide_i32() -> i32 {
         32
     }
 }
 
-#[subcomponent(modules: [BazModule])]
+#[subcomponent(modules: [SubcomponentModule])]
 pub trait MySubcomponent<'a> {
     fn fi64(&self) -> i64;
     fn fi32(&self) -> i32;
 }
 
-struct MyModule {}
+struct ParentComponentModule {}
 
 #[module(subcomponents: [MySubcomponent])]
-impl MyModule {
+impl ParentComponentModule {
     #[provides]
     pub fn provide_i64() -> i64 {
         64
     }
 }
 
-#[component(modules: [MyModule])]
+#[component(modules: [ParentComponentModule])]
 pub trait MyComponent {
     fn sub(&'_ self) -> Cl<dyn MySubcomponentBuilder<'_>>;
 }

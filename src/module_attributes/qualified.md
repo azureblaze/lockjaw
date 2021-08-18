@@ -1,4 +1,4 @@
-Designates a [qualifier](crate::qualifier) to the return type, so they can be seperated bindings of
+Designates a [qualifier](crate::qualifier) to the return type, so there can be seperated bindings of
 the same type.
 
 ```

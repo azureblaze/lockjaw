@@ -1,51 +1,65 @@
 # Lockjaw
 
 Lockjaw is a fully static, compile-time
-[dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) framework for 
-[Rust](https://www.rust-lang.org/) inspired by [Dagger](https://dagger.dev).
-It is also what you get when jabbed by a rusty dagger.
+[dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) framework for
+[Rust](https://www.rust-lang.org/) inspired by [Dagger](https://dagger.dev). It is also what you get
+when jabbed by a rusty dagger.
 
 Features:
-*   Compile time dependency graph validation with helpful  diagnostic messages. The code won't
-    compile if a dependency is missing or there are cyclic dependencies.
-*   Cross-crate injection. Libraries can provide different implementations like prod and test, and
-    allow clients to choose from them.
-*   Aims for feature parity with Dagger. If you have used Dagger before, lockjaw should feel
-    familiar.
-    *   Implemented:
-        *   [`@Inject`](https://dagger.dev/members-injection.html) => 
-            `#[injectable]` member injection for concrete class
-        *   [`@Provides`](https://dagger.dev/api/latest/dagger/Provides.html) => `#[provides]` bind
-            method return values
-        *   [`@Binds`](https://dagger.dev/api/latest/dagger/Binds.html) => `#[binds]` bind trait to
-            implementation.
-        *   [`@Singleton`](https://docs.oracle.com/javaee/7/api/javax/inject/Singleton.html) /
-            [`@Scope`](https://docs.oracle.com/javaee/6/api/javax/inject/Scope.html) => 
-            `scope="component"` shared instance.
-        *   [`@Named`](https://docs.oracle.com/javaee/6/api/javax/inject/Named.html) =>
-            `type NamedType = Type;`
-    *   To do:
-        *   `@Inject` constructor injection
-        *   [`Provider<T>`](https://docs.oracle.com/javaee/7/api/javax/inject/Provider.html) create
-            multiple instances at run time.
-        *   [`Lazy<T>`](https://dagger.dev/api/latest/dagger/Lazy.html) create and cache instance
-            only when used.
-        *   [Subcomponents](https://dagger.dev/dev-guide/subcomponents) Dynamically creatable
-            sub-scopes with additional bindings
-        *   [Multibindings](https://dagger.dev/dev-guide/multibindings) Collect same bindings to 
-            a set/map, useful for plugin systems.
-        *   [`@BindsOptionalOf`](https://dagger.dev/api/2.13/index.html?dagger/BindsOptionalOf.html)
-            Allow some bindings to be missing 
-        *   [Factories](https://github.com/google/auto/tree/master/factory) create objects with
-            both injected fields and runtime fields.
-        *   [Producers](https://dagger.dev/dev-guide/producers) async dependency injection. Might
-            not be too useful comparing to async/await
-            
-    
+
+* Compile time dependency graph validation with helpful diagnostic messages. The code won't compile
+  if a dependency is missing or there are cyclic dependencies.
+* Cross-crate injection. Libraries can provide different implementations like prod and test, and
+  allow clients to choose from them.
+* Aims for feature parity with Dagger. If you have used Dagger before, lockjaw should feel familiar.
+    * Implemented:
+        * [`@Inject`](https://docs.oracle.com/javaee/7/api/javax/inject/package-summary.html) =>
+          [`#[inject]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html)
+          constructor injection
+          in [`#[injectable]`](https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html)
+        * [`@Provides`](https://dagger.dev/api/latest/dagger/Provides.html)
+          => [`#[provides]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.provides.html)
+          bind method return values
+        * [`@Binds`](https://dagger.dev/api/latest/dagger/Binds.html)
+          => [`#[binds]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds.html)
+          bind trait to implementation.
+        * [`@Singleton`](https://docs.oracle.com/javaee/7/api/javax/inject/Singleton.html) /
+          [`@Scope`](https://docs.oracle.com/javaee/6/api/javax/inject/Scope.html) =>
+          [`scope=component`]((https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html#scope))
+          shared instance.
+        * [`@Named`](https://docs.oracle.com/javaee/6/api/javax/inject/Named.html) =>
+          [`#[qualified]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.qualified.html)
+        * [`Provider<T>`](https://docs.oracle.com/javaee/7/api/javax/inject/Provider.html)
+          => [`Provider<T>`](https://docs.rs/lockjaw/latest/lockjaw/struct.Provider.html) create
+          multiple instances at run time.
+        * [`Lazy<T>`](https://dagger.dev/api/latest/dagger/Lazy.html)
+          => [`Lazy<T>`](https://docs.rs/lockjaw/latest/lockjaw/struct.Lazy.html) create and cache
+          instance only when used.
+        * [Subcomponents](https://dagger.dev/dev-guide/subcomponents)
+          => [`#[subcomponent]`](https://docs.rs/lockjaw/latest/lockjaw/attr.define_component.html)
+          Dynamically creatable sub-scopes with additional bindings
+        * [Multibindings](https://dagger.dev/dev-guide/multibindings)
+          => [`#[into_vec]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.into_vec.html)
+          / [`#[into_map]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.into_map.html)
+          Collect same bindings to a Vec/HashMap, useful for plugin systems.
+        * [`@BindsOptionalOf`](https://dagger.dev/api/2.13/index.html?dagger/BindsOptionalOf.html)
+          => [`#[binds_option_of]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds_option_of.html)
+          Allow some bindings to be missing
+        * [Factories](https://github.com/google/auto/tree/master/factory)
+          => [`#[facotry]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html)
+          create objects with both injected fields and runtime fields.
+        * [Hilt](https://dagger.dev/hilt/)
+          => [`#[define_component]`](https://docs.rs/lockjaw/latest/lockjaw/attr.define_component.html)/ [`#[entry_point`](https://docs.rs/lockjaw/latest/lockjaw/attr.entry_point.html)
+          / [`install_in`](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#install_in)
+          Automatic module collection from build dependency.
+    * Todo
+        * [Producers](https://dagger.dev/dev-guide/producers) async dependency injection. Might not
+          be too useful comparing to async/await
 
 See [user guide](https://azureblaze.github.io/lockjaw/) for more information.
 
 Example:
+
 ```rust
 use lockjaw::*;
 use std::ops::Add;
@@ -88,7 +102,7 @@ struct GreeterImpl {
 impl GreeterImpl {
     // Lockjaw will call this with other injectable objects provided.
     #[inject]
-    pub fn new(greet_counter : crate::GreetCounter, phrase : String) -> Self {
+    pub fn new(greet_counter : GreetCounter, phrase : String) -> Self {
         Self {
             greet_counter,
             phrase
@@ -109,7 +123,7 @@ struct MyModule {}
 impl MyModule {
     // When ever someone needs a Greeter, use GreeterImpl as the actual implementation 
     #[binds]
-    pub fn bind_greeter(_impl : crate::GreeterImpl) -> Cl<dyn crate::Greeter> {}
+    pub fn bind_greeter(_impl : crate::GreeterImpl) -> Cl<dyn Greeter> {}
 
     // Called when a String is requested
     #[provides]
@@ -124,7 +138,7 @@ impl MyModule {
 trait MyComponent {
     // Allows creating a greeter with the component. The created object has the lifetime of the
     // component
-    fn greeter(&'_ self) -> Cl<'_, dyn crate::Greeter>;
+    fn greeter(&self) -> Cl<dyn Greeter>;
 }
 
 pub fn main() {
