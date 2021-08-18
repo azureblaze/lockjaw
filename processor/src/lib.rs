@@ -59,6 +59,16 @@ pub fn injectable(attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
+pub fn injectable_inject(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[inject] should only annotate an item under a #[injectable] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
+pub fn injectable_factory(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[factory] should only annotate an item under a #[injectable] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
 pub fn builder_modules(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| components::handle_builder_modules_attribute(attr.into(), input.into()))
 }
@@ -109,6 +119,11 @@ pub fn define_subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream
             true,
         )
     })
+}
+
+#[proc_macro_attribute]
+pub fn component_qualified(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[qualified] should only annotate an item under a #[component]/#[subcomponent]/#[define_component]/#[define_subcomponent] item. This attribute macro is for documentation purpose only and should not be called directly.")
 }
 
 #[proc_macro_attribute]

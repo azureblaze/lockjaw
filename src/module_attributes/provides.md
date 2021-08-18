@@ -58,12 +58,12 @@ epilogue!();
 
 Cannot annotate a method that is already annotated with [`#[binds]`](#binds)
 
-#### Metadata
+# Metadata
 
 `#[provides]` accept additional metadata in the form of
 `#[provides(key=value, key2=value)]`.
 
-##### scope
+## scope
 
 **Optional** fully qualified path to a [`component`](crate::component), which makes the returned
 object a scoped singleton under the `component`.
@@ -123,3 +123,18 @@ epilogue!();
 
 Scoped returned objects are shared and cannot be mutable while they commonly needs mutability. users
 must implement internal mutability.
+
+# Parameter attributes
+
+Additional attributes can be added to the parameter to affect how the method behaves.
+
+Parameter attributes are added before the parameter name, for example
+
+```ignore
+pub fn foo(#[attribute] param1: ParamType)
+```
+
+## `#[qualified]`
+
+Designates a [qualifier](crate::qualifier) to the parameter type, so a seperated binding of the same
+type can be requested.

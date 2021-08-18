@@ -1,13 +1,5 @@
-Annotates a struct to declare a binding qualifier.
-
-This allows the same type to be provided multiple times under different names. When providing/
-requesting bindings a [`#[qualified]`](injectable#qualified) attribute can be added to refer to a
-specific binding.
-
-While the [new type idiom](https://doc.rust-lang.org/rust-by-example/generics/new_types.html) may be
-preferred for such uses, qualifers are required for [`#[into_vec]`](module_attributes::into_vec)/
-[`#[into_map]`](module_attributes::into_map) since lockjaw must be able to tell the binding is a
-`Vec` or `HashMap`.
+Designates a [qualifier](crate::qualifier) to the return type, so a seperated binding of the same
+type can be requested.
 
 ```
 # use lockjaw::*;

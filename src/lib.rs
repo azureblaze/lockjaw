@@ -29,6 +29,8 @@ pub use lockjaw_processor::define_component;
 #[doc = include_str ! ("define_subcomponent.md")]
 pub use lockjaw_processor::define_subcomponent;
 
+pub mod component_attributes;
+
 #[doc = include_str ! ("entry_point.md")]
 pub use lockjaw_processor::entry_point;
 
@@ -52,13 +54,11 @@ pub use lockjaw_processor::epilogue;
 #[doc = include_str ! ("injectable.md")]
 pub use lockjaw_processor::injectable;
 
+pub mod injectable_attributes;
+
 #[doc = include_str ! ("module.md")]
 pub use lockjaw_processor::module;
 
-/// Additional nested attributes for items under a [`#[module]`](module)
-///
-/// This mod is for documentation purpose only. All nested attributes should be unqualified (always
-/// used as `#[attribute]` instead of `#[lockjaw::attribute]`).
 pub mod module_attributes;
 
 #[doc = include_str ! ("qualifier.md")]

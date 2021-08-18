@@ -7,6 +7,9 @@ metadata on the attribute in the form of `#[into_map(metadata_key: metadata_valu
 
 Keys must be compile time constant.
 
+If a `#[into_map]` binding is also [`#[qualified(Q)]`](qualified), the result is collected into
+`#[qualified(Q)] HashMap<K,V>`.
+
 # Metadata key `string_key`
 
 The map type is be `HashMap<String, V>`. The metadata should have a string value which will be used
