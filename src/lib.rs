@@ -55,6 +55,12 @@ pub use lockjaw_processor::injectable;
 #[doc = include_str ! ("module.md")]
 pub use lockjaw_processor::module;
 
+/// Additional nested attributes for items under a [`#[module]`](module)
+///
+/// This mod is for documentation purpose only. All nested attributes should be unqualified (always
+/// used as `#[attribute]` instead of `#[lockjaw::attribute]`).
+pub mod module_attributes;
+
 #[doc = include_str ! ("qualifier.md")]
 pub use lockjaw_processor::qualifier;
 
