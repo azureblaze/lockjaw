@@ -3,9 +3,8 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title></title>
-                        <base href="/">
-        
+        <title>Caveats - Lockjaw User Guide</title>
+                
 
         <!-- Custom HTML head -->
         
@@ -83,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">11.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">14.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">11.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html" class="active"><strong aria-hidden="true">14.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -144,14 +143,69 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
-<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+                        <h1 id="caveats"><a class="header" href="#caveats">Caveats</a></h1>
+<p>Due to limitations of Rust and the author's ignorance, some of lockjaw's APIs have bad ergonomics,
+and some others have abusive implementation which may break any time as Rust evolves
+(or even already broken on some platforms). Beware of these before using lockjaw.</p>
+<h2 id="abusive"><a class="header" href="#abusive">Abusive</a></h2>
+<p>These are things lockjaw do that are probably not recommended, and may easily break in the future.</p>
+<h3 id="persistent-mutable-state-between-proc_macro-invocations"><a class="header" href="#persistent-mutable-state-between-proc_macro-invocations">Persistent mutable state between proc_macro invocations</a></h3>
+<p>Lockjaw proc_macros are not independent. Most macros only gather type data in memory, which is then
+compiled to a dependency graph and used to generate the component codes.</p>
+<p>Rust does not have any guarantee when proc_macros are executed, the order they are executed, the
+threads they are executed on, or even the process they are executed on. This can easily break if the
+compilation mode changes, such as incremental compilation (some proc_marco are not re-invoked) and
+multi-threaded compilation (lockjaw macros has strict order dependency. For example <code>epilogue!()</code>
+must be the last invoked lockjaw macro).</p>
+<p>It would be nice if rust somehow allows proc_macro to generate pieces of serializable metadata that
+can be read by other proc_macros.</p>
+<h3 id="proc_macro-writes-data-to-build-script-out_dir"><a class="header" href="#proc_macro-writes-data-to-build-script-out_dir">proc_macro writes data to build script OUT_DIR</a></h3>
+<p>To handle cross-crate dependencies, lockjaw writes the bindings metadata to OUT_DIR so other crates
+can read it later.</p>
+<p>Rust only specifies the build script should write to OUT_DIR, while proc_macro seems to run on the
+same process and has the environment variable (when there is a build script, so lockjaw forces the
+user to use a build script even though it is doing nothing).</p>
+<h3 id="proc_macro-reads-data-from-disk"><a class="header" href="#proc_macro-reads-data-from-disk">proc_macro reads data from disk</a></h3>
+<p>Same as above, lockjaw proc_macro reads data from other crates output so cross-crate dependency
+graph can be generated.</p>
+<h3 id="proc_macro-writes-data-to-other-crates-out_dir"><a class="header" href="#proc_macro-writes-data-to-other-crates-out_dir">proc_macro writes data to other crate's OUT_DIR</a></h3>
+<p>Also for cross-crate dependency, the bindings metadata from other crates are required. While lockjaw
+can determine the crate's dependencies with <code>cargo tree</code> (proc_macro spawning processes is probably
+also a bad idea), it has no idea where their OUT_DIR are.</p>
+<p>The current solution is to hardcode the proc_macro library's OUT_DIR into itself with a build
+script, and let other crates that uses lockjaw also write their OUT_DIR to the proc_macro library's
+OUT_DIR so it can be looked up later. Mutating data outside a crate's bound seems really bad.</p>
+<p>This can be solved if:</p>
+<ul>
+<li>Rust allow looking up OUT_DIR of crates depended on.</li>
+<li>Rust allow compile time reflection such as inspecting whether a const string exists and reading
+its value, so the metadata can be encoded.</li>
+</ul>
+<h2 id="bad-ergonomic"><a class="header" href="#bad-ergonomic">Bad ergonomic</a></h2>
+<p>Some restrictions in the API causes additional work/confusion to users.</p>
+<h3 id="unable-to-resolve-types"><a class="header" href="#unable-to-resolve-types">Unable to resolve types</a></h3>
+<p>proc_macro are invoked at the token phase, so there are no type information available. Lockjaw is
+unable to resolve <code>use</code> or type aliases, and must force users to provide fully qualified path
+where ever it needs to compare types.</p>
+<p>To fix this Rust need to provide some other code generation mechanism that runs at later phases
+with type information.</p>
+<h3 id="unable-to-detect-path-to-current-item"><a class="header" href="#unable-to-detect-path-to-current-item">Unable to detect path to current item</a></h3>
+<p>Lockjaw need users to call <code>mod_epilogue!()</code> to provide the path of the current file, and add the
+<code>path=&quot;&quot;</code> metadata to some attributes, so it can figure out the fully qualified path of a binding.</p>
+<p>This can be improved if <a href="https://github.com/rust-lang/rfcs/pull/2320">eager macro expansion</a> is
+implemented, where lockjaw can insert <code>module_path!()</code> where needed.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                                                    <a rel="prev" href="scoped.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
                         
+                                                    <a rel="next" href="code-of-conduct.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         
                         <div style="clear: both"></div>
                     </nav>
@@ -159,7 +213,13 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                                    <a rel="prev" href="scoped.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
                 
+                                    <a rel="next" href="code-of-conduct.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
                             </nav>
 
         </div>

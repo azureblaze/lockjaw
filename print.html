@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="chapter_1.html"><strong aria-hidden="true">1.</strong> Chapter 1</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">11.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">14.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -144,7 +144,497 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="chapter-1"><a class="header" href="#chapter-1">Chapter 1</a></h1>
+                        <h1 id="lockjaw"><a class="header" href="#lockjaw">Lockjaw</a></h1>
+<p>Lockjaw is a fully static, compile-time
+<a href="https://en.wikipedia.org/wiki/Dependency_injection">dependency injection</a> framework for
+<a href="https://www.rust-lang.org/">Rust</a> inspired by <a href="https://dagger.dev">Dagger</a>. It is also what you get
+when jabbed by a rusty dagger.</p>
+<p>Features:</p>
+<ul>
+<li>Compile time dependency graph validation with helpful diagnostic messages. The code won't compile
+if a dependency is missing or there are cyclic dependencies.</li>
+<li>Cross-crate injection. Libraries can provide different implementations like prod and test, and
+allow clients to choose from them.</li>
+<li>Aims for feature parity with Dagger. If you have used Dagger before, lockjaw should feel familiar.
+<ul>
+<li>Implemented:
+<ul>
+<li><a href="https://docs.oracle.com/javaee/7/api/javax/inject/package-summary.html"><code>@Inject</code></a> =&gt;
+<a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a>
+constructor injection
+in <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html"><code>#[injectable]</code></a></li>
+<li><a href="https://dagger.dev/api/latest/dagger/Provides.html"><code>@Provides</code></a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.provides.html"><code>#[provides]</code></a>
+bind method return values</li>
+<li><a href="https://dagger.dev/api/latest/dagger/Binds.html"><code>@Binds</code></a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds.html"><code>#[binds]</code></a>
+bind trait to implementation.</li>
+<li><a href="https://docs.oracle.com/javaee/7/api/javax/inject/Singleton.html"><code>@Singleton</code></a> /
+<a href="https://docs.oracle.com/javaee/6/api/javax/inject/Scope.html"><code>@Scope</code></a> =&gt;
+<a href="(https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html#scope)"><code>scope=component</code></a>
+shared instance.</li>
+<li><a href="https://docs.oracle.com/javaee/6/api/javax/inject/Named.html"><code>@Named</code></a> =&gt;
+<a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.qualified.html"><code>#[qualified]</code></a></li>
+<li><a href="https://docs.oracle.com/javaee/7/api/javax/inject/Provider.html"><code>Provider&lt;T&gt;</code></a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/struct.Provider.html"><code>Provider&lt;T&gt;</code></a> create
+multiple instances at run time.</li>
+<li><a href="https://dagger.dev/api/latest/dagger/Lazy.html"><code>Lazy&lt;T&gt;</code></a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/struct.Lazy.html"><code>Lazy&lt;T&gt;</code></a> create and cache
+instance only when used.</li>
+<li><a href="https://dagger.dev/dev-guide/subcomponents">Subcomponents</a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.define_component.html"><code>#[subcomponent]</code></a>
+Dynamically creatable sub-scopes with additional bindings</li>
+<li><a href="https://dagger.dev/dev-guide/multibindings">Multibindings</a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.into_vec.html"><code>#[into_vec]</code></a>
+/ <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.into_map.html"><code>#[into_map]</code></a>
+Collect same bindings to a Vec/HashMap, useful for plugin systems.</li>
+<li><a href="https://dagger.dev/api/2.13/index.html?dagger/BindsOptionalOf.html"><code>@BindsOptionalOf</code></a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds_option_of.html"><code>#[binds_option_of]</code></a>
+Allow some bindings to be missing</li>
+<li><a href="https://github.com/google/auto/tree/master/factory">Factories</a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html"><code>#[facotry]</code></a>
+create objects with both injected fields and runtime fields.</li>
+<li><a href="https://dagger.dev/hilt/">Hilt</a>
+=&gt; <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.define_component.html"><code>#[define_component]</code></a>/ <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.entry_point.html"><code>#[entry_point</code></a>
+/ <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#install_in"><code>install_in</code></a>
+Automatic module collection from build dependency.</li>
+</ul>
+</li>
+<li>Todo
+<ul>
+<li><a href="https://dagger.dev/dev-guide/producers">Producers</a> async dependency injection. Might not
+be too useful comparing to async/await</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>See <a href="https://azureblaze.github.io/lockjaw/">user guide</a> for more information.</p>
+<p>Example:</p>
+<pre><pre class="playground"><code class="language-rust">use lockjaw::*;
+use std::ops::Add;
+
+lockjaw::prologue!(&quot;src/lib.rs&quot;);
+
+struct GreetCounter {
+    counter: ::std::cell::RefCell&lt;i32&gt;
+}
+
+// Allow GreetCounter to be created in the dependency graph. These bindings are available anywhere.
+#[injectable]
+impl GreetCounter {
+    // Marks a method as the inject constructor. Lockjaw will call this to create the object.
+    #[inject]
+    pub fn new() -&gt; Self {
+        Self{counter : std::cell::RefCell::new(0) }
+    }
+    
+}
+
+impl GreetCounter{
+    pub fn increment(&amp;self) -&gt; i32 {
+        let mut m = self.counter.borrow_mut();
+        *m = m.add(1);
+        m.clone()
+    }
+}
+
+pub trait Greeter {
+    fn greet(&amp;self) -&gt; String;
+}
+
+struct GreeterImpl {
+    greet_counter : crate::GreetCounter,
+    phrase : String
+}
+
+#[injectable]
+impl GreeterImpl {
+    // Lockjaw will call this with other injectable objects provided.
+    #[inject]
+    pub fn new(greet_counter : GreetCounter, phrase : String) -&gt; Self {
+        Self {
+            greet_counter,
+            phrase
+        }
+    }
+}
+
+impl Greeter for GreeterImpl{
+    fn greet(&amp;self) -&gt; String{
+        format!(&quot;{} {}&quot;, self.phrase, self.greet_counter.increment())
+    }
+}
+
+// Declare a module so we can do special bindings. These bindings are only available if the
+// component installs the module, so different bindings can be used based on the situation.
+struct MyModule {}
+#[module]
+impl MyModule {
+    // When ever someone needs a Greeter, use GreeterImpl as the actual implementation 
+    #[binds]
+    pub fn bind_greeter(_impl : crate::GreeterImpl) -&gt; Cl&lt;dyn Greeter&gt; {}
+
+    // Called when a String is requested
+    #[provides]
+    pub fn provide_string() -&gt; String {
+        &quot;helloworld&quot;.to_owned()
+    }
+}
+
+// Components stitch modules and injectables together into a dependency graph, and can create
+// objects in the graph. The component installs modules listed in `modules`
+#[component(modules: MyModule)]
+trait MyComponent {
+    // Allows creating a greeter with the component. The created object has the lifetime of the
+    // component
+    fn greeter(&amp;self) -&gt; Cl&lt;dyn Greeter&gt;;
+}
+
+pub fn main() {
+    // Creates the component
+    let component = MyComponent::new();
+    // Creates a greeter.
+    let greeter = component.greeter();
+    assert_eq!(greeter.greet(), &quot;helloworld 1&quot;);
+    // Internal states of the greeter is kept.
+    assert_eq!(greeter.greet(), &quot;helloworld 2&quot;);
+    
+    // A new greeter has a new independent set of injected objects.
+    assert_eq!(component.greeter().greet(), &quot;helloworld 1&quot;);
+}
+// called after the last use of lockjaw to perform validation and code generation
+epilogue!();
+</code></pre></pre>
+<h1 id="disclaimer"><a class="header" href="#disclaimer">Disclaimer</a></h1>
+<p>This is not an officially supported Google product.</p>
+<p>Lockjaw is currently in early development and all APIs are subjected to changes. Some feature are
+also implemented in a <a href="https://azureblaze.github.io/lockjaw/caveats.html">hacky way</a>. Use at your
+own risk.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="before-using"><a class="header" href="#before-using">Before using</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
+<p>Add lockjaw to your <code>Cargo.toml</code>:</p>
+<pre><code>lockjaw = &quot;*&quot;
+</code></pre>
+<p>:warning: <strong>Lockjaw is still in early development.</strong> all APIs are subjected to change and will break
+without notice. You may want to pin it to a specific version, but if you don't want to fix breaking
+changes, you probably should not use lockjaw yet.</p>
+<p>The proc_macro and runtime library are packaged into the same crate, so this is the only target you
+need.</p>
+<p>Lockjaw also needs some environment setup, and requires a
+<a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html">build script</a>. Add <code>build.rs</code> next to
+<code>Cargo.toml</code>, and call <code>lockjaw::build_script()</code> in <code>main()</code> inside it:</p>
+<pre><pre class="playground"><code class="language-rust">// build.rs
+fn main(){
+    lockjaw::build_script();
+}
+</code></pre></pre>
+<p>Lockjaw will ask you to do this if this step is missing.</p>
+<p>You also must call the <code>lockjaw::epilogue!()</code> macro in the root of your crate (<code>lib.rs</code> or
+<code>main.rs</code>) after all other uses of lockjaw, preferably at the end of the file.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="injecting-objects"><a class="header" href="#injecting-objects">Injecting Objects</a></h1>
+<h2 id="declaring-object-injections"><a class="header" href="#declaring-object-injections">Declaring object injections</a></h2>
+<p>Lockjaw will create objects for you and satisfy their dependencies, but you need to let lockjaw know
+how to create an object and what their dependencies are.</p>
+<h2 id="constructor-injection"><a class="header" href="#constructor-injection">Constructor injection</a></h2>
+<p>Lockjaw can create structs by calling a static method in the struct marked with the <code>#[inject]</code>
+attribute. Lockjaw will satisfy the parameters with other injections. The impl block must be
+annotated with <code>#[injectable]</code>, as Rust proc_macro cannot be applied to methods.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Foo{
+    bar : Bar,
+    i : i32
+}
+
+#[injectable]
+impl Foo {
+    #[inject]
+    pub fn new(bar : crate::Bar) -&gt; Foo {
+        Foo {
+            bar,
+            i : 123
+        }
+    } 
+}
+<span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="requesting-objects"><a class="header" href="#requesting-objects">Requesting objects</a></h1>
+<p><code>#[injectable]</code> and <code>#[provides]</code> defines how objects can be created, but they won't be too useful
+unless someone tries to actually create an object.</p>
+<p>Injected objects are created through a <code>#[component]</code>, which annotates a trait with methods that
+return the requested types.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Foo {}
+
+#[injectable]
+impl Foo {
+    #[inject]
+    pub fn new() -&gt; Self {
+        Self {}
+    }
+}
+
+#[component]
+pub trait MyComponent {
+    fn foo(&amp;self) -&gt; crate::Foo();
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The methods should always take <code>&amp;self</code>.</p>
+<p>lockjaw will generate the implementation, including a static <code>new()</code> method that can be called to
+create the component(as an opaque trait, box it if you want), which can be used to request the
+objects.</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let my_component = MyComponent::new();
+    let foo = my_component.foo();
+}
+
+epilogue!();
+</code></pre></pre>
+<p>Note that if you forgot to call <code>epilogue!()</code>, or if there are any dependency issues, <code>new()</code> won't
+be generated.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="injecting-objects-1"><a class="header" href="#injecting-objects-1">Injecting Objects</a></h1>
+<h2 id="declaring-object-injections-1"><a class="header" href="#declaring-object-injections-1">Declaring object injections</a></h2>
+<p>Lockjaw will create objects for you and satisfy their dependencies, but you need to let lockjaw know
+how to create an object and what their dependencies are.</p>
+<h2 id="constructor-injection-1"><a class="header" href="#constructor-injection-1">Constructor injection</a></h2>
+<p>Lockjaw can create structs by calling a static method in the struct marked with the <code>#[inject]</code>
+attribute. Lockjaw will satisfy the parameters with other injections. The impl block must be
+annotated with <code>#[injectable]</code>, as Rust proc_macro cannot be applied to methods.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Foo{
+    bar : Bar,
+    i : i32
+}
+
+#[injectable]
+impl Foo {
+    #[inject]
+    pub fn new(bar : crate::Bar) -&gt; Foo {
+        Foo {
+            bar,
+            i : 123
+        }
+    } 
+}
+<span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="installing-modules"><a class="header" href="#installing-modules">Installing Modules</a></h1>
+<p><code>#[injectables]</code> are global bindings, which mean they are included into any dependency graph. But
+for <code>#[provides]</code> which bindings should be available should be specified, as it may be situational.</p>
+<p>Each component should declare a list of modules they want to use with a<br />
+using the <code>modules</code> field in the <code>#[component]</code> attribute.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[component(modules=[MyModule])]
+trait MyComponent {
+    fn my_module_binding() -&gt; MyModuleBinding;
+}
+<span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="scoped-bindings"><a class="header" href="#scoped-bindings">Scoped Bindings</a></h1>
+<p>By default everytime a dependency needs to be satisfied, lockjaw creates a new instance, and move it
+to the dependency (field or method parameter). This is not always desired since an object may be
+used to carry some common state, and we want every type that depends on it to get a reference to a
+single instance instead (singletons).</p>
+<p>To do this, the <code>scope</code> metadata can be specified on a <code>#[injecatable]</code>, <code>#[provides]</code>, or
+<code>#[binds]</code>, passing a component's fully qualified path as a string literal. This means there are
+only one instance of the type for objects created by the same instance of component (they are not
+global singletons, you can still have multiple instances if you have multiple components).</p>
+<p>Other types can depend on a scoped type as a reference (<code>&amp;T</code>) or <code>Cl&lt;T&gt;</code></p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Foo {}
+
+#[injectable(scope=&quot;crate::MyComponent&quot;)]
+impl Foo {
+    #[inject]
+    pub fn new() -&gt; Self {
+        Self {}
+    }
+}
+
+struct Bar&lt;'a&gt; {
+    foo: &amp;'a Foo
+}
+
+#[injectable]
+impl Bar&lt;'_&gt; {
+    #[inject]
+    pub fn new(foo: &amp;'_ Foo) -&gt; Bar&lt;'_&gt; {
+        Bar { foo }
+    }
+}
+
+#[component]
+trait MyComponent {
+    fn bar(&amp;'_ self) -&gt; Bar&lt;'_&gt;;
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>Cl&lt;T&gt;</code> allows a type to decouple itself from whether the type depended on is scoped or not. It may
+be an owned instance or a shared instance, but the type does not care as it will not try to move it.</p>
+<p>Scoped types or types that depends on them will have the same lifetime as the component.</p>
+<p>Note that in most uses a scoped type probably should be mutable to make it useful. However we cannot
+request it as <code>&amp;mut T</code> since certainly multiple objects will try to request it. Scoped types must
+implement <a href="https://doc.rust-lang.org/reference/interior-mutability.html">interior mutability</a> itself
+and use an immutable interface.</p>
+<p>While lockjaw implementing an automatic <code>RefCell&lt;T&gt;</code> might make the user's life easier, it does not
+suit multi-threaded use cases well. It is better that the user make careful consideration of its
+mutability and threading story.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="caveats"><a class="header" href="#caveats">Caveats</a></h1>
+<p>Due to limitations of Rust and the author's ignorance, some of lockjaw's APIs have bad ergonomics,
+and some others have abusive implementation which may break any time as Rust evolves
+(or even already broken on some platforms). Beware of these before using lockjaw.</p>
+<h2 id="abusive"><a class="header" href="#abusive">Abusive</a></h2>
+<p>These are things lockjaw do that are probably not recommended, and may easily break in the future.</p>
+<h3 id="persistent-mutable-state-between-proc_macro-invocations"><a class="header" href="#persistent-mutable-state-between-proc_macro-invocations">Persistent mutable state between proc_macro invocations</a></h3>
+<p>Lockjaw proc_macros are not independent. Most macros only gather type data in memory, which is then
+compiled to a dependency graph and used to generate the component codes.</p>
+<p>Rust does not have any guarantee when proc_macros are executed, the order they are executed, the
+threads they are executed on, or even the process they are executed on. This can easily break if the
+compilation mode changes, such as incremental compilation (some proc_marco are not re-invoked) and
+multi-threaded compilation (lockjaw macros has strict order dependency. For example <code>epilogue!()</code>
+must be the last invoked lockjaw macro).</p>
+<p>It would be nice if rust somehow allows proc_macro to generate pieces of serializable metadata that
+can be read by other proc_macros.</p>
+<h3 id="proc_macro-writes-data-to-build-script-out_dir"><a class="header" href="#proc_macro-writes-data-to-build-script-out_dir">proc_macro writes data to build script OUT_DIR</a></h3>
+<p>To handle cross-crate dependencies, lockjaw writes the bindings metadata to OUT_DIR so other crates
+can read it later.</p>
+<p>Rust only specifies the build script should write to OUT_DIR, while proc_macro seems to run on the
+same process and has the environment variable (when there is a build script, so lockjaw forces the
+user to use a build script even though it is doing nothing).</p>
+<h3 id="proc_macro-reads-data-from-disk"><a class="header" href="#proc_macro-reads-data-from-disk">proc_macro reads data from disk</a></h3>
+<p>Same as above, lockjaw proc_macro reads data from other crates output so cross-crate dependency
+graph can be generated.</p>
+<h3 id="proc_macro-writes-data-to-other-crates-out_dir"><a class="header" href="#proc_macro-writes-data-to-other-crates-out_dir">proc_macro writes data to other crate's OUT_DIR</a></h3>
+<p>Also for cross-crate dependency, the bindings metadata from other crates are required. While lockjaw
+can determine the crate's dependencies with <code>cargo tree</code> (proc_macro spawning processes is probably
+also a bad idea), it has no idea where their OUT_DIR are.</p>
+<p>The current solution is to hardcode the proc_macro library's OUT_DIR into itself with a build
+script, and let other crates that uses lockjaw also write their OUT_DIR to the proc_macro library's
+OUT_DIR so it can be looked up later. Mutating data outside a crate's bound seems really bad.</p>
+<p>This can be solved if:</p>
+<ul>
+<li>Rust allow looking up OUT_DIR of crates depended on.</li>
+<li>Rust allow compile time reflection such as inspecting whether a const string exists and reading
+its value, so the metadata can be encoded.</li>
+</ul>
+<h2 id="bad-ergonomic"><a class="header" href="#bad-ergonomic">Bad ergonomic</a></h2>
+<p>Some restrictions in the API causes additional work/confusion to users.</p>
+<h3 id="unable-to-resolve-types"><a class="header" href="#unable-to-resolve-types">Unable to resolve types</a></h3>
+<p>proc_macro are invoked at the token phase, so there are no type information available. Lockjaw is
+unable to resolve <code>use</code> or type aliases, and must force users to provide fully qualified path
+where ever it needs to compare types.</p>
+<p>To fix this Rust need to provide some other code generation mechanism that runs at later phases
+with type information.</p>
+<h3 id="unable-to-detect-path-to-current-item"><a class="header" href="#unable-to-detect-path-to-current-item">Unable to detect path to current item</a></h3>
+<p>Lockjaw need users to call <code>mod_epilogue!()</code> to provide the path of the current file, and add the
+<code>path=&quot;&quot;</code> metadata to some attributes, so it can figure out the fully qualified path of a binding.</p>
+<p>This can be improved if <a href="https://github.com/rust-lang/rfcs/pull/2320">eager macro expansion</a> is
+implemented, where lockjaw can insert <code>module_path!()</code> where needed.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="code-of-conduct"><a class="header" href="#code-of-conduct">Code of Conduct</a></h1>
+<h2 id="our-pledge"><a class="header" href="#our-pledge">Our Pledge</a></h2>
+<p>In the interest of fostering an open and welcoming environment, we as
+contributors and maintainers pledge to making participation in our project and
+our community a harassment-free experience for everyone, regardless of age, body
+size, disability, ethnicity, gender identity and expression, level of
+experience, education, socio-economic status, nationality, personal appearance,
+race, religion, or sexual identity and orientation.</p>
+<h2 id="our-standards"><a class="header" href="#our-standards">Our Standards</a></h2>
+<p>Examples of behavior that contributes to creating a positive environment
+include:</p>
+<ul>
+<li>Using welcoming and inclusive language</li>
+<li>Being respectful of differing viewpoints and experiences</li>
+<li>Gracefully accepting constructive criticism</li>
+<li>Focusing on what is best for the community</li>
+<li>Showing empathy towards other community members</li>
+</ul>
+<p>Examples of unacceptable behavior by participants include:</p>
+<ul>
+<li>The use of sexualized language or imagery and unwelcome sexual attention or
+advances</li>
+<li>Trolling, insulting/derogatory comments, and personal or political attacks</li>
+<li>Public or private harassment</li>
+<li>Publishing others' private information, such as a physical or electronic
+address, without explicit permission</li>
+<li>Other conduct which could reasonably be considered inappropriate in a
+professional setting</li>
+</ul>
+<h2 id="our-responsibilities"><a class="header" href="#our-responsibilities">Our Responsibilities</a></h2>
+<p>Project maintainers are responsible for clarifying the standards of acceptable
+behavior and are expected to take appropriate and fair corrective action in
+response to any instances of unacceptable behavior.</p>
+<p>Project maintainers have the right and responsibility to remove, edit, or reject
+comments, commits, code, wiki edits, issues, and other contributions that are
+not aligned to this Code of Conduct, or to ban temporarily or permanently any
+contributor for other behaviors that they deem inappropriate, threatening,
+offensive, or harmful.</p>
+<h2 id="scope"><a class="header" href="#scope">Scope</a></h2>
+<p>This Code of Conduct applies both within project spaces and in public spaces
+when an individual is representing the project or its community. Examples of
+representing a project or community include using an official project e-mail
+address, posting via an official social media account, or acting as an appointed
+representative at an online or offline event. Representation of a project may be
+further defined and clarified by project maintainers.</p>
+<p>This Code of Conduct also applies outside the project spaces when the Project
+Steward has a reasonable belief that an individual's behavior may have a
+negative impact on the project or its community.</p>
+<h2 id="conflict-resolution"><a class="header" href="#conflict-resolution">Conflict Resolution</a></h2>
+<p>We do not believe that all conflict is bad; healthy debate and disagreement
+often yield positive results. However, it is never okay to be disrespectful or
+to engage in behavior that violates the project’s code of conduct.</p>
+<p>If you see someone violating the code of conduct, you are encouraged to address the behavior
+directly with those involved. Many issues can be resolved quickly and easily, and this gives people
+more control over the outcome of their dispute. If you are unable to resolve the matter for any
+reason, or if the behavior is threatening or harassing, report it. We are dedicated to providing an
+environment where participants feel welcome and safe.</p>
+<p>Reports should be directed to azureblaze, the Project Steward(s) for Lockjaw. It is the Project
+Steward’s duty to receive and address reported violations of the code of conduct. They will then
+work with a committee consisting of representatives from the Open Source Programs Office and the
+Google Open Source Strategy team. If for any reason you are uncomfortable reaching out to the
+Project Steward, please email opensource@google.com.</p>
+<p>We will investigate every complaint, but you may not receive a direct response. We will use our
+discretion in determining when and how to follow up on reported incidents, which may range from not
+taking action to permanent expulsion from the project and project-sponsored spaces. We will notify
+the accused of the
+report and provide them an opportunity to discuss it before any action is taken.
+The identity of the reporter will be omitted from the details of the report
+supplied to the accused. In potentially harmful situations, such as ongoing
+harassment or threats to anyone's safety, we may take action without notice.</p>
+<h2 id="attribution"><a class="header" href="#attribution">Attribution</a></h2>
+<p>This Code of Conduct is adapted from the Contributor Covenant, version 1.4,
+available at
+https://www.contributor-covenant.org/version/1/4/code-of-conduct.html</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="how-to-contribute"><a class="header" href="#how-to-contribute">How to Contribute</a></h1>
+<p>We'd love to accept your patches and contributions to this project. There are
+just a few small guidelines you need to follow.</p>
+<h2 id="contributor-license-agreement"><a class="header" href="#contributor-license-agreement">Contributor License Agreement</a></h2>
+<p>Contributions to this project must be accompanied by a Contributor License
+Agreement. You (or your employer) retain the copyright to your contribution;
+this simply gives us permission to use and redistribute your contributions as
+part of the project. Head over to <a href="https://cla.developers.google.com/">https://cla.developers.google.com/</a> to see
+your current agreements on file or to sign a new one.</p>
+<p>You generally only need to submit a CLA once, so if you've already submitted one
+(even if it was for a different project), you probably don't need to do it
+again.</p>
+<h2 id="code-reviews"><a class="header" href="#code-reviews">Code reviews</a></h2>
+<p>All submissions, including submissions by project members, require review. We
+use GitHub pull requests for this purpose. Consult
+<a href="https://help.github.com/articles/about-pull-requests/">GitHub Help</a> for more
+information on using pull requests.</p>
+<h2 id="community-guidelines"><a class="header" href="#community-guidelines">Community Guidelines</a></h2>
+<p>This project follows <a href="https://opensource.google/conduct/">Google's Open Source Community
+Guidelines</a>.</p>
 
                     </main>
 
