@@ -122,6 +122,46 @@ pub fn module(attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
+pub fn module_provides(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[provides] should only annotate an item under a #[module] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
+pub fn module_binds(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[binds] should only annotate an item under a #[module] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
+pub fn module_binds_option_of(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[binds_option_of] should only annotate an item under a #[module] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
+pub fn module_multibinds(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[multibinds] should only annotate an item under a #[module] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
+pub fn module_into_vec(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[into_vec] should only annotate an item under a #[module] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
+pub fn module_elements_into_vec(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[elements_into_vec] should only annotate an item under a #[module] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
+pub fn module_into_map(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[into_map] should only annotate an item under a #[module] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
+pub fn module_qualified(_attr: TokenStream, _input: TokenStream) -> TokenStream {
+    doc_proc_macro("#[qualified] should only annotate an item under a #[module] item. This attribute macro is for documentation purpose only and should not be called directly.")
+}
+
+#[proc_macro_attribute]
 pub fn qualifier(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| qualifier::handle_qualifier_attribute(attr.into(), input.into()))
 }
@@ -339,4 +379,8 @@ fn merge_manifest(
         result.merge_from(&dep_manifest);
     }
     Ok(result)
+}
+
+fn doc_proc_macro(message: &str) -> TokenStream {
+    (quote! { compile_error!(#message)}).into()
 }
