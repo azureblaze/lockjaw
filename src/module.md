@@ -104,7 +104,6 @@ the bindings of the component/subcomponent the module is installed in.
 /[`#[define_subcomponent]`](define_subcomponent) where the module will be automatically installed
 in, instead of having to specify the module in a component's [`modules`](component#modules)
 metadata.
-
 This allows a module to add bindings to a component that is defined in another crate the current
 crate is depending on, For example injecting hooks into a library that will call it.
 
