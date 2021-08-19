@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded "><a href="setup.html" class="active"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">11.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">14.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html" class="active"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">11.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">14.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -144,31 +144,40 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
-<p>Add lockjaw to your <code>Cargo.toml</code>:</p>
-<pre><code>lockjaw = &quot;*&quot;
+<p>Add lockjaw to the <code>[dependencies]</code> and <code>[build_dependencies]</code> section of your <code>Cargo.toml</code>:</p>
+<pre><code class="language-toml">[dependencies]
+lockjaw = &quot;*&quot;
+
+[build-dependencies]
+lockjaw = &quot;*&quot;
 </code></pre>
-<p>:warning: <strong>Lockjaw is still in early development.</strong> all APIs are subjected to change and will break
-without notice. You may want to pin it to a specific version, but if you don't want to fix breaking
-changes, you probably should not use lockjaw yet.</p>
 <p>The proc_macro and runtime library are packaged into the same crate, so this is the only target you
 need.</p>
 <p>Lockjaw also needs some environment setup, and requires a
 <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html">build script</a>. Add <code>build.rs</code> next to
-<code>Cargo.toml</code>, and call <code>lockjaw::build_script()</code> in <code>main()</code> inside it:</p>
-<pre><pre class="playground"><code class="language-rust">// build.rs
-fn main(){
+<code>Cargo.toml</code>, and
+call <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/fn.build_script.html"><code>lockjaw::build_script()</code></a>
+in <code>main()</code> inside it:</p>
+<pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/build.rs
+fn main() {
     lockjaw::build_script();
 }
-</code></pre></pre>
+</code></pre>
 <p>Lockjaw will ask you to do this if this step is missing.</p>
-<p>You also must call the <code>lockjaw::epilogue!()</code> macro in the root of your crate (<code>lib.rs</code> or
+<p>You also must call
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/macro.epilogue.html"><code>lockjaw::epilogue!()</code></a> macro in the
+root of your crate (<code>lib.rs</code> or
 <code>main.rs</code>) after all other uses of lockjaw, preferably at the end of the file.</p>
+<pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
+lockjaw::epilogue!();
+</code></pre>
+<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/">Source</a> of this chapter</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="before.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="glossary.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
@@ -182,7 +191,7 @@ fn main(){
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="before.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="glossary.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
