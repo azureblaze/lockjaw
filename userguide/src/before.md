@@ -41,6 +41,6 @@ decide to remove Lockjaw in the future, you may need to rewrite the whole projec
 * You also like to live dangerously.
 * You are experimenting things.
 * You are working on a small project, and it won't be maintained in the future.
-* Someone else is maintaining the project in the future, and you are a horrible individual.
+* Someone else will be maintaining the project in the future, and you are a horrible individual.
 * You love dependency injection so much you are willing to patch bugs yourself, and freeze Rust
   version if it breaks Lockjaw.
