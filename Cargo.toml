@@ -23,6 +23,7 @@ members = [
     "compile_tests",
     "compile_tests/duplicated_root_epilogue/dep",
     "compile_tests/duplicated_root_epilogue",
+    "userguide/projects/setup",
 ]
 
 [package]
