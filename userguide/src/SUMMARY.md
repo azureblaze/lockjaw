@@ -1,8 +1,10 @@
 # Summary
 
 [Introduction](intro.md)
-
 [Before using](before.md)
+[Glossary](glossary.md)
+
+---
 
 - [Project Setup](./setup.md)
 - [Injecting Objects](inject.md)

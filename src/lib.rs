@@ -100,4 +100,5 @@ mod lazy;
 
 pub use lazy::Lazy;
 
+#[doc = include_str ! ("singleton.md")]
 pub trait Singleton {}
