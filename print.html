@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">11.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">14.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Factory</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">12.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">14.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">15.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -251,6 +251,7 @@ version if it breaks Lockjaw.</li>
 <p>In all Lockjaw documentations, &quot;module&quot; refers to a <em>dependency injection module</em>. When referring to
 Rust modules <code>mod</code> will be used instead.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
+<h2 id="cargo"><a class="header" href="#cargo">Cargo</a></h2>
 <p>Add lockjaw to the <code>[dependencies]</code> and <code>[build_dependencies]</code> section of your <code>Cargo.toml</code>:</p>
 <pre><code class="language-toml">[dependencies]
 lockjaw = &quot;*&quot;
@@ -260,6 +261,7 @@ lockjaw = &quot;*&quot;
 </code></pre>
 <p>The proc_macro and runtime library are packaged into the same crate, so this is the only target you
 need.</p>
+<h2 id="build-script"><a class="header" href="#build-script">Build script</a></h2>
 <p>Lockjaw also needs some environment setup, and requires a
 <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html">build script</a>. Add <code>build.rs</code> next to
 <code>Cargo.toml</code>, and
@@ -271,6 +273,22 @@ fn main() {
 }
 </code></pre>
 <p>Lockjaw will ask you to do this if this step is missing.</p>
+<h2 id="prologue-macro"><a class="header" href="#prologue-macro">Prologue macro</a></h2>
+<p>Before using any Lockjaw attribute macros, the
+lockjaw <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/macro.prologue.html"><code>prologue!()</code></a> macro must be
+called:</p>
+<pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
+lockjaw::prologue!(&quot;src/main.rs&quot;);
+</code></pre>
+<p>The file path of the current source file should be passed to the prologue.</p>
+<p>Lockjaw need to perform some static analysis on the current source file to understand type names,
+which is an integral part of a dependency injection framework. If a type is encountered, what is its
+fully qualified name? Is it something imported with a <code>use</code> declaration? or if it is a locally
+declared, what is the <code>mod</code> path to the local scope?</p>
+<p>Lockjaw also generates a test to verify the source path is correct. However passing a wrong path
+often result in weird type resolution errors at compile time. Double-check the source path if there
+are type resolution issues.</p>
+<h2 id="epilogue-macro"><a class="header" href="#epilogue-macro">Epilogue macro</a></h2>
 <p>You also must call
 the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/macro.epilogue.html"><code>lockjaw::epilogue!()</code></a> macro in the
 root of your crate (<code>lib.rs</code> or
@@ -280,33 +298,94 @@ lockjaw::epilogue!();
 </code></pre>
 <p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/">Source</a> of this chapter</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="injecting-objects"><a class="header" href="#injecting-objects">Injecting Objects</a></h1>
-<h2 id="declaring-object-injections"><a class="header" href="#declaring-object-injections">Declaring object injections</a></h2>
-<p>Lockjaw will create objects for you and satisfy their dependencies, but you need to let lockjaw know
-how to create an object and what their dependencies are.</p>
+<p>Lockjaw can create objects for you, but you need to let lockjaw know how to create the object and
+what is needed to create them. These recipes for object creation is called <em>bindings</em>, which forms
+nodes in a dependency graph, and add edges to other bindings it depends on.</p>
+<p>The most simple binding is constructor injection binding.</p>
 <h2 id="constructor-injection"><a class="header" href="#constructor-injection">Constructor injection</a></h2>
-<p>Lockjaw can create structs by calling a static method in the struct marked with the <code>#[inject]</code>
-attribute. Lockjaw will satisfy the parameters with other injections. The impl block must be
-annotated with <code>#[injectable]</code>, as Rust proc_macro cannot be applied to methods.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct Foo{
-    bar : Bar,
-    i : i32
-}
+<p>A binding can be created for a struct by using a constructor method, which is a static method
+associated to the struct that returns a new instance. The field constructor ( <code>Foo {a : 0, ...}</code>) is
+not directly used by Lockjaw since methods are more expressive when a none injected field needs a
+default value or when transformations are needed on the input.</p>
+<p>A struct can be made injectable by marking a struct <code>impl</code> block with
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html"><code>#[injectable]</code></a> attribute, and
+then mark the constructor method
+as <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a>.</p>
+<pre><code class="language-rust no_run noplayground">struct Foo {}
 
 #[injectable]
 impl Foo {
     #[inject]
-    pub fn new(bar : crate::Bar) -&gt; Foo {
-        Foo {
-            bar,
-            i : 123
-        }
-    } 
+    pub fn new() -&gt; Foo {
+        Foo {}
+    }
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
+<p>Now Lockjaw understands when trying to create <code>Foo</code>, it should call <code>Foo::new()</code>.</p>
+<p>Note that since it is an associated method, constructor injection only works on a type you <em>own</em> (
+you can actually change its implementation). For foreign types like imported crates a different
+method will be discussed in the <a href="provides.html">providing objects</a> chapter.</p>
+<h2 id="constructor-dependencies"><a class="header" href="#constructor-dependencies">Constructor dependencies</a></h2>
+<p>To create an object, it may many need objects of other types. This is called <em>dependencies</em>. In this
+example, <code>Bar</code> <em>depends</em> on having an instance of <code>Foo</code> to be created.</p>
+<p>In constructor injections, dependencies are listed with its parameters. Lockjaw will try to use
+available bindings to create all arguments and pass them to the constructor. If a parameter does not
+have a binding, Lockjaw will fail compilation with <em>missing bindings</em>.</p>
+<p>Note that since we are not asking Lockjaw to actually create the object yet, binding validation
+won't be performed. Lockjaw is assuming there are some bindings else where it does not know about
+yet.</p>
+<pre><code class="language-rust no_run noplayground">struct Bar {
+    foo: Foo,
+    i: i32,
+}
+
+#[injectable]
+impl Bar {
+    #[inject]
+    pub fn new(foo: Foo) -&gt; Bar {
+        Bar { foo, i: 42 }
+    }
+}
+</code></pre>
+<p>If the struct has other fields that can be initialized without injection, like <code>i</code>, it can be
+directly assigned. If the object needs a runtime value (for example, if <code>i</code> needs to be assigned by
+the caller with a user input), then <a href="factory.html">factories</a> will be needed, which will be discussed
+later.</p>
+<h2 id="manual-injection"><a class="header" href="#manual-injection">Manual injection</a></h2>
+<p>For a moment let's forget about Lockjaw, and try to do dependency injection manually. With the
+binding information we have we can write a factory that can create the objects we just defined:</p>
+<pre><code class="language-rust no_run noplayground">struct Factory {}
+
+impl Factory {
+    pub fn create_foo(&amp;self) -&gt; Foo {
+        Foo::new()
+    }
+
+    pub fn create_bar(&amp;self) -&gt; Bar {
+        Bar::new(self.create_foo())
+    }
+}
+
+fn main() {
+    let factory = Factory {};
+
+    let _foo = factory.create_foo();
+    let _bar = factory.create_bar();
+}
+
+#[test]
+fn test() {
+    main()
+}
+
+epilogue!();
+</code></pre>
+<p>Note that there is one method for each binding, only taking <code>&amp;self</code> and returning the binding type.
+Inside the method it calls the constructor method we just marked, and calls other binding methods to
+generate the argument.</p>
+<p>Writing the factory by hand gets complicated and boring fast. In the next chapter we will ask
+Lockjaw to generate it.</p>
+<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/inject/">Source</a> of this chapter</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="requesting-objects"><a class="header" href="#requesting-objects">Requesting objects</a></h1>
 <p><code>#[injectable]</code> and <code>#[provides]</code> defines how objects can be created, but they won't be too useful
 unless someone tries to actually create an object.</p>
@@ -345,33 +424,94 @@ epilogue!();
 <p>Note that if you forgot to call <code>epilogue!()</code>, or if there are any dependency issues, <code>new()</code> won't
 be generated.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="injecting-objects-1"><a class="header" href="#injecting-objects-1">Injecting Objects</a></h1>
-<h2 id="declaring-object-injections-1"><a class="header" href="#declaring-object-injections-1">Declaring object injections</a></h2>
-<p>Lockjaw will create objects for you and satisfy their dependencies, but you need to let lockjaw know
-how to create an object and what their dependencies are.</p>
+<p>Lockjaw can create objects for you, but you need to let lockjaw know how to create the object and
+what is needed to create them. These recipes for object creation is called <em>bindings</em>, which forms
+nodes in a dependency graph, and add edges to other bindings it depends on.</p>
+<p>The most simple binding is constructor injection binding.</p>
 <h2 id="constructor-injection-1"><a class="header" href="#constructor-injection-1">Constructor injection</a></h2>
-<p>Lockjaw can create structs by calling a static method in the struct marked with the <code>#[inject]</code>
-attribute. Lockjaw will satisfy the parameters with other injections. The impl block must be
-annotated with <code>#[injectable]</code>, as Rust proc_macro cannot be applied to methods.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct Foo{
-    bar : Bar,
-    i : i32
-}
+<p>A binding can be created for a struct by using a constructor method, which is a static method
+associated to the struct that returns a new instance. The field constructor ( <code>Foo {a : 0, ...}</code>) is
+not directly used by Lockjaw since methods are more expressive when a none injected field needs a
+default value or when transformations are needed on the input.</p>
+<p>A struct can be made injectable by marking a struct <code>impl</code> block with
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html"><code>#[injectable]</code></a> attribute, and
+then mark the constructor method
+as <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a>.</p>
+<pre><code class="language-rust no_run noplayground">struct Foo {}
 
 #[injectable]
 impl Foo {
     #[inject]
-    pub fn new(bar : crate::Bar) -&gt; Foo {
-        Foo {
-            bar,
-            i : 123
-        }
-    } 
+    pub fn new() -&gt; Foo {
+        Foo {}
+    }
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
+<p>Now Lockjaw understands when trying to create <code>Foo</code>, it should call <code>Foo::new()</code>.</p>
+<p>Note that since it is an associated method, constructor injection only works on a type you <em>own</em> (
+you can actually change its implementation). For foreign types like imported crates a different
+method will be discussed in the <a href="provides.html">providing objects</a> chapter.</p>
+<h2 id="constructor-dependencies-1"><a class="header" href="#constructor-dependencies-1">Constructor dependencies</a></h2>
+<p>To create an object, it may many need objects of other types. This is called <em>dependencies</em>. In this
+example, <code>Bar</code> <em>depends</em> on having an instance of <code>Foo</code> to be created.</p>
+<p>In constructor injections, dependencies are listed with its parameters. Lockjaw will try to use
+available bindings to create all arguments and pass them to the constructor. If a parameter does not
+have a binding, Lockjaw will fail compilation with <em>missing bindings</em>.</p>
+<p>Note that since we are not asking Lockjaw to actually create the object yet, binding validation
+won't be performed. Lockjaw is assuming there are some bindings else where it does not know about
+yet.</p>
+<pre><code class="language-rust no_run noplayground">struct Bar {
+    foo: Foo,
+    i: i32,
+}
+
+#[injectable]
+impl Bar {
+    #[inject]
+    pub fn new(foo: Foo) -&gt; Bar {
+        Bar { foo, i: 42 }
+    }
+}
+</code></pre>
+<p>If the struct has other fields that can be initialized without injection, like <code>i</code>, it can be
+directly assigned. If the object needs a runtime value (for example, if <code>i</code> needs to be assigned by
+the caller with a user input), then <a href="factory.html">factories</a> will be needed, which will be discussed
+later.</p>
+<h2 id="manual-injection-1"><a class="header" href="#manual-injection-1">Manual injection</a></h2>
+<p>For a moment let's forget about Lockjaw, and try to do dependency injection manually. With the
+binding information we have we can write a factory that can create the objects we just defined:</p>
+<pre><code class="language-rust no_run noplayground">struct Factory {}
+
+impl Factory {
+    pub fn create_foo(&amp;self) -&gt; Foo {
+        Foo::new()
+    }
+
+    pub fn create_bar(&amp;self) -&gt; Bar {
+        Bar::new(self.create_foo())
+    }
+}
+
+fn main() {
+    let factory = Factory {};
+
+    let _foo = factory.create_foo();
+    let _bar = factory.create_bar();
+}
+
+#[test]
+fn test() {
+    main()
+}
+
+epilogue!();
+</code></pre>
+<p>Note that there is one method for each binding, only taking <code>&amp;self</code> and returning the binding type.
+Inside the method it calls the constructor method we just marked, and calls other binding methods to
+generate the argument.</p>
+<p>Writing the factory by hand gets complicated and boring fast. In the next chapter we will ask
+Lockjaw to generate it.</p>
+<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/inject/">Source</a> of this chapter</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="installing-modules"><a class="header" href="#installing-modules">Installing Modules</a></h1>
 <p><code>#[injectables]</code> are global bindings, which mean they are included into any dependency graph. But
 for <code>#[provides]</code> which bindings should be available should be specified, as it may be situational.</p>
