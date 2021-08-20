@@ -15,6 +15,7 @@
 - [Qualifiers]()
 - [Provider]()
 - [Lazy]()
+- [Factory]()
 - [Optional Bindings]()
 - [Multibindings]()
     - [Vec bindings]()
