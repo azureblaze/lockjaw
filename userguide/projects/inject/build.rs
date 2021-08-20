@@ -14,19 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// ANCHOR: prologue
-lockjaw::prologue!("src/main.rs");
-// ANCHOR_END: prologue
-
+// ANCHOR: main
 fn main() {
-    println!("Hello, world!");
+    lockjaw::build_script();
 }
-
-#[test]
-fn test() {
-    main()
-}
-
-// ANCHOR: epilogue
-lockjaw::epilogue!();
-// ANCHOR_END: epilogue
+// ANCHOR_END: main
