@@ -63,6 +63,9 @@ Note that there is one method for each binding, only taking `&self` and returnin
 Inside the method it calls the constructor method we just marked, and calls other binding methods to
 generate the argument.
 
+The factory is an object instead of just methods, since it might need to carry states in the future
+(For example, returning a reference to a shared object owned by the factory.)
+
 Writing the factory by hand gets complicated and boring fast. In the next chapter we will ask
 Lockjaw to generate it.
 

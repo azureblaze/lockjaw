@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{epilogue, injectable, prologue};
+use lockjaw::{component, epilogue, injectable, prologue};
 
 prologue!("src/main.rs");
 
-// ANCHOR: foo
 struct Foo {}
 
 #[injectable]
@@ -28,9 +27,7 @@ impl Foo {
         Foo {}
     }
 }
-// ANCHOR_END: foo
 
-// ANCHOR: bar
 struct Bar {
     foo: Foo,
     i: i32,
@@ -43,28 +40,24 @@ impl Bar {
         Bar { foo, i: 42 }
     }
 }
-// ANCHOR_END: bar
 
-//ANCHOR: factory
-struct Factory {}
+//ANCHOR: component
+#[component]
+trait MyComponent {
+    fn create_foo(&self) -> Foo;
 
-impl Factory {
-    pub fn create_foo(&self) -> Foo {
-        Foo::new()
-    }
-
-    pub fn create_bar(&self) -> Bar {
-        Bar::new(self.create_foo())
-    }
+    fn create_bar(&self) -> Bar;
 }
+// ANCHOR_END: component
 
+// ANCHOR: main
 fn main() {
-    let factory = Factory {};
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::build();
 
-    let _foo = factory.create_foo();
-    let _bar = factory.create_bar();
+    let _foo = component.create_foo();
+    let _bar = component.create_bar();
 }
-// ANCHOR_END: factory
+// ANCHOR_END: main
 
 #[test]
 fn test() {
