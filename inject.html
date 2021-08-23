@@ -218,17 +218,12 @@ fn main() {
     let _foo = factory.create_foo();
     let _bar = factory.create_bar();
 }
-
-#[test]
-fn test() {
-    main()
-}
-
-epilogue!();
 </code></pre>
 <p>Note that there is one method for each binding, only taking <code>&amp;self</code> and returning the binding type.
 Inside the method it calls the constructor method we just marked, and calls other binding methods to
 generate the argument.</p>
+<p>The factory is an object instead of just methods, since it might need to carry states in the future
+(For example, returning a reference to a shared object owned by the factory.)</p>
 <p>Writing the factory by hand gets complicated and boring fast. In the next chapter we will ask
 Lockjaw to generate it.</p>
 <p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/inject/">Source</a> of this chapter</p>
