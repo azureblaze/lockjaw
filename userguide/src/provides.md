@@ -1,95 +1,83 @@
-Injections does not always work:
+## Providing Objects
 
-* Traits are not structs and can not be instantiated.
-* `#[injectable]` and `#[inject]` cannot annotate third party structs.
-* The desired implementation of a trait may be affected by run time conditions, like switching
-  implementations based on reading a config file.
+In this chapter we will discuss another way to create bindings.
 
-For these cases, a `#[provides]` method can be used instead. A `#[provides]` method satisfy its
-return type. When the type is requested the method is invoked.
+## Limitations of constructor injection bindings
 
-```rust
-#[provides]
-pub fn provide_string() -> String {
-    "my_string".to_owned()
-}
-```
+Constructor injections are designed to be the **only** way to create an instance of the type it
+binds. It is even considered bad practice to call the constructor manually. Hence, constructor
+injections has some limitations:
 
-Whenever someone requested a `String`, they will get a `String` with the value `"my_string"`.
+* Constructor injections can only be done by owned types (can only be defined by the `mod` that
+  defines the type itself.).
+  * If you don't own the type you should not say something is the only way to create it.
+* Can only create concrete types
+  * Sometimes you may want to bind traits and swap the implementation, maybe at runtime.
 
-`#[provides]` method can also have their own dependencies, which is requested through the method
-parameter. Lockjaw will satisfy them first and pass them to the method.
+## Modules
 
-```rust
-pub struct Foo {
-    value: String
-}
+Obviously Lockjaw is not going to ask the world to use it or the user to rewrite everything they use
+with it, so it gives other ways to bind types. Since these bindings are no longer the "one true way
+to create things", and different bindings for the same type may be needed within the same program,
+the user needs to be able to select which bindings to use in each dependency graph.
 
-#[provides]
-pub fn provide_foo(s : String) -> crate::Foo {
-    Foo {value: s}
-}
-```
+In Lockjaw, these elective bindings are defined in *modules*, and the component can choose what
+modules to *install*, which imports its bindings. Note that in Lockjaw documentation *modules*
+always refer dependency injection modules, and `mod` will be used to refer to Rust modules.
 
-When someone requested a `Foo`, `provided_foo()` will be invoked with the `String` returned by
-`provided_string()`, and used to create the `Foo` struct.
+To declare a module with Lockjaw
+the [`#[module]`](file:///C:/git/lockjaw/target/doc/lockjaw/attr.module.html) attribute should be
+used to mark the `impl` block of a struct.
 
-`#[provides]` can also be used for traits:
-
-```rust
-pub trait Foo {
-    fn foo();
-}
-
-pub struct FooImpl {}
-
-#[injectable]
-impl FooImpl {
-    #[inject]
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-impl Foo for FooImpl {
-    fn foo() {
-        //...
-    }
-}
-
-#[provides]
-pub fn provide_foo(impl_ : FooImpl) -> Box<dyn Foo> {
-    Box::new(impl_)
-}
-```
-
-We can also simplify trait provisions with a `#[binds]` method:
-
-```rust
-#[binds]
-pub fn bind_foo_impl(impl_ : FooImpl) -> Cl<dyn Foo> {}
-```
-
-Note that since the implementation may contain a reference to a singleton (more
-on [scope](#scoped-bindings)
-later), the return type is `Cl<T>`. `Cl<T>` (ComponentLifetime) forces the returned value to have a
-lifetime less than the component itself.
-
-Since `#[provides]` and `#[binds]` are less coupled with the type they provide, and users might want
-to swap out implementations (like use a `FakeClient` for test that emulates talking to a server
-without actual network operations), these bindings should not be global. They are grouped into
-a `#[module]` so they can be incorporated later into a specific dependency graph. `#[module]`
-annotates a [impl block](https://doc.rust-lang.org/std/keyword.impl.html) of a struct to define the
-bindings.
-
-```rust
+```rust,no_run,noplayground
 struct MyModule {}
+
 #[module]
-impl MyModule {
-    #[binds]
-    pub fn bind_foo_impl(impl_ : FooImpl) -> impl Foo {}
+impl My Module {
+  ...
 }
 ```
 
-Note: in lockjaw documentations, "modules" always refer to the dependency injection module. The Rust
-module is always referred as `mod`.
+The `impl` block will contain the binding definitions.
+
+For now the modules should be static (without fields). Modules with fields will be discussed
+in [builder modules](builder.md)
+
+## #[provides] bindings
+
+The [`#[provides]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html)
+binding annotates a method that returns the type.
+
+```rust,no_run,noplayground
+{{#include ../projects/provide/src/lib.rs:provides}}
+```
+
+Like [`#[inject]`](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html),
+the `#[provides]` method can also request other bindings from the dependency graph, and produce the
+target value with it.
+
+```rust,no_run,noplayground
+{{#include ../projects/provide/src/lib.rs:provides_with_dep}}
+```
+
+## Installing modules
+
+`#[module]` on its own is just a collection of bindings and does not do anything. It must be
+installed in a [`#[component]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html) to joint
+the dependency graph. This is done by listing the module type in
+the [`modules` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#modules) of the
+component.
+
+```rust,no_run,noplayground
+{{#include ../projects/provide/src/lib.rs:component}}
+```
+
+A lot of Lockjaw attribute macros also takes *metadata arguments*, which is comma
+separated `key : value` pairs in a parenthesis. The values are usually string literal, integers,
+types, arrays of values (`foo : [value 1, value 2]`), or more metadata (`foo : { key : value }`). In
+this case `modules` takes an array of types (of `#[modules]`).
+
+Providing `trait` is a bit more complicated and will be discussed [later](binds.md).
+
+[Source](https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/provide/) of this
+chapter

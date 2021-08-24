@@ -14,54 +14,49 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, epilogue, injectable, prologue};
+use lockjaw::{component, epilogue, module, prologue};
 
-prologue!("src/main.rs");
+prologue!("src/lib.rs");
 
-struct Foo {}
+// ANCHOR: module
+struct MyModule;
 
-#[injectable]
-impl Foo {
-    #[inject]
-    pub fn new() -> Foo {
-        Foo {}
+#[module]
+impl MyModule {
+    // ANCHOR_END: module
+
+    // ANCHOR: provides
+    #[provides]
+    pub fn provide_i32() -> i32 {
+        42
     }
-}
+    // ANCHOR_END: provides
 
-struct Bar {
-    foo: Foo,
-    i: i32,
-}
-
-#[injectable]
-impl Bar {
-    #[inject]
-    pub fn new(foo: Foo) -> Bar {
-        Bar { foo, i: 42 }
+    // ANCHOR: provides_with_dep
+    #[provides]
+    pub fn provides_string(i: i32) -> String {
+        format!("{}", i)
     }
+    // ANCHOR_END: provides_with_dep
 }
 
-//ANCHOR: component
-#[component]
+// ANCHOR: component
+#[component(modules: [MyModule])]
 trait MyComponent {
-    fn create_foo(&self) -> Foo;
+    fn i32(&self) -> i32;
 
-    fn create_bar(&self) -> Bar;
+    fn string(&self) -> String;
 }
 // ANCHOR_END: component
 
 // ANCHOR: main
-fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::build();
-
-    let _foo = component.create_foo();
-    let _bar = component.create_bar();
-}
-// ANCHOR_END: main
-
 #[test]
 fn test() {
-    main()
+    let component: Box<dyn MyComponent> = <dyn MyComponent>::build();
+
+    assert_eq!(component.i32(), 42);
+    assert_eq!(component.string(), "42");
 }
+// ANCHOR_END: main
 
 epilogue!();
