@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Installing Modules - Lockjaw User Guide</title>
+        <title>Providing Objects - Lockjaw User Guide</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html" class="active"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Factory</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">12.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">14.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">15.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html" class="active"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Factory</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">13.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">14.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">15.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,30 +143,92 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="installing-modules"><a class="header" href="#installing-modules">Installing Modules</a></h1>
-<p><code>#[injectables]</code> are global bindings, which mean they are included into any dependency graph. But
-for <code>#[provides]</code> which bindings should be available should be specified, as it may be situational.</p>
-<p>Each component should declare a list of modules they want to use with a<br />
-using the <code>modules</code> field in the <code>#[component]</code> attribute.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>#[component(modules=[MyModule])]
-trait MyComponent {
-    fn my_module_binding() -&gt; MyModuleBinding;
+                        <h2 id="providing-objects"><a class="header" href="#providing-objects">Providing Objects</a></h2>
+<p>In this chapter we will discuss another way to create bindings.</p>
+<h2 id="limitations-of-constructor-injection-bindings"><a class="header" href="#limitations-of-constructor-injection-bindings">Limitations of constructor injection bindings</a></h2>
+<p>Constructor injections are designed to be the <strong>only</strong> way to create an instance of the type it
+binds. It is even considered bad practice to call the constructor manually. Hence, constructor
+injections has some limitations:</p>
+<ul>
+<li>Constructor injections can only be done by owned types (can only be defined by the <code>mod</code> that
+defines the type itself.).
+<ul>
+<li>If you don't own the type you should not say something is the only way to create it.</li>
+</ul>
+</li>
+<li>Can only create concrete types
+<ul>
+<li>Sometimes you may want to bind traits and swap the implementation, maybe at runtime.</li>
+</ul>
+</li>
+</ul>
+<h2 id="modules"><a class="header" href="#modules">Modules</a></h2>
+<p>Obviously Lockjaw is not going to ask the world to use it or the user to rewrite everything they use
+with it, so it gives other ways to bind types. Since these bindings are no longer the &quot;one true way
+to create things&quot;, and different bindings for the same type may be needed within the same program,
+the user needs to be able to select which bindings to use in each dependency graph.</p>
+<p>In Lockjaw, these elective bindings are defined in <em>modules</em>, and the component can choose what
+modules to <em>install</em>, which imports its bindings. Note that in Lockjaw documentation <em>modules</em>
+always refer dependency injection modules, and <code>mod</code> will be used to refer to Rust modules.</p>
+<p>To declare a module with Lockjaw
+the <a href="file:///C:/git/lockjaw/target/doc/lockjaw/attr.module.html"><code>#[module]</code></a> attribute should be
+used to mark the <code>impl</code> block of a struct.</p>
+<pre><code class="language-rust no_run noplayground">struct MyModule {}
+
+#[module]
+impl My Module {
+  ...
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
+<p>The <code>impl</code> block will contain the binding definitions.</p>
+<p>For now the modules should be static (without fields). Modules with fields will be discussed
+in <a href="builder.html">builder modules</a></p>
+<h2 id="provides-bindings"><a class="header" href="#provides-bindings">#[provides] bindings</a></h2>
+<p>The <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html"><code>#[provides]</code></a>
+binding annotates a method that returns the type.</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    pub fn provide_i32() -&gt; i32 {
+        42
+    }
+</code></pre>
+<p>Like <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a>,
+the <code>#[provides]</code> method can also request other bindings from the dependency graph, and produce the
+target value with it.</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    pub fn provides_string(i: i32) -&gt; String {
+        format!(&quot;{}&quot;, i)
+    }
+</code></pre>
+<h2 id="installing-modules"><a class="header" href="#installing-modules">Installing modules</a></h2>
+<p><code>#[module]</code> on its own is just a collection of bindings and does not do anything. It must be
+installed in a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html"><code>#[component]</code></a> to joint
+the dependency graph. This is done by listing the module type in
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#modules"><code>modules</code> metadata</a> of the
+component.</p>
+<pre><code class="language-rust no_run noplayground">#[component(modules: [MyModule])]
+trait MyComponent {
+    fn i32(&amp;self) -&gt; i32;
+
+    fn string(&amp;self) -&gt; String;
+}
+</code></pre>
+<p>A lot of Lockjaw attribute macros also takes <em>metadata arguments</em>, which is comma
+separated <code>key : value</code> pairs in a parenthesis. The values are usually string literal, integers,
+types, arrays of values (<code>foo : [value 1, value 2]</code>), or more metadata (<code>foo : { key : value }</code>). In
+this case <code>modules</code> takes an array of types (of <code>#[modules]</code>).</p>
+<p>Providing <code>trait</code> is a bit more complicated and will be discussed <a href="binds.html">later</a>.</p>
+<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/provide/">Source</a> of this
+chapter</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="inject.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="request.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
-                                                    <a rel="next" href="scoped.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                                    <a rel="next" href="builder.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -176,11 +238,11 @@ trait MyComponent {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="inject.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="request.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
-                                    <a rel="next" href="scoped.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <a rel="next" href="builder.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                             </nav>

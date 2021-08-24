@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">5.</strong> Installing Modules</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">6.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Factory</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">12.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">14.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">15.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Factory</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">13.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">14.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">15.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -366,7 +366,8 @@ impl Factory {
     }
 }
 
-fn main() {
+#[test]
+fn test() {
     let factory = Factory {};
 
     let _foo = factory.create_foo();
@@ -395,7 +396,8 @@ impl Factory {
     }
 }
 
-fn main() {
+#[test]
+fn test() {
     let factory = Factory {};
 
     let _foo = factory.create_foo();
@@ -431,7 +433,8 @@ declares what needs to be publicly provided.</p>
 <h2 id="creating-and-using-the-component"><a class="header" href="#creating-and-using-the-component">Creating and using the component.</a></h2>
 <p>Since <code>create_foo(&amp;self)</code> is a method, we need to create the component to be able to call it.
 Lockjaw generates a static <code>build()</code> method on the trait that can be used to create the component.</p>
-<pre><code class="language-rust no_run noplayground">fn main() {
+<pre><code class="language-rust no_run noplayground">#[test]
+fn test() {
     let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::build();
 
     let _foo = component.create_foo();
@@ -443,155 +446,377 @@ procedural macros, so you might want to manually hint the type in the <code>let<
 <p>Once the component is created, the trait methods can be used to create the objects.</p>
 <p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/request/">Source</a> of this
 chapter</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="injecting-objects-1"><a class="header" href="#injecting-objects-1">Injecting Objects</a></h1>
-<p>Lockjaw can create objects for you, but you need to let lockjaw know how to create the object and
-what is needed to create them. These recipes for object creation is called <em>bindings</em>, which forms
-nodes in a dependency graph, and add edges to other bindings it depends on.</p>
-<p>The most simple binding is constructor injection binding.</p>
-<h2 id="constructor-injection-1"><a class="header" href="#constructor-injection-1">Constructor injection</a></h2>
-<p>A binding can be created for a struct by using a constructor method, which is a static method
-associated to the struct that returns a new instance. The field constructor ( <code>Foo {a : 0, ...}</code>) is
-not directly used by Lockjaw since methods are more expressive when a none injected field needs a
-default value or when transformations are needed on the input.</p>
-<p>A struct can be made injectable by marking a struct <code>impl</code> block with
-the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html"><code>#[injectable]</code></a> attribute, and
-then mark the constructor method
-as <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a>.</p>
-<pre><code class="language-rust no_run noplayground">struct Foo {}
+<div style="break-before: page; page-break-before: always;"></div><h2 id="providing-objects"><a class="header" href="#providing-objects">Providing Objects</a></h2>
+<p>In this chapter we will discuss another way to create bindings.</p>
+<h2 id="limitations-of-constructor-injection-bindings"><a class="header" href="#limitations-of-constructor-injection-bindings">Limitations of constructor injection bindings</a></h2>
+<p>Constructor injections are designed to be the <strong>only</strong> way to create an instance of the type it
+binds. It is even considered bad practice to call the constructor manually. Hence, constructor
+injections has some limitations:</p>
+<ul>
+<li>Constructor injections can only be done by owned types (can only be defined by the <code>mod</code> that
+defines the type itself.).
+<ul>
+<li>If you don't own the type you should not say something is the only way to create it.</li>
+</ul>
+</li>
+<li>Can only create concrete types
+<ul>
+<li>Sometimes you may want to bind traits and swap the implementation, maybe at runtime.</li>
+</ul>
+</li>
+</ul>
+<h2 id="modules"><a class="header" href="#modules">Modules</a></h2>
+<p>Obviously Lockjaw is not going to ask the world to use it or the user to rewrite everything they use
+with it, so it gives other ways to bind types. Since these bindings are no longer the &quot;one true way
+to create things&quot;, and different bindings for the same type may be needed within the same program,
+the user needs to be able to select which bindings to use in each dependency graph.</p>
+<p>In Lockjaw, these elective bindings are defined in <em>modules</em>, and the component can choose what
+modules to <em>install</em>, which imports its bindings. Note that in Lockjaw documentation <em>modules</em>
+always refer dependency injection modules, and <code>mod</code> will be used to refer to Rust modules.</p>
+<p>To declare a module with Lockjaw
+the <a href="file:///C:/git/lockjaw/target/doc/lockjaw/attr.module.html"><code>#[module]</code></a> attribute should be
+used to mark the <code>impl</code> block of a struct.</p>
+<pre><code class="language-rust no_run noplayground">struct MyModule {}
 
-#[injectable]
-impl Foo {
-    #[inject]
-    pub fn new() -&gt; Foo {
-        Foo {}
-    }
+#[module]
+impl My Module {
+  ...
 }
 </code></pre>
-<p>Now Lockjaw understands when trying to create <code>Foo</code>, it should call <code>Foo::new()</code>.</p>
-<p>Note that since it is an associated method, constructor injection only works on a type you <em>own</em> (
-you can actually change its implementation). For foreign types like imported crates a different
-method will be discussed in the <a href="provides.html">providing objects</a> chapter.</p>
-<h2 id="constructor-dependencies-1"><a class="header" href="#constructor-dependencies-1">Constructor dependencies</a></h2>
-<p>To create an object, it may many need objects of other types. This is called <em>dependencies</em>. In this
-example, <code>Bar</code> <em>depends</em> on having an instance of <code>Foo</code> to be created.</p>
-<p>In constructor injections, dependencies are listed with its parameters. Lockjaw will try to use
-available bindings to create all arguments and pass them to the constructor. If a parameter does not
-have a binding, Lockjaw will fail compilation with <em>missing bindings</em>.</p>
-<p>Note that since we are not asking Lockjaw to actually create the object yet, binding validation
-won't be performed. Lockjaw is assuming there are some bindings else where it does not know about
-yet.</p>
-<pre><code class="language-rust no_run noplayground">struct Bar {
-    foo: Foo,
+<p>The <code>impl</code> block will contain the binding definitions.</p>
+<p>For now the modules should be static (without fields). Modules with fields will be discussed
+in <a href="builder.html">builder modules</a></p>
+<h2 id="provides-bindings"><a class="header" href="#provides-bindings">#[provides] bindings</a></h2>
+<p>The <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html"><code>#[provides]</code></a>
+binding annotates a method that returns the type.</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    pub fn provide_i32() -&gt; i32 {
+        42
+    }
+</code></pre>
+<p>Like <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a>,
+the <code>#[provides]</code> method can also request other bindings from the dependency graph, and produce the
+target value with it.</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    pub fn provides_string(i: i32) -&gt; String {
+        format!(&quot;{}&quot;, i)
+    }
+</code></pre>
+<h2 id="installing-modules"><a class="header" href="#installing-modules">Installing modules</a></h2>
+<p><code>#[module]</code> on its own is just a collection of bindings and does not do anything. It must be
+installed in a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html"><code>#[component]</code></a> to joint
+the dependency graph. This is done by listing the module type in
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#modules"><code>modules</code> metadata</a> of the
+component.</p>
+<pre><code class="language-rust no_run noplayground">#[component(modules: [MyModule])]
+trait MyComponent {
+    fn i32(&amp;self) -&gt; i32;
+
+    fn string(&amp;self) -&gt; String;
+}
+</code></pre>
+<p>A lot of Lockjaw attribute macros also takes <em>metadata arguments</em>, which is comma
+separated <code>key : value</code> pairs in a parenthesis. The values are usually string literal, integers,
+types, arrays of values (<code>foo : [value 1, value 2]</code>), or more metadata (<code>foo : { key : value }</code>). In
+this case <code>modules</code> takes an array of types (of <code>#[modules]</code>).</p>
+<p>Providing <code>trait</code> is a bit more complicated and will be discussed <a href="binds.html">later</a>.</p>
+<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/provide/">Source</a> of this
+chapter</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="builder-modules"><a class="header" href="#builder-modules">Builder Modules</a></h1>
+<p>In the previous chapter the modules are without fields, so Lockjaw can easily create instances of it
+(In fact no instance are created since Lockjaw can just call the static methods). However sometimes
+we want to be able to affect the values that are bound at runtime, hence need to be able to change
+what <code>#[provides]</code> does using fields in the module.</p>
+<pre><code class="language-rust no_run noplayground">struct MyModule {
     i: i32,
 }
 
-#[injectable]
-impl Bar {
-    #[inject]
-    pub fn new(foo: Foo) -&gt; Bar {
-        Bar { foo, i: 42 }
+#[module]
+impl MyModule {
+    #[provides]
+    pub fn provide_i32(&amp;self) -&gt; i32 {
+        self.i
     }
 }
 </code></pre>
-<p>If the struct has other fields that can be initialized without injection, like <code>i</code>, it can be
-directly assigned. If the object needs a runtime value (for example, if <code>i</code> needs to be assigned by
-the caller with a user input), then <a href="factory.html">factories</a> will be needed, which will be discussed
-later.</p>
-<h2 id="manual-injection-1"><a class="header" href="#manual-injection-1">Manual injection</a></h2>
-<p>For a moment let's forget about Lockjaw, and try to do dependency injection manually. With the
-binding information we have we can write a factory that can create the objects we just defined:</p>
-<pre><code class="language-rust no_run noplayground">struct Factory {}
-
-impl Factory {
-    pub fn create_foo(&amp;self) -&gt; Foo {
-        Foo::new()
-    }
-
-    pub fn create_bar(&amp;self) -&gt; Bar {
-        Bar::new(self.create_foo())
-    }
-}
-
-fn main() {
-    let factory = Factory {};
-
-    let _foo = factory.create_foo();
-    let _bar = factory.create_bar();
+<p>Since the <code>struct</code> now has fields Lockjaw can no longer automatically create it, the user must
+manually pass in the modules when creating the component.</p>
+<p><em>Implementation note: While Lockjaw can also try to
+use <a href="https://doc.rust-lang.org/std/default/trait.Default.html">Default</a> or some other mechanisms,
+usages like this implies the module has mutable state and generally is a bad idea.</em></p>
+<h2 id="using-builder-modules"><a class="header" href="#using-builder-modules">Using builder modules</a></h2>
+<p>Instead of passing the runtime modules to the component one by one, they are collected in a single
+<code>struct</code> annotated by
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html"><code>#[builder_modules]</code></a>
+attribute.</p>
+<pre><code class="language-rust no_run noplayground">#[builder_modules]
+struct MyBuilderModules {
+    my_module: MyModule,
 }
 </code></pre>
-<p>Note that there is one method for each binding, only taking <code>&amp;self</code> and returning the binding type.
-Inside the method it calls the constructor method we just marked, and calls other binding methods to
-generate the argument.</p>
-<p>The factory is an object instead of just methods, since it might need to carry states in the future
-(For example, returning a reference to a shared object owned by the factory.)</p>
-<p>Writing the factory by hand gets complicated and boring fast. In the next chapter we will ask
-Lockjaw to generate it.</p>
-<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/inject/">Source</a> of this chapter</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="installing-modules"><a class="header" href="#installing-modules">Installing Modules</a></h1>
-<p><code>#[injectables]</code> are global bindings, which mean they are included into any dependency graph. But
-for <code>#[provides]</code> which bindings should be available should be specified, as it may be situational.</p>
-<p>Each component should declare a list of modules they want to use with a<br />
-using the <code>modules</code> field in the <code>#[component]</code> attribute.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>#[component(modules=[MyModule])]
+<p>Every field in the struct should be a module. Using a <code>struct</code> makes sure each module will be
+required by the compiler/IDE while exposing the least amount of generated code(which is harder for
+users and IDEs to understand, it is better to spell everything out in visible code.).</p>
+<p>The <code>#[builder_modules]</code> can then be installed in the component using
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules"><code>builder_modules</code> metadata</a></p>
+<pre><code class="language-rust no_run noplayground">#[component(builder_modules: MyBuilderModules)]
 trait MyComponent {
-    fn my_module_binding() -&gt; MyModuleBinding;
+    fn i32(&amp;self) -&gt; i32;
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
+<p>The component only accepts one<code>#[builder_modules]</code>, which is likely to be specifically tailored for
+the component. The modules itself can be shared.</p>
+<p>The <code>builder_modules</code> metadata can be used at the same time with
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#modules"><code>modules</code> metadata</a>.
+<code>modules</code> should be preferred whenever possible as they are easier to use.</p>
+<h2 id="creating-components-with-builder-modules"><a class="header" href="#creating-components-with-builder-modules">Creating components with builder modules</a></h2>
+<p>If
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules"><code>builder_modules</code> metadata</a>
+is specified,
+the  <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html"><code>#[builder_modules] struct</code></a>
+will become the parameter for
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#component-builder"><code>build()</code> method</a>
+of the component which the user must pass.</p>
+<pre><code class="language-rust no_run noplayground">#[test]
+fn test() {
+    let my_module = MyModule { i: 42 };
+    let my_builder_modules = MyBuilderModules { my_module };
+    let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::build(my_builder_modules);
+    assert_eq!(component.i32(), 42);
+
+    let other_component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::build(MyBuilderModules {
+        my_module: MyModule { i: 123 },
+    });
+    assert_eq!(other_component.i32(), 123);
+}
+</code></pre>
+<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/builder/">Source</a> of this
+chapter</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="binding-traits"><a class="header" href="#binding-traits">Binding traits</a></h1>
+<h2 id="provides-trait"><a class="header" href="#provides-trait"><code>#[provides]</code> trait</a></h2>
+<p>A <code>trait</code> can be provided using
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html"><code>#[provides]</code></a>
+binding.</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    pub fn provide_i32_maker(impl_: I32MakerImpl) -&gt; Box&lt;dyn I32Maker&gt; {
+        Box::new(impl_)
+    }
+</code></pre>
+<p>However, Lockjaw is going to be particular when trying to request a trait object from the dependency
+graph. The concrete implementation of the trait may contain <a href="scoped.html">reference to the component</a>,
+but ideally this is not something the consumer of the trait should care about, so Lockjaw enforces
+that any trait it provides must not outlive the component. The worst case <code>'ComponentLifetime</code> is
+assumed, so consumers don't have to change when it actually happens.</p>
+<p>The <code>Box</code> returned by the component must be bound by the component's lifetime(same as <code>self</code>).</p>
+<pre><code class="language-rust no_run noplayground">#[component(modules: [MyModule])]
+trait ProvideComponent {
+    fn i32_maker(&amp;'_ self) -&gt; Box&lt;dyn I32Maker + '_&gt;;
+}
+</code></pre>
+<h2 id="binds-trait"><a class="header" href="#binds-trait"><code>#[binds]</code> trait</a></h2>
+<p>While <code>#[provides]</code> kind of works, binding an implementation to a <code>trait</code> interface is a common
+operation so Lockjaw has
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.binds.html"><code>#[binds]</code></a> attribute
+to make them easier to use.</p>
+<p>For an interface and an implementation:</p>
+<pre><code class="language-rust no_run noplayground">pub trait Logger {
+    fn log(&amp;self, msg: &amp;str);
+}
+
+struct StdoutLogger;
+
+#[injectable]
+impl StdoutLogger {
+    #[inject]
+    pub fn new() -&gt; StdoutLogger {
+        StdoutLogger
+    }
+}
+
+impl Logger for StdoutLogger {
+    fn log(&amp;self, msg: &amp;str) {
+        println!(&quot;{}&quot;, msg);
+    }
+}
+</code></pre>
+<p><code>#[binds]</code> can be used to create binding that says &quot;when the <code>Logger</code> interface is needed,
+use <code>StdoutLogger</code> as the actual implementation&quot;:</p>
+<pre><code class="language-rust no_run noplayground">    #[binds]
+    pub fn bind_stdout_logger(_impl: StdoutLogger) -&gt; Cl&lt;dyn Logger&gt; {}
+</code></pre>
+<p>The method body must be empty, as Lockjaw will replace it.</p>
+<p>The<a href="https://docs.rs/lockjaw/0.2.0/lockjaw/enum.Cl.html"><code>Cl</code></a> in the return type means
+<strong>C</strong>omponent <strong>l</strong>ifetimed, which is a wrapper around a type forcing it not outlive the component.
+Having this wrapper makes it easier for the compiler to deduce the lifetime.</p>
+<p>With the binding defined the <code>Logger</code> can now be used by other classes, without caring about the
+actual implementation.</p>
+<pre><code class="language-rust no_run noplayground">pub struct Greeter&lt;'component&gt; {
+    logger: Cl&lt;'component, dyn Logger&gt;,
+}
+
+#[injectable]
+impl Greeter&lt;'_&gt; {
+    #[inject]
+    pub fn new(logger: Cl&lt;dyn Logger&gt;) -&gt; Greeter {
+        Greeter { logger }
+    }
+
+    pub fn greet(&amp;self) {
+        self.logger.log(&quot;helloworld!&quot;);
+    }
+}
+</code></pre>
+<p>Note that <code>Logger</code> still has to be injected as <code>Cl&lt;dyn Logger&gt;</code>, and <code>Greeter</code> is also bound by the
+lifetime of the component.</p>
+<h2 id="unit-testing-with-dependency-injection"><a class="header" href="#unit-testing-with-dependency-injection">Unit testing with dependency injection</a></h2>
+<p><code>StdoutLogger</code> writes its output straight to the console, so it is hard to verify <code>Greeter</code> actually
+sends the correct thing. While we can give <code>StdoutLogger</code> special apis to memorize what it logs and
+give access to tests, having test code in prod is generally bad practice.</p>
+<p>Instead we can use dependency injection to replace the environment <code>Greeter</code> runs in. We can create
+a <code>TestLogger</code> that writes the logs to memory and can read it later, bind it to the <code>Logger</code> with a
+module, and install the module in a component for test that has all test bindings. We are than able
+to test <code>Greeter</code> without adding test code to the <code>Greeter</code> itself:</p>
+<pre><code class="language-rust no_run noplayground">#[cfg(test)]
+pub mod testing {
+    use crate::{Greeter, Logger};
+    use lockjaw::{component, injectable, module, Cl};
+
+    static mut MESSAGES: Vec&lt;String&gt; = Vec::new();
+
+    pub struct TestLogger;
+
+    #[injectable]
+    impl TestLogger {
+        #[inject]
+        pub fn new() -&gt; TestLogger {
+            TestLogger
+        }
+
+        pub fn get_messages(&amp;self) -&gt; Vec&lt;String&gt; {
+            unsafe { MESSAGES.clone() }
+        }
+    }
+
+    impl Logger for TestLogger {
+        fn log(&amp;self, msg: &amp;str) {
+            unsafe { MESSAGES.push(msg.to_owned()) }
+        }
+    }
+
+    pub struct TestModule;
+
+    #[module]
+    impl TestModule {
+        #[binds]
+        pub fn bind_test_logger(_impl: TestLogger) -&gt; Cl&lt;dyn Logger&gt; {}
+    }
+
+    #[component(modules: [TestModule])]
+    pub trait TestComponent {
+        fn greeter(&amp;self) -&gt; Greeter;
+        fn test_logger(&amp;self) -&gt; TestLogger;
+    }
+
+    #[test]
+    fn test() {
+        let component: Box&lt;dyn TestComponent&gt; = &lt;dyn TestComponent&gt;::build();
+
+        component.greeter().greet();
+
+        assert_eq!(
+            component.test_logger().get_messages(),
+            vec![&quot;helloworld!&quot;.to_owned()]
+        );
+    }
+}
+
+</code></pre>
+<p>Generally, a library should also provide a test implementation and a module that binds the test
+implementation. The consumer of the library can then test by installing the test module instead of
+the real module. This allows test infrastructure to easily be shared. Some kind of test scaffolding
+can also be created to auto generate the component and inject objects into tests, but that is out of
+scope for lockjaw itself.</p>
+<p>Note that in the <code>TestLogger</code> <code>MESSAGES</code> is a static mutable, since <code>log()</code> and <code>get_messages()</code> is
+going to be called on different instances of <code>TestLogger</code>. This is <code>unsafe</code> and bad, so in the next
+chapter we will discuss how to handle this by forcing a single instance of <code>TestLogger</code> to be shared
+among everything that uses it.</p>
+<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/binds/">Source</a> of this chapter</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="scoped-bindings"><a class="header" href="#scoped-bindings">Scoped Bindings</a></h1>
 <p>By default everytime a dependency needs to be satisfied, lockjaw creates a new instance, and move it
 to the dependency (field or method parameter). This is not always desired since an object may be
 used to carry some common state, and we want every type that depends on it to get a reference to a
 single instance instead (singletons).</p>
-<p>To do this, the <code>scope</code> metadata can be specified on a <code>#[injecatable]</code>, <code>#[provides]</code>, or
-<code>#[binds]</code>, passing a component's fully qualified path as a string literal. This means there are
-only one instance of the type for objects created by the same instance of component (they are not
-global singletons, you can still have multiple instances if you have multiple components).</p>
+<p>In the last chapter, we had to use a mutable static state to store the messages <code>TestLogger</code> logs,
+since we need to read the same messages later but a different instance of <code>TestLogger</code> will be
+created.</p>
+<p>To do this, the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html#scope"><code>scope</code> metadata</a>
+can be specified on a <code>#[injecatable]</code> or <code>#[provides]</code>
+, passing a component's path. This means there are only one instance of the type for objects created
+by the same instance of component (they are not global singletons, you can still have multiple
+instances if you have multiple components).</p>
+<pre><code class="language-rust no_run noplayground">    #[derive(Default)]
+    pub struct TestLogger {
+        messages: RefCell&lt;Vec&lt;String&gt;&gt;,
+    }
+
+    #[injectable(scope: TestComponent)]
+    impl TestLogger {
+        #[inject]
+        pub fn new() -&gt; TestLogger {
+            TestLogger::default()
+        }
+
+        pub fn get_messages(&amp;self) -&gt; Vec&lt;String&gt; {
+            self.messages.borrow().clone()
+        }
+    }
+
+    impl Logger for TestLogger {
+        fn log(&amp;self, msg: &amp;str) {
+            self.messages.borrow_mut().push(msg.to_owned())
+        }
+    }
+
+</code></pre>
 <p>Other types can depend on a scoped type as a reference (<code>&amp;T</code>) or <code>Cl&lt;T&gt;</code></p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Foo {}
+<pre><code class="language-rust no_run noplayground">        fn test_logger(&amp;self) -&gt; Cl&lt;TestLogger&gt;;
+    }
 
-#[injectable(scope=&quot;crate::MyComponent&quot;)]
-impl Foo {
-    #[inject]
-    pub fn new() -&gt; Self {
-        Self {}
+    #[test]
+    fn test() {
+        let component: Box&lt;dyn TestComponent&gt; = &lt;dyn TestComponent&gt;::build();
+
+        component.greeter().greet();
+
+        assert_eq!(
+            component.test_logger().get_messages(),
+            vec![&quot;helloworld!&quot;.to_owned()]
+        );
     }
 }
 
-struct Bar&lt;'a&gt; {
-    foo: &amp;'a Foo
-}
-
-#[injectable]
-impl Bar&lt;'_&gt; {
-    #[inject]
-    pub fn new(foo: &amp;'_ Foo) -&gt; Bar&lt;'_&gt; {
-        Bar { foo }
-    }
-}
-
-#[component]
-trait MyComponent {
-    fn bar(&amp;'_ self) -&gt; Bar&lt;'_&gt;;
-}
-<span class="boring">}
-</span></code></pre></pre>
-<p><code>Cl&lt;T&gt;</code> allows a type to decouple itself from whether the type depended on is scoped or not. It may
-be an owned instance or a shared instance, but the type does not care as it will not try to move it.</p>
-<p>Scoped types or types that depends on them will have the same lifetime as the component.</p>
-<p>Note that in most uses a scoped type probably should be mutable to make it useful. However we cannot
-request it as <code>&amp;mut T</code> since certainly multiple objects will try to request it. Scoped types must
+epilogue!();
+</code></pre>
+<p>Although <code>#[binds]</code> has to explicitly ask for <code>&amp;TestLogger</code></p>
+<pre><code class="language-rust no_run noplayground">        #[binds]
+        pub fn bind_test_logger(_impl: &amp;TestLogger) -&gt; Cl&lt;dyn Logger&gt; {}
+</code></pre>
+<p>Note that <code>Greeter</code> hasn't changed at
+all. <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/enum.Cl.html"><code>Cl&lt;T&gt;</code></a> allows a type to decouple itself
+from whether the type depended on is scoped or not. It may be an owned instance or a shared
+instance, but the type does not care as it will not try to move it.</p>
+<h2 id="handling-mutability"><a class="header" href="#handling-mutability">Handling mutability</a></h2>
+<p>In most uses a scoped type probably should be mutable to make it useful. However we cannot request
+it as <code>&amp;mut T</code> since certainly multiple objects will try to request it. Scoped types must
 implement <a href="https://doc.rust-lang.org/reference/interior-mutability.html">interior mutability</a> itself
-and use an immutable interface.</p>
-<p>While lockjaw implementing an automatic <code>RefCell&lt;T&gt;</code> might make the user's life easier, it does not
-suit multi-threaded use cases well. It is better that the user make careful consideration of its
-mutability and threading story.</p>
+and use an immutable interface. In the example <code>TestLogger</code> use
+a <a href="https://doc.rust-lang.org/std/cell/struct.RefCell.html"><code>RefCell</code></a> so the messages can be mutated
+even when the <code>TestLogger</code> itself is immutable.</p>
+<p>Sometimes it might be easier to wrap the whole class in a memory container like a <code>RefCell</code>
+or <a href="https://doc.rust-lang.org/std/sync/struct.RwLock.html"><code>RwLock</code></a>.
+The <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html#container"><code>container</code> metadata</a>
+can be used on a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html"><code>#[injectable]</code></a> to
+bind the type as <code>&amp;CONTAINER&lt;T&gt;</code> instead of <code>&amp;T</code> </p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="caveats"><a class="header" href="#caveats">Caveats</a></h1>
 <p>Due to limitations of Rust and the author's ignorance, some of lockjaw's APIs have bad ergonomics,
 and some others have abusive implementation which may break any time as Rust evolves

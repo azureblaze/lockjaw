@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Scoped Bindings - Lockjaw User Guide</title>
+        <title>Builder Modules - Lockjaw User Guide</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html" class="active"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Factory</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">13.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">14.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">15.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html" class="active"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">8.</strong> Qualifiers</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Provider</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> Lazy</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">11.</strong> Factory</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">12.</strong> Optional Bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.</strong> Multibindings</div></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">13.1.</strong> Vec bindings</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">13.2.</strong> Map bindings</div></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">14.</strong> Subcomponents</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">15.</strong> Defined components</div></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,92 +143,86 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="scoped-bindings"><a class="header" href="#scoped-bindings">Scoped Bindings</a></h1>
-<p>By default everytime a dependency needs to be satisfied, lockjaw creates a new instance, and move it
-to the dependency (field or method parameter). This is not always desired since an object may be
-used to carry some common state, and we want every type that depends on it to get a reference to a
-single instance instead (singletons).</p>
-<p>In the last chapter, we had to use a mutable static state to store the messages <code>TestLogger</code> logs,
-since we need to read the same messages later but a different instance of <code>TestLogger</code> will be
-created.</p>
-<p>To do this, the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html#scope"><code>scope</code> metadata</a>
-can be specified on a <code>#[injecatable]</code> or <code>#[provides]</code>
-, passing a component's path. This means there are only one instance of the type for objects created
-by the same instance of component (they are not global singletons, you can still have multiple
-instances if you have multiple components).</p>
-<pre><code class="language-rust no_run noplayground">    #[derive(Default)]
-    pub struct TestLogger {
-        messages: RefCell&lt;Vec&lt;String&gt;&gt;,
-    }
-
-    #[injectable(scope: TestComponent)]
-    impl TestLogger {
-        #[inject]
-        pub fn new() -&gt; TestLogger {
-            TestLogger::default()
-        }
-
-        pub fn get_messages(&amp;self) -&gt; Vec&lt;String&gt; {
-            self.messages.borrow().clone()
-        }
-    }
-
-    impl Logger for TestLogger {
-        fn log(&amp;self, msg: &amp;str) {
-            self.messages.borrow_mut().push(msg.to_owned())
-        }
-    }
-
-</code></pre>
-<p>Other types can depend on a scoped type as a reference (<code>&amp;T</code>) or <code>Cl&lt;T&gt;</code></p>
-<pre><code class="language-rust no_run noplayground">        fn test_logger(&amp;self) -&gt; Cl&lt;TestLogger&gt;;
-    }
-
-    #[test]
-    fn test() {
-        let component: Box&lt;dyn TestComponent&gt; = &lt;dyn TestComponent&gt;::build();
-
-        component.greeter().greet();
-
-        assert_eq!(
-            component.test_logger().get_messages(),
-            vec![&quot;helloworld!&quot;.to_owned()]
-        );
-    }
+                        <h1 id="builder-modules"><a class="header" href="#builder-modules">Builder Modules</a></h1>
+<p>In the previous chapter the modules are without fields, so Lockjaw can easily create instances of it
+(In fact no instance are created since Lockjaw can just call the static methods). However sometimes
+we want to be able to affect the values that are bound at runtime, hence need to be able to change
+what <code>#[provides]</code> does using fields in the module.</p>
+<pre><code class="language-rust no_run noplayground">struct MyModule {
+    i: i32,
 }
 
-epilogue!();
+#[module]
+impl MyModule {
+    #[provides]
+    pub fn provide_i32(&amp;self) -&gt; i32 {
+        self.i
+    }
+}
 </code></pre>
-<p>Although <code>#[binds]</code> has to explicitly ask for <code>&amp;TestLogger</code></p>
-<pre><code class="language-rust no_run noplayground">        #[binds]
-        pub fn bind_test_logger(_impl: &amp;TestLogger) -&gt; Cl&lt;dyn Logger&gt; {}
+<p>Since the <code>struct</code> now has fields Lockjaw can no longer automatically create it, the user must
+manually pass in the modules when creating the component.</p>
+<p><em>Implementation note: While Lockjaw can also try to
+use <a href="https://doc.rust-lang.org/std/default/trait.Default.html">Default</a> or some other mechanisms,
+usages like this implies the module has mutable state and generally is a bad idea.</em></p>
+<h2 id="using-builder-modules"><a class="header" href="#using-builder-modules">Using builder modules</a></h2>
+<p>Instead of passing the runtime modules to the component one by one, they are collected in a single
+<code>struct</code> annotated by
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html"><code>#[builder_modules]</code></a>
+attribute.</p>
+<pre><code class="language-rust no_run noplayground">#[builder_modules]
+struct MyBuilderModules {
+    my_module: MyModule,
+}
 </code></pre>
-<p>Note that <code>Greeter</code> hasn't changed at
-all. <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/enum.Cl.html"><code>Cl&lt;T&gt;</code></a> allows a type to decouple itself
-from whether the type depended on is scoped or not. It may be an owned instance or a shared
-instance, but the type does not care as it will not try to move it.</p>
-<h2 id="handling-mutability"><a class="header" href="#handling-mutability">Handling mutability</a></h2>
-<p>In most uses a scoped type probably should be mutable to make it useful. However we cannot request
-it as <code>&amp;mut T</code> since certainly multiple objects will try to request it. Scoped types must
-implement <a href="https://doc.rust-lang.org/reference/interior-mutability.html">interior mutability</a> itself
-and use an immutable interface. In the example <code>TestLogger</code> use
-a <a href="https://doc.rust-lang.org/std/cell/struct.RefCell.html"><code>RefCell</code></a> so the messages can be mutated
-even when the <code>TestLogger</code> itself is immutable.</p>
-<p>Sometimes it might be easier to wrap the whole class in a memory container like a <code>RefCell</code>
-or <a href="https://doc.rust-lang.org/std/sync/struct.RwLock.html"><code>RwLock</code></a>.
-The <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html#container"><code>container</code> metadata</a>
-can be used on a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html"><code>#[injectable]</code></a> to
-bind the type as <code>&amp;CONTAINER&lt;T&gt;</code> instead of <code>&amp;T</code> </p>
+<p>Every field in the struct should be a module. Using a <code>struct</code> makes sure each module will be
+required by the compiler/IDE while exposing the least amount of generated code(which is harder for
+users and IDEs to understand, it is better to spell everything out in visible code.).</p>
+<p>The <code>#[builder_modules]</code> can then be installed in the component using
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules"><code>builder_modules</code> metadata</a></p>
+<pre><code class="language-rust no_run noplayground">#[component(builder_modules: MyBuilderModules)]
+trait MyComponent {
+    fn i32(&amp;self) -&gt; i32;
+}
+</code></pre>
+<p>The component only accepts one<code>#[builder_modules]</code>, which is likely to be specifically tailored for
+the component. The modules itself can be shared.</p>
+<p>The <code>builder_modules</code> metadata can be used at the same time with
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#modules"><code>modules</code> metadata</a>.
+<code>modules</code> should be preferred whenever possible as they are easier to use.</p>
+<h2 id="creating-components-with-builder-modules"><a class="header" href="#creating-components-with-builder-modules">Creating components with builder modules</a></h2>
+<p>If
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules"><code>builder_modules</code> metadata</a>
+is specified,
+the  <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html"><code>#[builder_modules] struct</code></a>
+will become the parameter for
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#component-builder"><code>build()</code> method</a>
+of the component which the user must pass.</p>
+<pre><code class="language-rust no_run noplayground">#[test]
+fn test() {
+    let my_module = MyModule { i: 42 };
+    let my_builder_modules = MyBuilderModules { my_module };
+    let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::build(my_builder_modules);
+    assert_eq!(component.i32(), 42);
+
+    let other_component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::build(MyBuilderModules {
+        my_module: MyModule { i: 123 },
+    });
+    assert_eq!(other_component.i32(), 123);
+}
+</code></pre>
+<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/builder/">Source</a> of this
+chapter</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="binds.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="provides.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
-                                                    <a rel="next" href="caveats.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                                    <a rel="next" href="binds.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -238,11 +232,11 @@ bind the type as <code>&amp;CONTAINER&lt;T&gt;</code> instead of <code>&amp;T</c
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="binds.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="provides.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
-                                    <a rel="next" href="caveats.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <a rel="next" href="binds.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                             </nav>
