@@ -19,7 +19,7 @@ then mark the constructor method
 as [`#[inject]`](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html).
 
 ```rust,no_run,noplayground
-{{#include ../projects/inject/src/main.rs:foo}}
+{{#include ../projects/inject/src/lib.rs:foo}}
 ```
 
 Now Lockjaw understands when trying to create `Foo`, it should call `Foo::new()`.
@@ -42,7 +42,7 @@ won't be performed. Lockjaw is assuming there are some bindings else where it do
 yet.
 
 ```rust,no_run,noplayground
-{{#include ../projects/inject/src/main.rs:bar}}
+{{#include ../projects/inject/src/lib.rs:bar}}
 ```
 
 If the struct has other fields that can be initialized without injection, like `i`, it can be
@@ -56,7 +56,7 @@ For a moment let's forget about Lockjaw, and try to do dependency injection manu
 binding information we have we can write a factory that can create the objects we just defined:
 
 ```rust,no_run,noplayground
-{{#include ../projects/inject/src/main.rs:factory}}
+{{#include ../projects/inject/src/lib.rs:factory}}
 ```
 
 Note that there is one method for each binding, only taking `&self` and returning the binding type.

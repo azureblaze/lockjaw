@@ -26,6 +26,10 @@ members = [
     "userguide/projects/setup",
     "userguide/projects/inject",
     "userguide/projects/request",
+    "userguide/projects/builder",
+    "userguide/projects/provide",
+    "userguide/projects/binds",
+    "userguide/projects/scoped",
 ]
 
 [package]
