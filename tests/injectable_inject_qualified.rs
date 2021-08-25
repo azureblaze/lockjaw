@@ -29,10 +29,12 @@ pub struct Q;
 
 #[injectable]
 impl Foo {
+    // ANCHOR: qualified
     #[inject]
-    pub fn new(#[qualified(crate::Q)] s: String) -> Foo {
+    pub fn new(#[qualified(Q)] s: String) -> Foo {
         Foo { s }
     }
+    // ANCHOR_END: qualified
 }
 
 pub struct MyModule {}
@@ -40,7 +42,7 @@ pub struct MyModule {}
 #[module]
 impl MyModule {
     #[provides]
-    #[qualified(crate::Q)]
+    #[qualified(Q)]
     pub fn provide_q1_string() -> String {
         "q_string".to_owned()
     }

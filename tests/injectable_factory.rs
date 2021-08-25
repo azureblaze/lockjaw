@@ -21,14 +21,14 @@ use lockjaw::{builder_modules, component, epilogue, injectable, module};
 lockjaw::prologue!("tests/injectable_factory.rs");
 
 struct MyModule {
-    phrase: String,
+    s: String,
 }
 
 #[module]
 impl MyModule {
     #[provides]
     pub fn provide_string(&self) -> String {
-        self.phrase.clone()
+        self.s.clone()
     }
 }
 
@@ -40,16 +40,18 @@ pub struct BuilderModules {
 #[derive(Debug)]
 pub struct Foo {
     pub i: i32,
-    pub phrase: String,
+    pub s: String,
 }
 
+// ANCHOR: factory
 #[injectable]
 impl Foo {
     #[factory]
-    fn create(#[runtime] i: i32, phrase: String) -> Self {
-        Self { i, phrase }
+    fn create(#[runtime] i: i32, s: String) -> Self {
+        Self { i, s }
     }
 }
+// ANCHOR_END: factory
 
 #[component(builder_modules: BuilderModules)]
 pub trait MyComponent {
@@ -60,14 +62,14 @@ pub trait MyComponent {
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::build(BuilderModules {
         my_module: MyModule {
-            phrase: "helloworld".to_owned(),
+            s: "helloworld".to_owned(),
         },
     });
-
+    // ANCHOR: factory_use
     let foo = component.foo_factory().create(42);
-
+    // ANCHOR_END: factory_use
     assert_eq!(foo.i, 42);
-    assert_eq!(foo.phrase, "helloworld");
+    assert_eq!(foo.s, "helloworld");
 }
 
 epilogue!();
