@@ -31,8 +31,10 @@ impl MyModule {
         self.phrase.clone()
     }
 
+    // ANCHOR: bind
     #[binds]
     pub fn bind_foo_creator(impl_: FooFactory) -> Cl<dyn FooCreator> {}
+    // ANCHOR_END: bind
 }
 
 #[builder_modules]
@@ -45,6 +47,7 @@ pub struct Foo {
     pub phrase: String,
 }
 
+// ANCHOR: factory
 pub trait FooCreator {
     fn create(&self, i: i32) -> Foo;
 }
@@ -56,6 +59,7 @@ impl Foo {
         Self { i, phrase }
     }
 }
+// ANCHOR_END: factory
 
 #[component(builder_modules: BuilderModules)]
 pub trait MyComponent {

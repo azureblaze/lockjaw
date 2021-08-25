@@ -22,14 +22,17 @@ pub use String as NamedString;
 
 lockjaw::prologue!("tests/module_provides_qualifier.rs");
 
+//ANCHOR: decl
 #[qualifier]
 pub struct Q1;
 
+//ANCHOR_END: decl
 #[qualifier]
 pub struct Q2;
 
 pub struct MyModule {}
 
+//ANCHOR: module
 #[module]
 impl MyModule {
     #[provides]
@@ -38,26 +41,29 @@ impl MyModule {
     }
 
     #[provides]
-    #[qualified(crate::Q1)]
+    #[qualified(Q1)]
     pub fn provide_q1_string() -> String {
         "q1_string".to_owned()
     }
 
     #[provides]
-    #[qualified(crate::Q2)]
+    #[qualified(Q2)]
     pub fn provide_q2_string() -> String {
         "q2_string".to_owned()
     }
 }
+// ANCHOR_END: module
 
+//ANCHOR: component
 #[component(modules: [MyModule])]
 pub trait MyComponent {
     fn string(&self) -> String;
-    #[qualified(crate::Q1)]
+    #[qualified(Q1)]
     fn q1_string(&self) -> String;
-    #[qualified(crate::Q2)]
+    #[qualified(Q2)]
     fn q2_string(&self) -> String;
 }
+//ANCHOR_END: component
 
 #[test]
 pub fn main() {

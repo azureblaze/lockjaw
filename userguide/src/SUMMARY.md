@@ -13,16 +13,19 @@
 - [Builder Modules](builder.md)
 - [Binding traits](binds.md)
 - [Scoped Bindings](scoped.md)
-- [Qualifiers]()
-- [Provider]()
-- [Lazy]()
-- [Factory]()
-- [Optional Bindings]()
-- [Multibindings]()
-  - [Vec bindings]()
-  - [Map bindings]()
-- [Subcomponents]()
-- [Defined components]()
+- [Qualifiers](qualifiers.md)
+
+---
+
+- [Provider](provider.md)
+- [Lazy](lazy.md)
+- [Factory](factory.md)
+- [Optional Bindings](optional.md)
+- [Multibindings](multibindings.md)
+  - [Vec bindings](vec.md)
+  - [Map bindings](map.md)
+- [Subcomponents](subcomponent.md)
+- [Defined components](define_component.md)
 
 ---
 

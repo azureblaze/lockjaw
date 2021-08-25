@@ -16,46 +16,49 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{
-    component, injectable, Provider,
-};
+use lockjaw::{component, injectable, Provider};
 
-lockjaw::prologue!(
-    "tests/provider_cyclic.rs"
-);
-struct Foo<'a> {
-    bar: Provider<'a, Box<crate::Bar<'a>>>,
+lockjaw::prologue!("tests/provider_cyclic.rs");
+
+// ANCHOR: cyclic
+struct Foo<'component> {
+    bar_provider: Provider<'component, Box<Bar<'component>>>,
 }
 
 #[injectable]
-impl<'a> Foo<'a> {
+impl<'component> Foo<'component> {
     #[inject]
-    pub fn new(bar: Provider<'a, Box<crate::Bar<'a>>>) -> Foo<'a> {
-        Self { bar }
+    pub fn new(bar: Provider<'component, Box<Bar<'component>>>) -> Foo<'component> {
+        Self { bar_provider: bar }
+    }
+
+    pub fn create_bar(&self) -> Box<Bar> {
+        self.bar_provider.get()
     }
 }
 
-struct Bar<'a> {
-    foo: Box<crate::Foo<'a>>,
+struct Bar<'component> {
+    foo: Box<Foo<'component>>,
 }
 
 #[injectable]
-impl<'a> Bar<'a> {
+impl<'component> Bar<'component> {
     #[inject]
-    pub fn new(foo: Box<crate::Foo<'a>>) -> Bar<'a> {
+    pub fn new(foo: Box<Foo<'component>>) -> Bar<'component> {
         Self { foo }
     }
 }
+// ANCHOR_END: cyclic
 
 #[component]
 trait S {
-    fn foo(&self) -> crate::Foo;
+    fn foo(&self) -> Foo;
 }
 
 #[test]
 fn main() {
     let component: Box<dyn S> = <dyn S>::build();
-    component.foo().bar.get().foo.bar.get();
+    component.foo().create_bar().foo.create_bar();
 }
 
 lockjaw::epilogue!(test);

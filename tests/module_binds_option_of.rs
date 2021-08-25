@@ -31,8 +31,10 @@ impl MyModule {
         "string".to_owned()
     }
 
+    // ANCHOR: binds
     #[binds_option_of]
     pub fn binds_option_of_string() -> String {}
+    // ANCHOR_END: binds
 
     #[binds_option_of]
     pub fn binds_option_of_i32() -> i32 {}
@@ -40,7 +42,9 @@ impl MyModule {
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {
+    // ANCHOR: component
     fn option_string(&self) -> Option<String>;
+    // ANCHOR_END: component
     fn option_i32(&self) -> Option<i32>;
 }
 
