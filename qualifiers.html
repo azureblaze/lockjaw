@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Before using - Lockjaw User Guide</title>
+        <title>Qualifiers - Lockjaw User Guide</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html" class="active">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html" class="active"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,56 +143,90 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="before-using-lockjaw"><a class="header" href="#before-using-lockjaw">Before Using Lockjaw</a></h1>
-<p>Before using lockjaw you should carefully consider if it is really for you. Having compile time
-dependency injection is wonderful, but the current Rust proc-macro system does not make it easy, and
-there are a lot of trade-offs.</p>
-<h2 id="robustness"><a class="header" href="#robustness">Robustness</a></h2>
-<p>Lockjaw is experimental in its nature, with the main goal of reaching feature parity with Dagger. It
-tries to answer:</p>
+                        <h1 id="qualifiers"><a class="header" href="#qualifiers">Qualifiers</a></h1>
+<p>Sometimes users may need multiple shared instances of the same type for different purposes. For
+example the application may need
+different <a href="https://docs.rs/futures/0.3.16/futures/executor/struct.ThreadPool.html"><code>ThreadPool</code></a>:</p>
 <ul>
-<li>What dependency injection would look like in Rust?
-<ul>
-<li>Is it even possible?</li>
-<li>Is it going to be useful?</li>
-<li>How should lifetimes and borrows be handled?</li>
+<li>A thread pool for UI with a single thread, since OpenGL does not like concurrency.</li>
+<li>A thread pool for general purpose CPU bound tasks, with a thread for each physical core.</li>
+<li>A thread pool for IO bound tasks, with a small amount of threads. It is IO bound so more threads
+won't make it faster</li>
+<li>A thread pool for other blocking tasks with unbounded threads. Most of them will be idling anyway.</li>
 </ul>
-</li>
-<li>What are the hurdles when trying to implement a dependency injection framework in Rust?</li>
-</ul>
-<p>Currently lockjaw focuses on &quot;can&quot; instead of &quot;should&quot;. If there is any hacky undocumented compiler
-behavior we can abuse to implement a feature, It <strong>will</strong> be used. While we try to make it bug-free
-and generate safe code in the current version of Rust, there are no guarantee it will continue to
-work in the future.</p>
-<p>See the <a href="caveats.html">caveats</a> section for all horrible hacks used.</p>
-<p>Future efforts might be made to get language features Lockjaw need implemented in Rust, but that is
-a very long road.</p>
-<h2 id="maintenance"><a class="header" href="#maintenance">Maintenance</a></h2>
-<p>Lockjaw is a quite complicated project, but it is built by the developer with short attention span
-and other priorities, as a hobby project, while also trying to learn Rust. Do not expect continuous
-support, and especially consider that newer Rust can break Lockjaw at any moment.</p>
-<h2 id="irreversibility"><a class="header" href="#irreversibility">Irreversibility</a></h2>
-<p>Dependency injection frameworks are very invasive and will change how code are written. If you
-decide to remove Lockjaw in the future, you may need to rewrite the whole project.</p>
-<h2 id="only-use-lockjaw-if"><a class="header" href="#only-use-lockjaw-if">Only use lockjaw if...</a></h2>
-<ul>
-<li>You also like to live dangerously.</li>
-<li>You are experimenting things.</li>
-<li>You are working on a small project, and it won't be maintained in the future.</li>
-<li>Someone else will be maintaining the project in the future, and you are a horrible individual.</li>
-<li>You love dependency injection so much you are willing to patch bugs yourself, and freeze Rust
-version if it breaks Lockjaw.</li>
-</ul>
+<p>They all share the same type/interface, but have different internal characteristics. Trying to bind
+them all will cause duplicated binding failures. Furthermore, the user need to be able to specify
+which one they want.</p>
+<h2 id="new-type-idiom"><a class="header" href="#new-type-idiom">New type idiom</a></h2>
+<p>In most cases,
+the <a href="https://doc.rust-lang.org/rust-by-example/generics/new_types.html#new-type-idiom">new type idiom</a>
+is preferred. With new types, Lockjaw sees them as unrelated and won't cause duplicated binding
+issues. The compiler also provides strong compile time type check to ensure the correct one is used
+(an API that do IO work can explicitly ask for the IoThreadPool).</p>
+<p>However, the new type idiom does not work with bindings with type generated by Lockjaw such
+as <a href="provider.html">providers</a>, <a href="optional.html">optional bindings</a>,
+and <a href="multibindings.html">multibinding containers</a>. It may also cause a lot of wrapping/unwrapping when
+working with third party libraries.</p>
+<h2 id="qualifiers-1"><a class="header" href="#qualifiers-1">Qualifiers</a></h2>
+<p>Qualifiers are hints for Lockjaw to give a type different tags, so they can be bound separately.</p>
+<p>A qualifier must be declared first using
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.qualifier.html"><code>#[qualifier]</code></a> attribute macro.</p>
+<pre><code class="language-rust no_run noplayground">#[qualifier]
+pub struct Q1;
+
+</code></pre>
+<p>The struct body does not matter and probably should be empty.</p>
+<p>Once the qualifier is declared, it can then be used in
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.qualified.html"><code>#[qualified]</code></a>
+attribute on a method in a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html"><code>#[module]</code></a>,
+marking the return type as qualified. Lockjaw will treat the bindings as distinct types.</p>
+<pre><code class="language-rust no_run noplayground">#[module]
+impl MyModule {
+    #[provides]
+    pub fn provide_string() -&gt; String {
+        &quot;string&quot;.to_owned()
+    }
+
+    #[provides]
+    #[qualified(Q1)]
+    pub fn provide_q1_string() -&gt; String {
+        &quot;q1_string&quot;.to_owned()
+    }
+
+    #[provides]
+    #[qualified(Q2)]
+    pub fn provide_q2_string() -&gt; String {
+        &quot;q2_string&quot;.to_owned()
+    }
+}
+</code></pre>
+<p>Qualified types can be injected using
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/component_attributes/attr.qualified.html"><code>#[qualified]</code></a>
+attribute on the parameter, or the component method.</p>
+<pre><code class="language-rust no_run noplayground">#[component(modules: [MyModule])]
+pub trait MyComponent {
+    fn string(&amp;self) -&gt; String;
+    #[qualified(Q1)]
+    fn q1_string(&amp;self) -&gt; String;
+    #[qualified(Q2)]
+    fn q2_string(&amp;self) -&gt; String;
+}
+</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[inject]
+    pub fn new(#[qualified(Q)] s: String) -&gt; Foo {
+        Foo { s }
+    }
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="scoped.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
-                                                    <a rel="next" href="glossary.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                                    <a rel="next" href="provider.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -202,11 +236,11 @@ version if it breaks Lockjaw.</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="scoped.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
-                                    <a rel="next" href="glossary.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <a rel="next" href="provider.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                             </nav>
