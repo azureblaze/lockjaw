@@ -32,7 +32,7 @@ impl<'component> Foo<'component> {
         Self { bar_provider: bar }
     }
 
-    pub fn create_bar(&self) -> Box<Bar> {
+    pub fn create_bar(&self) -> Box<Bar<'component>> {
         self.bar_provider.get()
     }
 }
