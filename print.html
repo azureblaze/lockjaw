@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li><li class="chapter-item expanded "><a href="empty_multibinding.html"><strong aria-hidden="true">13.3.</strong> Empty multibindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -805,6 +805,8 @@ epilogue!();
 all. <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/enum.Cl.html"><code>Cl&lt;T&gt;</code></a> allows a type to decouple itself
 from whether the type depended on is scoped or not. It may be an owned instance or a shared
 instance, but the type does not care as it will not try to move it.</p>
+<h2 id="lifetime"><a class="header" href="#lifetime">Lifetime</a></h2>
+<p>Scoped objects are owned by the component and has the same lifetime as it.</p>
 <h2 id="handling-mutability"><a class="header" href="#handling-mutability">Handling mutability</a></h2>
 <p>In most uses a scoped type probably should be mutable to make it useful. However we cannot request
 it as <code>&amp;mut T</code> since certainly multiple objects will try to request it. Scoped types must
@@ -969,6 +971,8 @@ a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/struct.Provider.html"><code>Pro
 object once and caches the result. The object will only be created
 when <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/struct.Lazy.html#method.get"><code>get()</code></a> is called, and
 subsequent invocations returns a reference to the same object.</p>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<p>https://github.com/azureblaze/lockjaw/blob/main/tests/lazy.rs</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="factory"><a class="header" href="#factory">Factory</a></h1>
 <p>Sometimes an object needs not only injected values but also runtime values to be created, such as
 constructor parameters that depends on user input.</p>
@@ -1035,6 +1039,9 @@ impl Foo {
 <pre><code class="language-rust no_run noplayground">    #[binds]
     pub fn bind_foo_creator(impl_: FooFactory) -&gt; Cl&lt;dyn FooCreator&gt; {}
 </code></pre>
+<h2 id="examples-1"><a class="header" href="#examples-1">Examples</a></h2>
+<p>https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory.rs
+https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory_implementing.rs</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="optional-bindings"><a class="header" href="#optional-bindings">Optional bindings</a></h1>
 <p>Sometimes a binding might be optional, being behind
 a <a href="https://doc.rust-lang.org/cargo/reference/features.html">cargo feature</a> or provided by an
@@ -1053,7 +1060,350 @@ the <code>T</code>.</p>
 </code></pre>
 <p>If <code>T</code> is actually bound somewhere else, injecting <code>Option&lt;T&gt;</code> will result in <code>Some(T)</code>. Otherwise
 it will be <code>None</code>.</p>
-<div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><div style="break-before: page; page-break-before: always;"></div><h1 id="caveats"><a class="header" href="#caveats">Caveats</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="multibinding"><a class="header" href="#multibinding">Multibinding</a></h1>
+<p>Multibinding is a special type of binding in Lockjaw that allows duplicated bindings. Instead of
+enforcing one binding per type, multibindings gather the bindings into a collection, allowing
+&quot;everything implementing a type&quot; to be injected. This is especially useful to build a plugin system
+where an unspecified amount of implementations can be handled.</p>
+<p>Multibindings comes in 2 flavors, a <a href="vec.html"><code>Vec&lt;T&gt;</code> binding</a> that simply collects everything, and
+<a href="map.html"><code>HashMap&lt;K,V&gt;</code> binding</a> where key collisions are checked at compile time.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="vect-multibindings"><a class="header" href="#vect-multibindings"><code>Vec&lt;T&gt;</code> multibindings</a></h1>
+<p>A <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html"><code>#[provides]</code></a> or
+<a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.binds.html"><code>#[binds]</code></a> binding can
+also be marked with
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.into_vec.html"><code>#[into_vec]</code></a>
+attribute, which means instead of directly binding to <code>T</code>, the binding should be collected into a
+<code>Vec&lt;T&gt;</code>.</p>
+<p>With the bindings:</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[into_vec]
+    pub fn provide_string1() -&gt; String {
+        &quot;string1&quot;.to_owned()
+    }
+
+    #[provides]
+    #[into_vec]
+    pub fn provide_string2() -&gt; String {
+        &quot;string2&quot;.to_owned()
+    }
+</code></pre>
+<p><code>Vec&lt;String&gt;</code> can be injected with the values <code>[&quot;string1&quot;, &quot;string2&quot;]</code>. This works across all
+modules that are installed.</p>
+<p><code>#[into_vec]</code> can also be <a href="qualifiers.html"><code>#[qualified]</code></a></p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[qualified(Q)]
+    #[into_vec]
+    pub fn provide_q_string1() -&gt; String {
+        &quot;q_string1&quot;.to_owned()
+    }
+</code></pre>
+<p>Which result in <code>#[qualified(Q)] Vec&lt;String&gt;</code>. Note that the container is qualified instead of the
+content.</p>
+<p><code>#[into_vec]</code> also works with <a href="binds.html"><code>#[binds]</code></a></p>
+<pre><code class="language-rust no_run noplayground">    #[binds]
+    #[into_vec]
+    pub fn bind_bar(impl_: crate::Bar) -&gt; Cl&lt;dyn crate::Foo&gt; {}
+
+    #[binds]
+    #[into_vec]
+    pub fn bind_baz(impl_: crate::Baz) -&gt; Cl&lt;dyn crate::Foo&gt; {}
+</code></pre>
+<p>Which allows <code>Vec&lt;Cl&lt;dyn Foo&gt;&gt;</code> to be injected. This is a common way to implement event callbacks.</p>
+<h2 id="providing-multiple-items"><a class="header" href="#providing-multiple-items">Providing multiple items</a></h2>
+<p>A method marked
+with <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.elements_into_vec.html"><code>#[elements_into_vec]</code></a>
+can return <code>Vec&lt;T&gt;</code>, which will get merged with other <code>#[into_vec]</code> and <code>#[elements_into_vec]</code>.</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[elements_into_vec]
+    pub fn provide_strings() -&gt; Vec&lt;String&gt; {
+        vec![&quot;string3&quot;.to_owned(), &quot;string4&quot;.to_owned()]
+    }
+</code></pre>
+<p>This allows multiple bindings to be provided at once. It also allows a binding method to decide not
+to provide anything at runtime, by returning an empty <code>Vec</code>.</p>
+<h2 id="duplication-behaviors"><a class="header" href="#duplication-behaviors">Duplication behaviors</a></h2>
+<p>Lockjaw's <code>#[into_vec]</code> strays from
+Dagger's <a href="https://dagger.dev/api/latest/dagger/multibindings/IntoSet.html"><code>@IntoSet</code></a>, as <code>Hash</code>
+and <code>Eq</code> are not universally implemented in Rust. This mean the <code>Vec</code> may contain duplicated values.</p>
+<p>However, duplicated modules are not allowed by Lockjaw, so each binding method will be called at
+most once when generating the <code>Vec</code>.</p>
+<p>If deduplication is needed, you can add another provider that does the conversion:</p>
+<pre><code class="language-rust no_run noplayground">#[provides]
+pub fn vec_string_to_set_string(v: Vec&lt;String&gt;) -&gt; HashSet&lt;String&gt; {
+    HashSet::from_iter(v)
+}
+</code></pre>
+<h2 id="examples-2"><a class="header" href="#examples-2">Examples</a></h2>
+<p>https://github.com/azureblaze/lockjaw/blob/main/tests/module_provides_into_vec.rs</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="hashmapkv-multibinding"><a class="header" href="#hashmapkv-multibinding"><code>HashMap&lt;K,V&gt;</code> multibinding</a></h1>
+<p>Similar to <a href="vec.html"><code>Vec&lt;T&gt; multibinding</code></a>,
+a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html"><code>#[provides]</code></a> or
+<a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.binds.html"><code>#[binds]</code></a> binding can
+also be marked with
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.into_map.html"><code>#[into_map]</code></a>
+attribute, which collects the key-value pair into
+a <a href="https://doc.rust-lang.org/std/collections/struct.HashMap.html"><code>HashMap</code></a></p>
+<p>While a map can be created by multibinding <code>Vec&lt;(K,V)&gt;</code> or some other entry generating mechanisms,
+the <code>HashMap&lt;K,V&gt;</code> multibinding has additional compile time checks to make sure there are no key
+collisions.</p>
+<h2 id="map-keys"><a class="header" href="#map-keys">Map keys</a></h2>
+<p>The value type is specified by the binding method return value, but the key type and value needs to
+be specified by a metadata in the <code>#[into_map]</code> attribute.</p>
+<h3 id="string_key"><a class="header" href="#string_key"><code>string_key</code></a></h3>
+<p><code>string_key</code> specifies the map key is
+a <a href="https://doc.rust-lang.org/std/string/struct.String.html"><code>String</code></a>. The value must be a string
+literal, lockjaw is unable to resolve more complex compile time constants.</p>
+<p>This example binds to <code>HashMap&lt;String,String&gt;</code>:</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[into_map(string_key: &quot;1&quot;)]
+    pub fn provide_string1() -&gt; String {
+        &quot;string1&quot;.to_owned()
+    }
+
+    #[provides]
+    #[into_map(string_key: &quot;2&quot;)]
+    pub fn provide_string2() -&gt; String {
+        &quot;string2&quot;.to_owned()
+    }
+</code></pre>
+<h3 id="i32_key"><a class="header" href="#i32_key"><code>i32_key</code></a></h3>
+<p><code>i32_key</code> specifies the map key is an <code>i32</code>. The value must be an i32 literal, lockjaw is unable to
+resolve more complex compile time constants.</p>
+<p>This example binds to <code>HashMap&lt;i32,String&gt;</code>:</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[into_map(i32_key: 1)]
+    pub fn provide_i32_string1() -&gt; String {
+        &quot;string1&quot;.to_owned()
+    }
+
+    #[provides]
+    #[into_map(i32_key: 2)]
+    pub fn provide_i32_string2() -&gt; String {
+        &quot;string2&quot;.to_owned()
+    }
+</code></pre>
+<p>Other types are not implemented. <code>i32</code> ought to be enough for everyone.</p>
+<h3 id="enum_key"><a class="header" href="#enum_key"><code>enum_key</code></a></h3>
+<p><code>i32_key</code> specifies the map key is an <code>enum</code>. Since the <code>enum</code> is going to be used as the map key,
+it must satisfy the same constraints <code>HashMap</code> gives, which is
+implementing <a href="https://doc.rust-lang.org/std/cmp/trait.Eq.html"><code>Eq</code></a>
+and <a href="https://doc.rust-lang.org/std/hash/trait.Hash.html"><code>Hash</code></a>. It also must be a simple enum with
+no fields so Lockjaw knows how to compare them at compile time (meaning comparing the name is
+enough).</p>
+<pre><code class="language-rust no_run noplayground">#[derive(Eq, PartialEq, Hash)]
+pub enum E {
+    Foo,
+    Bar,
+}
+</code></pre>
+<p>This example binds to <code>HashMap&lt;E,String&gt;</code>:</p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[into_map(enum_key: E::Foo)]
+    pub fn provide_enum_string1() -&gt; String {
+        &quot;string1&quot;.to_owned()
+    }
+
+    #[provides]
+    #[into_map(enum_key: Bar)]
+    pub fn provide_enum_string2() -&gt; String {
+        &quot;string2&quot;.to_owned()
+    }
+</code></pre>
+<p>Lockjaw is able to infer the enum type (<code>E</code>) if the value is imported (<code>use E::Bar</code>), but the code
+maybe be more readable if the type is explicitly spelled out, especially most IDEs today cannot
+properly inspect tokens inside the metadata.</p>
+<h2 id="qualifiers-2"><a class="header" href="#qualifiers-2">Qualifiers</a></h2>
+<p><code>#[into_map]</code> can also be <a href="qualifiers.html"><code>#[qualified]</code></a></p>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[qualified(Q)]
+    #[into_map(string_key: &quot;1&quot;)]
+    pub fn provide_q_string1() -&gt; String {
+        &quot;q_string1&quot;.to_owned()
+    }
+</code></pre>
+<p>Which result in <code> #[qualified(Q)] HashMap&lt;String, String&gt;</code>. Note that the container is qualified
+instead of the content.</p>
+<h2 id="dynamic-map-entries"><a class="header" href="#dynamic-map-entries">Dynamic map entries</a></h2>
+<p>All bindings in <code>#[into_map]</code> must be resolved at compile time, There are
+no <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.elements_into_vec.html"><code>#[elements_into_vec]</code></a>
+equivalent such as <code>#[elements_into_map]</code>.</p>
+<p>However dynamic map entries can be achieved by rebinding <code>Vec&lt;(K,V)&gt;</code> into a <code>HashMap&lt;K,V&gt;</code>.</p>
+<h2 id="examples-3"><a class="header" href="#examples-3">Examples</a></h2>
+<p>https://github.com/azureblaze/lockjaw/blob/main/tests/module_provides_into_map.rs</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="empty-multibindings"><a class="header" href="#empty-multibindings">Empty multibindings</a></h1>
+<p>The binding for <code>Vec&lt;T&gt;</code> and <code>HashMap&lt;K,V&gt;</code> is automatically generated when <a href="vec.html"><code>#[into_vec]</code></a>
+or <a href="map.html"><code>#[into_map]</code></a> is encountered. However when such binding does not exist and someone
+depended on the collection, Lockjaw cannot be sure if it should provide an empty collection since it
+should be a multibinding, or if the user forgot to bind the collection.</p>
+<p>This usually happens when a library defines a multibinding for events, etc., but does not bind
+anything to it itself, and clients aren't forced to use the event.</p>
+<p>A <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.multibinds.html"><code>#[multibinds]</code></a>
+method that returns the collection type should be declared in such case, to let Lockjaw know a
+multibinding collection is intended, but it may be empty.</p>
+<pre><code class="language-rust no_run noplayground">#[module]
+impl MyModule {
+    #[multibinds]
+    fn vec_string() -&gt; Vec&lt;String&gt; {}
+
+    #[multibinds]
+    #[qualified(Q)]
+    fn q_vec_string() -&gt; Vec&lt;String&gt; {}
+
+    #[multibinds]
+    fn map_string_string() -&gt; HashMap&lt;String, String&gt; {}
+
+    #[multibinds]
+    #[qualified(Q)]
+    fn q_map_string_string() -&gt; HashMap&lt;String, String&gt; {}
+}
+</code></pre>
+<p><code>#[multibinds]</code> also serves as documentation on the <code>#[module]</code> specifying it is expecting the
+multibinding.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="subcomponents"><a class="header" href="#subcomponents">Subcomponents</a></h1>
+<p><a href="scoped.html">Scopes</a> enforces an object to be a singleton within the component, so everyone can
+interact with the same instance. However there are times when we need multiple sets of such
+instances. For example, we might be implementing a web server, and there are a lot of shared
+resources with every session. We want the session to be independent, so we need to create component
+for each session:</p>
+<pre><code class="language-rust no_run noplayground">impl Server {
+    pub fn new_session(url: Url) -&gt; Session {
+      Session{
+         component: &lt;dyn SessionComponent&gt;::build({url,...})
+      }
+    }
+}
+</code></pre>
+<p>However, there are also some resource that belongs to the whole server shared by all sessions, for
+example, an IO bound thread pool. We have to rebind this in every <code>SessionComponent</code></p>
+<pre><code class="language-rust no_run noplayground">impl Server{
+    #[inject]
+    pub fn new(#[qualified(IoBound)] io_threadpool: &amp;ThreadPool) { ... }
+    
+        pub fn new_session(&amp;self, url: Url) -&gt; Session {
+        Session {
+            component: &lt;dyn SessionComponent&gt;::build({
+                url,
+                self.io_threadpool,
+                ...
+            })
+        }
+    }
+}
+</code></pre>
+<p>Managing these will soon get ugly.</p>
+<p>Instead we can create
+a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.subcomponent.html"><code>#[subcomponent]</code></a> which can have
+distinct scoped bindings, modules, but also has access to bindings in its parent component.</p>
+<p>Using <code>#[subcomponent]</code> is almost identical to a regular <code>#[component]</code>, except that the
+<code>#[subcomponent]</code> has to be installed in a parent component, and the method to create an instance.</p>
+<h2 id="installing-a-subcomponent"><a class="header" href="#installing-a-subcomponent">Installing a <code>#[subcomponent]</code></a></h2>
+<p>A <code>#[subcomponent]</code> is installed by first listing it in
+a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html#"><code>#[module]</code></a> using
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html#subcomponents"><code>subcomponents</code> metadata</a></p>
+<pre><code class="language-rust no_run noplayground">#[module(subcomponents: [MySubcomponent])]
+impl ParentComponentModule {
+</code></pre>
+<p>Then installing the <code>#[module]</code> in a parent component. The parent component can be either a regular
+component or another subcomponent.</p>
+<h2 id="creating-a-instance-of-the-subcomponent"><a class="header" href="#creating-a-instance-of-the-subcomponent">Creating a instance of the subcomponent</a></h2>
+<p>The <code>#[module]</code> with a <code>subcomponents: [FooSubcomponent]</code> metadata creates hidden binding
+of <code>Cl&lt;FooSubcomponentBuilder&gt;</code> which can be injected to create new instances of <code>FooSubcomponent</code>
+by calling <code>build()</code>. <code>build()</code> also takes the
+corresponding <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html"><code>#[builder_modules]</code></a>
+if the subcomponent is defined with
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules"><code>builder_modules</code> metadata</a></p>
+<p><code>build</code> can be called multiple times to create independent subcomponents, with the parent being
+shared.</p>
+<h2 id="lifetime-1"><a class="header" href="#lifetime-1">Lifetime</a></h2>
+<p>The lifetime of the subcomponent is bound by its parent.</p>
+<h2 id="examples-4"><a class="header" href="#examples-4">Examples</a></h2>
+<p>https://github.com/azureblaze/lockjaw/blob/main/tests/sub_component.rs</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="defined-components"><a class="header" href="#defined-components">Defined components</a></h1>
+<p>One of the issues with
+using <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#"><code>#[component]</code></a>
+and <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.subcomponent.html"><code>#[subcomponent]</code></a> is that
+modules still has to be listed, which means anything using the component will depend on everything.
+The component is also generated in the crate, so other crates depending on it is not able to expand
+the dependency graph, which makes <a href="multibindings.html">multibindings</a> less useful. Additionally, unit
+tests often needs a different set of modules, so the whole component has to be redefined.</p>
+<p>In a large project there maybe tens and even hundreds of modules, and this will become very
+difficult to manage.</p>
+<p>Instead of <code>#[component]</code> and <code>#[subcomponent]</code>, Lockjaw also
+provides <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.define_component.html"><code>#[define_component]</code></a>
+and<a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.define_subcomponent.html"><code>#[define_subcomponent]</code></a>
+which automatically collects modules from the entire build dependency tree, so they no longer need
+to be manually installed.</p>
+<h1 id="root-crate"><a class="header" href="#root-crate">Root crate</a></h1>
+<p>When using <code>#[define_component]</code> the component is not immediately generated, since modules from
+crates depending on the current crate may still want to add to the dependency graph.</p>
+<p>Lockjaw needs to know which crate is the root crate that is not depended on by other crates, which
+is done by passing
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/macro.epilogue.html#root"><code>root</code> identifier</a> to
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/macro.epilogue.html"><code>epilogue!()</code> macro</a></p>
+<pre><code>epilogue!(root);
+</code></pre>
+<p>Typically the root crate is the binary. Libraries can also be the root crate but that is probably
+not a good idea. Lockjaw will fail compilation if a crate using it depends on another crate that is
+a root crate.</p>
+<h2 id="automatically-installing-modules"><a class="header" href="#automatically-installing-modules">Automatically installing modules</a></h2>
+<p><a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html"><code>#[modules]</code></a> can be automatically
+installed in a component by using
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html#install_in"><code>install_in</code> metadata</a>. The
+metadata takes a path to a <code>#[define_component]</code> <code>trait</code>. Alternatively, it can also be a path to
+<a href="https://docs.rs/lockjaw/latest/lockjaw/trait.Singleton.html"><code>Singleton</code></a>, which means it should be
+installed in every <code>#[define_component]</code> but not <code>#[define_subcomponent]</code>.</p>
+<p>Such modules cannot have fields.</p>
+<pre><code class="language-rust no_run noplayground">#[module(install_in: MyComponent)]
+impl MyModule {
+    #[provides]
+    pub fn provide_string() -&gt; String {
+        &quot;string&quot;.to_owned()
+    }
+}
+
+#[define_component]
+pub trait MyComponent {
+    fn string(&amp;self) -&gt; String;
+}
+</code></pre>
+<h2 id="entry-points"><a class="header" href="#entry-points">Entry points</a></h2>
+<p>Ideally a component should only be used at the program's entry point, and rest of the program should
+all use dependency injection, instead of trying to pass the component around. However sometimes
+callbacks will be called from non-injected context, and the user will need to reach back into the
+component.</p>
+<p>These kinds of usage will cause the <a href="request.html">requesting methods</a> in a component to bloat, and
+add redundant dependencies or cycle issues to everyone that uses the component.</p>
+<p>With <code>#[define_component]</code>
+, <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.entry_point.html"><code>#[entry_point]</code></a> can be used.</p>
+<p>An <code>#[entry_point]</code> has binding requesting methods just like a component.
+The <a href=""><code>install_in</code> metadata</a> needs to be used to install the <code>#[entry_point]</code> in a component. Once
+installed, the</p>
+<pre><code class="language-rust no_run noplayground">&lt;dyn FooEntryPoint&gt;::get(component : &amp;dyn FooComponent) -&gt; &amp;dyn FooEntryPoint
+</code></pre>
+<p>method can be used to cast the opaque component into the entry point, and access the dependency
+graph.</p>
+<pre><code class="language-rust no_run noplayground">#[entry_point(install_in: MyComponent)]
+pub trait MyEntryPoint {
+    fn i(&amp;self) -&gt; i32;
+}
+
+#[define_component]
+pub trait MyComponent {}
+
+#[test]
+pub fn main() {
+    let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::new();
+
+    assert_eq!(&lt;dyn MyEntryPoint&gt;::get(component.as_ref()).i(), 42)
+}
+</code></pre>
+<h2 id="testing-with-define_component"><a class="header" href="#testing-with-define_component">Testing with <code>#[define_component]</code></a></h2>
+<p>While compiling tests, Lockjaw gathers <code>install_in</code> modules only from the <code>[dev-dependencies]</code>
+section of <code>Cargo.toml</code> instead of the regular <code>[dependencies]</code>, even though <code>[dev-dependencies]</code>
+inherits <code>[dependencies]</code>. This is due to tests often have conflicting modules with prod code. any
+prod modules that need to be used in tests has to be relisted again in the <code>[dev-dependencies]</code>
+section. </p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="caveats"><a class="header" href="#caveats">Caveats</a></h1>
 <p>Due to limitations of Rust and the author's ignorance, some of lockjaw's APIs have bad ergonomics,
 and some others have abusive implementation which may break any time as Rust evolves
 (or even already broken on some platforms). Beware of these before using lockjaw.</p>

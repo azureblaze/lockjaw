@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html" class="active"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li><li class="chapter-item expanded "><a href="empty_multibinding.html"><strong aria-hidden="true">13.3.</strong> Empty multibindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html" class="active"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,12 +143,71 @@
 
                 <div id="content" class="content">
                     <main>
-                        
+                        <h1 id="subcomponents"><a class="header" href="#subcomponents">Subcomponents</a></h1>
+<p><a href="scoped.html">Scopes</a> enforces an object to be a singleton within the component, so everyone can
+interact with the same instance. However there are times when we need multiple sets of such
+instances. For example, we might be implementing a web server, and there are a lot of shared
+resources with every session. We want the session to be independent, so we need to create component
+for each session:</p>
+<pre><code class="language-rust no_run noplayground">impl Server {
+    pub fn new_session(url: Url) -&gt; Session {
+      Session{
+         component: &lt;dyn SessionComponent&gt;::build({url,...})
+      }
+    }
+}
+</code></pre>
+<p>However, there are also some resource that belongs to the whole server shared by all sessions, for
+example, an IO bound thread pool. We have to rebind this in every <code>SessionComponent</code></p>
+<pre><code class="language-rust no_run noplayground">impl Server{
+    #[inject]
+    pub fn new(#[qualified(IoBound)] io_threadpool: &amp;ThreadPool) { ... }
+    
+        pub fn new_session(&amp;self, url: Url) -&gt; Session {
+        Session {
+            component: &lt;dyn SessionComponent&gt;::build({
+                url,
+                self.io_threadpool,
+                ...
+            })
+        }
+    }
+}
+</code></pre>
+<p>Managing these will soon get ugly.</p>
+<p>Instead we can create
+a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.subcomponent.html"><code>#[subcomponent]</code></a> which can have
+distinct scoped bindings, modules, but also has access to bindings in its parent component.</p>
+<p>Using <code>#[subcomponent]</code> is almost identical to a regular <code>#[component]</code>, except that the
+<code>#[subcomponent]</code> has to be installed in a parent component, and the method to create an instance.</p>
+<h2 id="installing-a-subcomponent"><a class="header" href="#installing-a-subcomponent">Installing a <code>#[subcomponent]</code></a></h2>
+<p>A <code>#[subcomponent]</code> is installed by first listing it in
+a <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html#"><code>#[module]</code></a> using
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html#subcomponents"><code>subcomponents</code> metadata</a></p>
+<pre><code class="language-rust no_run noplayground">#[module(subcomponents: [MySubcomponent])]
+impl ParentComponentModule {
+</code></pre>
+<p>Then installing the <code>#[module]</code> in a parent component. The parent component can be either a regular
+component or another subcomponent.</p>
+<h2 id="creating-a-instance-of-the-subcomponent"><a class="header" href="#creating-a-instance-of-the-subcomponent">Creating a instance of the subcomponent</a></h2>
+<p>The <code>#[module]</code> with a <code>subcomponents: [FooSubcomponent]</code> metadata creates hidden binding
+of <code>Cl&lt;FooSubcomponentBuilder&gt;</code> which can be injected to create new instances of <code>FooSubcomponent</code>
+by calling <code>build()</code>. <code>build()</code> also takes the
+corresponding <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html"><code>#[builder_modules]</code></a>
+if the subcomponent is defined with
+the <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules"><code>builder_modules</code> metadata</a></p>
+<p><code>build</code> can be called multiple times to create independent subcomponents, with the parent being
+shared.</p>
+<h2 id="lifetime"><a class="header" href="#lifetime">Lifetime</a></h2>
+<p>The lifetime of the subcomponent is bound by its parent.</p>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<p>https://github.com/azureblaze/lockjaw/blob/main/tests/sub_component.rs</p>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="map.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="empty_multibinding.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
@@ -162,7 +221,7 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="map.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="empty_multibinding.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
