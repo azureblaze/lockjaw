@@ -35,8 +35,10 @@ pub trait MySubcomponent<'a> {
 
 struct ParentComponentModule {}
 
+// ANCHOR: list
 #[module(subcomponents: [MySubcomponent])]
 impl ParentComponentModule {
+    // ANCHOR_END: list
     #[provides]
     pub fn provide_i64() -> i64 {
         64

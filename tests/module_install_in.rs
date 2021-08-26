@@ -24,6 +24,7 @@ lockjaw::prologue!("tests/module_install_in.rs");
 
 pub struct MyModule {}
 
+// ANCHOR: install_in
 #[module(install_in: MyComponent)]
 impl MyModule {
     #[provides]
@@ -36,6 +37,7 @@ impl MyModule {
 pub trait MyComponent {
     fn string(&self) -> String;
 }
+// ANCHOR_END:install_in
 
 #[test]
 pub fn main() {

@@ -36,6 +36,10 @@ all. [`Cl<T>`](https://docs.rs/lockjaw/0.2.0/lockjaw/enum.Cl.html) allows a type
 from whether the type depended on is scoped or not. It may be an owned instance or a shared
 instance, but the type does not care as it will not try to move it.
 
+## Lifetime
+
+Scoped objects are owned by the component and has the same lifetime as it.
+
 ## Handling mutability
 
 In most uses a scoped type probably should be mutable to make it useful. However we cannot request
