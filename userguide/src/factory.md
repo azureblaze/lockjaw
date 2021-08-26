@@ -66,3 +66,8 @@ This is especially useful to bind the factory to a trait
 ```rust,no_run,noplayground
 {{#include ../../tests/injectable_factory_implementing.rs:bind}}
 ```
+
+## Examples
+
+https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory.rs
+https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory_implementing.rs

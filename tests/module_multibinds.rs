@@ -27,6 +27,7 @@ struct Q;
 
 pub struct MyModule {}
 
+// ANCHOR: multibinds
 #[module]
 impl MyModule {
     #[multibinds]
@@ -43,6 +44,7 @@ impl MyModule {
     #[qualified(Q)]
     fn q_map_string_string() -> HashMap<String, String> {}
 }
+// ANCHOR_END: multibinds
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {

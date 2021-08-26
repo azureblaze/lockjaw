@@ -70,6 +70,7 @@ impl MyModule {
         "string".to_owned()
     }
 
+    // ANCHOR: into_vec
     #[provides]
     #[into_vec]
     pub fn provide_string1() -> String {
@@ -81,13 +82,15 @@ impl MyModule {
     pub fn provide_string2() -> String {
         "string2".to_owned()
     }
-
+    // ANCHOR_END: into_vec
+    // ANCHOR: qualified
     #[provides]
     #[qualified(Q)]
     #[into_vec]
     pub fn provide_q_string1() -> String {
         "q_string1".to_owned()
     }
+    // ANCHOR_END: qualified
 
     #[provides]
     #[qualified(Q)]
@@ -96,12 +99,15 @@ impl MyModule {
         "q_string2".to_owned()
     }
 
+    // ANCHOR: elements_into_vec
     #[provides]
     #[elements_into_vec]
     pub fn provide_strings() -> Vec<String> {
         vec!["string3".to_owned(), "string4".to_owned()]
     }
+    // ANCHOR_END: elements_into_vec
 
+    // ANCHOR: binds
     #[binds]
     #[into_vec]
     pub fn bind_bar(impl_: crate::Bar) -> Cl<dyn crate::Foo> {}
@@ -109,16 +115,22 @@ impl MyModule {
     #[binds]
     #[into_vec]
     pub fn bind_baz(impl_: crate::Baz) -> Cl<dyn crate::Foo> {}
+    // ANCHOR_END: binds
 }
 
 #[component(modules: [MyModule])]
 pub trait MyComponent {
     fn string(&self) -> String;
+    // ANCHOR: component
     fn vec_string(&self) -> Vec<String>;
+    // ANCHOR_END: component
+    // ANCHOR: component_qualified
     #[qualified(Q)]
     fn q_vec_string(&self) -> Vec<String>;
-
+    // ANCHOR_END: component_qualified
+    // ANCHOR: component_binds
     fn vec_foo(&'_ self) -> Vec<Cl<'_, dyn crate::Foo>>;
+    // ANCHOR_END: component_binds
 }
 
 #[test]

@@ -28,11 +28,13 @@ pub struct MyModule {}
 #[qualifier]
 struct Q;
 
+// ANCHOR: enum
 #[derive(Eq, PartialEq, Hash)]
 pub enum E {
     Foo,
     Bar,
 }
+// ANCHOR_END: enum
 
 use E::Bar;
 
@@ -43,6 +45,7 @@ impl MyModule {
         "string".to_owned()
     }
 
+    // ANCHOR: string_key
     #[provides]
     #[into_map(string_key: "1")]
     pub fn provide_string1() -> String {
@@ -54,13 +57,16 @@ impl MyModule {
     pub fn provide_string2() -> String {
         "string2".to_owned()
     }
+    // ANCHOR_END: string_key
 
+    // ANCHOR: qualified
     #[provides]
     #[qualified(Q)]
     #[into_map(string_key: "1")]
     pub fn provide_q_string1() -> String {
         "q_string1".to_owned()
     }
+    // ANCHOR_END: qualified
 
     #[provides]
     #[qualified(Q)]
@@ -69,6 +75,7 @@ impl MyModule {
         "q_string2".to_owned()
     }
 
+    // ANCHOR: i32_key
     #[provides]
     #[into_map(i32_key: 1)]
     pub fn provide_i32_string1() -> String {
@@ -80,7 +87,9 @@ impl MyModule {
     pub fn provide_i32_string2() -> String {
         "string2".to_owned()
     }
+    // ANCHOR_END: i32_key
 
+    // ANCHOR: enum_key
     #[provides]
     #[into_map(enum_key: E::Foo)]
     pub fn provide_enum_string1() -> String {
@@ -92,6 +101,7 @@ impl MyModule {
     pub fn provide_enum_string2() -> String {
         "string2".to_owned()
     }
+    // ANCHOR_END: enum_key
 }
 
 #[component(modules: [MyModule])]

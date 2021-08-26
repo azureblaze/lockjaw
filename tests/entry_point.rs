@@ -17,7 +17,6 @@ limitations under the License.
 use lockjaw::{define_component, entry_point, module, prologue};
 
 prologue!("tests/entry_point.rs");
-
 struct MyModule {}
 
 #[module(install_in: MyComponent)]
@@ -28,6 +27,7 @@ impl MyModule {
     }
 }
 
+// ANCHOR: entry_point
 #[entry_point(install_in: MyComponent)]
 pub trait MyEntryPoint {
     fn i(&self) -> i32;
@@ -42,5 +42,5 @@ pub fn main() {
 
     assert_eq!(<dyn MyEntryPoint>::get(component.as_ref()).i(), 42)
 }
-
+// ANCHOR_END: entry_point
 lockjaw::epilogue!();

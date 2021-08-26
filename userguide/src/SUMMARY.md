@@ -24,6 +24,7 @@
 - [Multibindings](multibindings.md)
   - [Vec bindings](vec.md)
   - [Map bindings](map.md)
+  - [Empty multibindings](empty_multibinding.md)
 - [Subcomponents](subcomponent.md)
 - [Defined components](define_component.md)
 

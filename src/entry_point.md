@@ -39,8 +39,6 @@ Entry point methods behaves the same as [component methods](component#component-
 
 # Entry point retriever
 
-# Component builder
-
 For a trait `FooEntryPoint` annotated with `#[entry_point(install_in: FooComponent)]`, a retriever
 method is generated:
 
