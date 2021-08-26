@@ -34,7 +34,7 @@ members = [
 
 [package]
 name = "lockjaw"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Ta-wei Yen"]
 edition = "2018"
 description = "Compile time dependency injection framework inspired by dagger"
@@ -46,7 +46,7 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lockjaw_processor = { path = "processor", version = "0.2.0" }
+lockjaw_processor = { path = "processor", version = "0.2.1" }
 regex = "1"
 
 [build-dependencies]
