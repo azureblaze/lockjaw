@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Builder Modules - Lockjaw User Guide</title>
+        <title>Late implementation generation - Lockjaw User Guide</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html" class="active"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li><li class="chapter-item expanded "><a href="empty_multibinding.html"><strong aria-hidden="true">13.3.</strong> Empty multibindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="path_resolution.html"><strong aria-hidden="true">16.1.</strong> Path resolution</a></li><li class="chapter-item expanded "><a href="cross_macro_communication.html"><strong aria-hidden="true">16.2.</strong> Cross macro communication</a></li><li class="chapter-item expanded "><a href="visibility_bypass.html"><strong aria-hidden="true">16.3.</strong> Bypassing visibility</a></li><li class="chapter-item expanded "><a href="late_impl_generation.html"><strong aria-hidden="true">16.4.</strong> Late implementation generation</a></li><li class="spacer"></li></ol></li><li class="chapter-item expanded "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li><li class="chapter-item expanded "><a href="empty_multibinding.html"><strong aria-hidden="true">13.3.</strong> Empty multibindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="path_resolution.html"><strong aria-hidden="true">16.1.</strong> Path resolution</a></li><li class="chapter-item expanded "><a href="cross_macro_communication.html"><strong aria-hidden="true">16.2.</strong> Cross macro communication</a></li><li class="chapter-item expanded "><a href="visibility_bypass.html"><strong aria-hidden="true">16.3.</strong> Bypassing visibility</a></li><li class="chapter-item expanded "><a href="late_impl_generation.html" class="active"><strong aria-hidden="true">16.4.</strong> Late implementation generation</a></li><li class="spacer"></li></ol></li><li class="chapter-item expanded "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,86 +143,27 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="builder-modules"><a class="header" href="#builder-modules">Builder Modules</a></h1>
-<p>In the previous chapter the modules are without fields, so Lockjaw can easily create instances of it
-(In fact no instance are created since Lockjaw can just call the static methods). However sometimes
-we want to be able to affect the values that are bound at runtime, hence need to be able to change
-what <code>#[provides]</code> does using fields in the module.</p>
-<pre><code class="language-rust no_run noplayground">struct MyModule {
-    i: i32,
-}
-
-#[module]
-impl MyModule {
-    #[provides]
-    pub fn provide_i32(&amp;self) -&gt; i32 {
-        self.i
-    }
-}
-</code></pre>
-<p>Since the <code>struct</code> now has fields Lockjaw can no longer automatically create it, the user must
-manually pass in the modules when creating the component.</p>
-<p><em>Implementation note: While Lockjaw can also try to
-use <a href="https://doc.rust-lang.org/std/default/trait.Default.html">Default</a> or some other mechanisms,
-usages like this implies the module has mutable state and generally is a bad idea.</em></p>
-<h2 id="using-builder-modules"><a class="header" href="#using-builder-modules">Using builder modules</a></h2>
-<p>Instead of passing the runtime modules to the component one by one, they are collected in a single
-<code>struct</code> annotated by
-the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.builder_modules.html"><code>#[builder_modules]</code></a>
-attribute.</p>
-<pre><code class="language-rust no_run noplayground">#[builder_modules]
-struct MyBuilderModules {
-    my_module: MyModule,
-}
-</code></pre>
-<p>Every field in the struct should be a module. Using a <code>struct</code> makes sure each module will be
-required by the compiler/IDE while exposing the least amount of generated code(which is harder for
-users and IDEs to understand, it is better to spell everything out in visible code.).</p>
-<p>The <code>#[builder_modules]</code> can then be installed in the component using
-the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#builder_modules"><code>builder_modules</code> metadata</a></p>
-<pre><code class="language-rust no_run noplayground">#[component(builder_modules: MyBuilderModules)]
-trait MyComponent {
-    fn i32(&amp;self) -&gt; i32;
-}
-</code></pre>
-<p>The component only accepts one<code>#[builder_modules]</code>, which is likely to be specifically tailored for
-the component. The modules itself can be shared.</p>
-<p>The <code>builder_modules</code> metadata can be used at the same time with
-the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#modules"><code>modules</code> metadata</a>.
-<code>modules</code> should be preferred whenever possible as they are easier to use.</p>
-<h2 id="creating-components-with-builder-modules"><a class="header" href="#creating-components-with-builder-modules">Creating components with builder modules</a></h2>
-<p>If
-the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#builder_modules"><code>builder_modules</code> metadata</a>
-is specified,
-the  <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.builder_modules.html"><code>#[builder_modules] struct</code></a>
-will become the parameter for
-the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#component-builder"><code>build()</code> method</a>
-of the component which the user must pass.</p>
-<pre><code class="language-rust no_run noplayground">#[test]
-fn test() {
-    let my_module = MyModule { i: 42 };
-    let my_builder_modules = MyBuilderModules { my_module };
-    let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::build(my_builder_modules);
-    assert_eq!(component.i32(), 42);
-
-    let other_component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::build(MyBuilderModules {
-        my_module: MyModule { i: 123 },
-    });
-    assert_eq!(other_component.i32(), 123);
-}
-</code></pre>
-<p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/builder/">Source</a> of this
-chapter</p>
+                        <h1 id="late-implementation-generation"><a class="header" href="#late-implementation-generation">Late implementation generation</a></h1>
+<p>Rust requires the <code>impl</code> block to appear in the same <code>mod</code> is the type it implements. Items cannot
+be added to a mod later either. However with Lockjaw information to generate the implementation may
+not be available at the time, especially for component builders. Furthermore, the implementation may
+not even be possible in the same crate
+for <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.define_component.html"><code>#[define_component]</code></a>.</p>
+<p>Component builders should be associated method of the component, or at least a free-standing
+function in the same <code>mod</code>. Otherwise it will be hard for users to locate them.</p>
+<p>Lockjaw handles this by implementing such methods by calling an <code>extern</code> method. Which will later
+be generated. While this works, if the user forgets to call the code generation macro, a cryptic
+linker error about missing symbol will appear.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="provides.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="visibility_bypass.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
-                                                    <a rel="next" href="binds.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                                    <a rel="next" href="code-of-conduct.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -232,11 +173,11 @@ chapter</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="provides.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="visibility_bypass.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
-                                    <a rel="next" href="binds.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <a rel="next" href="code-of-conduct.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                             </nav>
