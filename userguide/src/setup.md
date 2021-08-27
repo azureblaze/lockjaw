@@ -9,14 +9,16 @@ Add lockjaw to the `[dependencies]` and `[build_dependencies]` section of your `
 ```
 
 The proc_macro and runtime library are packaged into the same crate, so this is the only target you
-need.
+need. While the `proc_macro` library is heavy, Rust should be able to optimize them away in the
+resulting binary. The runtime is pretty light, and the generated code is *supposed* to be zero cost
+abstraction.
 
 ## Build script
 
 Lockjaw also needs some environment setup, and requires a
 [build script](https://doc.rust-lang.org/cargo/reference/build-scripts.html). Add `build.rs` next to
 `Cargo.toml`, and
-call [`lockjaw::build_script()`](https://docs.rs/lockjaw/0.2.0/lockjaw/fn.build_script.html)
+call [`lockjaw::build_script()`](https://docs.rs/lockjaw/latest/lockjaw/fn.build_script.html)
 in `main()` inside it:
 
 ```rust,no_run,noplayground
@@ -29,7 +31,7 @@ Lockjaw will ask you to do this if this step is missing.
 ## Prologue macro
 
 Before using any Lockjaw attribute macros, the
-lockjaw [`prologue!()`](https://docs.rs/lockjaw/0.2.0/lockjaw/macro.prologue.html) macro must be
+lockjaw [`prologue!()`](https://docs.rs/lockjaw/latest/lockjaw/macro.prologue.html) macro must be
 called:
 
 ```rust,no_run,noplayground
@@ -51,7 +53,7 @@ are type resolution issues.
 ## Epilogue macro
 
 You also must call
-the [`lockjaw::epilogue!()`](https://docs.rs/lockjaw/0.2.0/lockjaw/macro.epilogue.html) macro in the
+the [`lockjaw::epilogue!()`](https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html) macro in the
 root of your crate (`lib.rs` or
 `main.rs`) after all other uses of lockjaw, preferably at the end of the file.
 

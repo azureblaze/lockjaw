@@ -30,16 +30,16 @@ impl FooFacotory<'_> {
 ```
 
 This is a lot of boilerplate, and can be automated by
-using [`#[factory]`](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.factory.html)
+using [`#[factory]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html)
 instead
-of [`#[inject]`](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html)
+of [`#[inject]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html)
 
 ```rust,no_run,noplayground
 {{#include ../../tests/injectable_factory.rs:factory}}
 ```
 
 Runtime parameters needs to be marked with
-the [`#[runtime]`](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.factory.html#runtime)
+the [`#[runtime]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html#runtime)
 attribute.
 
 `FooFactory` will be created by Lockjaw, with a method with the same name as the marked method
@@ -52,7 +52,7 @@ taking only runtime parameters.
 ## Factory traits
 
 The factory can also be instructed to implement a `trait` by using the
-[`implementing` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.factory.html#implementing)
+[`implementing` metadata](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html#implementing)
 .
 
 ```rust,no_run,noplayground

@@ -39,7 +39,7 @@ impl Server{
 Managing these will soon get ugly.
 
 Instead we can create
-a [`#[subcomponent]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.subcomponent.html) which can have
+a [`#[subcomponent]`](https://docs.rs/lockjaw/latest/lockjaw/attr.subcomponent.html) which can have
 distinct scoped bindings, modules, but also has access to bindings in its parent component.
 
 Using `#[subcomponent]` is almost identical to a regular `#[component]`, except that the
@@ -48,8 +48,8 @@ Using `#[subcomponent]` is almost identical to a regular `#[component]`, except 
 ## Installing a `#[subcomponent]`
 
 A `#[subcomponent]` is installed by first listing it in
-a [`#[module]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html#) using
-the [`subcomponents` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html#subcomponents)
+a [`#[module]`](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#) using
+the [`subcomponents` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#subcomponents)
 
 ```rust,no_run,noplayground
 {{#include ../../tests/sub_component.rs:list}}
@@ -63,9 +63,9 @@ component or another subcomponent.
 The `#[module]` with a `subcomponents: [FooSubcomponent]` metadata creates hidden binding
 of `Cl<FooSubcomponentBuilder>` which can be injected to create new instances of `FooSubcomponent`
 by calling `build()`. `build()` also takes the
-corresponding [`#[builder_modules]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html)
+corresponding [`#[builder_modules]`](https://docs.rs/lockjaw/latest/lockjaw/attr.builder_modules.html)
 if the subcomponent is defined with
-the [`builder_modules` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules)
+the [`builder_modules` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#builder_modules)
 
 `build` can be called multiple times to create independent subcomponents, with the parent being
 shared.

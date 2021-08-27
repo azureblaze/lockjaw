@@ -9,7 +9,7 @@ In the last chapter, we had to use a mutable static state to store the messages 
 since we need to read the same messages later but a different instance of `TestLogger` will be
 created.
 
-To do this, the [`scope` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html#scope)
+To do this, the [`scope` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html#scope)
 can be specified on a `#[injecatable]` or `#[provides]`
 , passing a component's path. This means there are only one instance of the type for objects created
 by the same instance of component (they are not global singletons, you can still have multiple
@@ -32,7 +32,7 @@ Although `#[binds]` has to explicitly ask for `&TestLogger`
 ```
 
 Note that `Greeter` hasn't changed at
-all. [`Cl<T>`](https://docs.rs/lockjaw/0.2.0/lockjaw/enum.Cl.html) allows a type to decouple itself
+all. [`Cl<T>`](https://docs.rs/lockjaw/latest/lockjaw/enum.Cl.html) allows a type to decouple itself
 from whether the type depended on is scoped or not. It may be an owned instance or a shared
 instance, but the type does not care as it will not try to move it.
 
@@ -51,6 +51,6 @@ even when the `TestLogger` itself is immutable.
 
 Sometimes it might be easier to wrap the whole class in a memory container like a `RefCell`
 or [`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html).
-The [`container` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html#container)
-can be used on a [`#[injectable]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html) to
+The [`container` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html#container)
+can be used on a [`#[injectable]`](https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html) to
 bind the type as `&CONTAINER<T>` instead of `&T` 

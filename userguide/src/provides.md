@@ -45,14 +45,14 @@ in [builder modules](builder.md)
 
 ## #[provides] bindings
 
-The [`#[provides]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html)
+The [`#[provides]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.provides.html)
 binding annotates a method that returns the type.
 
 ```rust,no_run,noplayground
 {{#include ../projects/provide/src/lib.rs:provides}}
 ```
 
-Like [`#[inject]`](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html),
+Like [`#[inject]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html),
 the `#[provides]` method can also request other bindings from the dependency graph, and produce the
 target value with it.
 
@@ -63,9 +63,9 @@ target value with it.
 ## Installing modules
 
 `#[module]` on its own is just a collection of bindings and does not do anything. It must be
-installed in a [`#[component]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html) to joint
+installed in a [`#[component]`](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html) to joint
 the dependency graph. This is done by listing the module type in
-the [`modules` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#modules) of the
+the [`modules` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#modules) of the
 component.
 
 ```rust,no_run,noplayground

@@ -32,7 +32,7 @@ working with third party libraries.
 Qualifiers are hints for Lockjaw to give a type different tags, so they can be bound separately.
 
 A qualifier must be declared first using
-the [`#[qualifier]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.qualifier.html) attribute macro.
+the [`#[qualifier]`](https://docs.rs/lockjaw/latest/lockjaw/attr.qualifier.html) attribute macro.
 
 ```rust,no_run,noplayground
 {{#include ../../tests/module_provides_qualifier.rs:decl}}
@@ -41,8 +41,8 @@ the [`#[qualifier]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.qualifier.html) 
 The struct body does not matter and probably should be empty.
 
 Once the qualifier is declared, it can then be used in
-the [`#[qualified]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.qualified.html)
-attribute on a method in a [`#[module]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html),
+the [`#[qualified]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.qualified.html)
+attribute on a method in a [`#[module]`](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html),
 marking the return type as qualified. Lockjaw will treat the bindings as distinct types.
 
 ```rust,no_run,noplayground
@@ -50,7 +50,7 @@ marking the return type as qualified. Lockjaw will treat the bindings as distinc
 ```
 
 Qualified types can be injected using
-the [`#[qualified]`](https://docs.rs/lockjaw/0.2.0/lockjaw/component_attributes/attr.qualified.html)
+the [`#[qualified]`](https://docs.rs/lockjaw/latest/lockjaw/component_attributes/attr.qualified.html)
 attribute on the parameter, or the component method.
 
 ```rust,no_run,noplayground

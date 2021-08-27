@@ -8,7 +8,7 @@ Lockjaw is a fully static, compile-time
 
 The main purpose of dependency injection is to separate the concerns of creating an object and using
 an object. In larger projects creating an object soon becomes a complicated process since creating
-an object ofter requires other objects that needs to be created fist(a dependency). Once the object
+an object ofter requires other objects that needs to be created first(a dependency). Once the object
 dependency graph grows deep and wide adding a new edge or node becomes a painful endeavor. For
 example, you may need to modify the signature of a dozen methods and interfaces just to pass the new
 object all the way to the site it is actually going to be used. This often ends up with
@@ -27,7 +27,7 @@ the objects can be created.
 
 Lockjaw is inspired by [Dagger](https://dagger.dev), which is a mature dependency injection
 framework for Java. Lockjaw has feature parity with Dagger (
-sans [producers](https://dagger.dev/dev-guide/producers), which may not be too useful in Rust with
+except [producers](https://dagger.dev/dev-guide/producers), which may not be too useful in Rust with
 async/await available.)
 
 Main features:
@@ -36,6 +36,9 @@ Main features:
     * Lockjaw makes sure all dependencies are fulfilled at compile time. The code will fail to
       compile if a dependency is missing, there are duplicated bindings for the same type, or if the
       dependency graph has cycles. There will be no runtime errors which are harder to detect.
+* *Relatively* readable diagnostic messages.
+    * When a dependency is missing Lockjaw tries to tell you why it is even in the dependency graph,
+      and where the dependency cycle is.
 * Cross-crate injection
     * Lockjaw is designed to be used across crates. Clients are able to inject bindings provided by
       libraries if they also use Lockjaw.

@@ -14,9 +14,9 @@ not directly used by Lockjaw since methods are more expressive when a none injec
 default value or when transformations are needed on the input.
 
 A struct can be made injectable by marking a struct `impl` block with
-the [`#[injectable]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.injectable.html) attribute, and
+the [`#[injectable]`](https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html) attribute, and
 then mark the constructor method
-as [`#[inject]`](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html).
+as [`#[inject]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html).
 
 ```rust,no_run,noplayground
 {{#include ../projects/inject/src/lib.rs:foo}}
