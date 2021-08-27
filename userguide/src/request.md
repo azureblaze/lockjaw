@@ -18,9 +18,9 @@ dependency graph is called a `Component` in Dagger terminology.
 Comparing to the manual factory there are not a lot of changes. Since Lockjaw Cannot generate the
 implementation immediately, we use a `trait` instead of a `struct` as the interface has to be
 abstract. The `trait` is then annotated with
-the [`#[component]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html) attribute that
+the [`#[component]`](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html) attribute that
 instructs Lockjaw to generate the implementation. Lockjaw is able to identify
-all [`#[inject]`](https://docs.rs/lockjaw/0.2.0/lockjaw/injectable_attributes/attr.inject.html)
+all [`#[inject]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html)
 bindings automatically.
 
 For every type we wish to be able to directly create from the component, a method returning the type

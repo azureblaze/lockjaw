@@ -1,10 +1,10 @@
 # `HashMap<K,V>` multibinding
 
 Similar to [`Vec<T> multibinding`](vec.md),
-a [`#[provides]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html) or
-[`#[binds]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.binds.html) binding can
+a [`#[provides]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.provides.html) or
+[`#[binds]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds.html) binding can
 also be marked with
-the [`#[into_map]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.into_map.html)
+the [`#[into_map]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.into_map.html)
 attribute, which collects the key-value pair into
 a [`HashMap`](https://doc.rust-lang.org/std/collections/struct.HashMap.html)
 
@@ -79,7 +79,7 @@ instead of the content.
 ## Dynamic map entries
 
 All bindings in `#[into_map]` must be resolved at compile time, There are
-no [`#[elements_into_vec]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.elements_into_vec.html)
+no [`#[elements_into_vec]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.elements_into_vec.html)
 equivalent such as `#[elements_into_map]`.
 
 However dynamic map entries can be achieved by rebinding `Vec<(K,V)>` into a `HashMap<K,V>`.

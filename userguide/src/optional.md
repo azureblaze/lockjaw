@@ -6,8 +6,8 @@ optional library. It will be useful to allow such bindings to be missing from th
 and detect whether such binding exists.
 
 In Lockjaw a binding can be declared as optional by using
-the [#[binds_option_of]](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.binds_option_of.html)
-method attribute in a [#[module]](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html)
+the [#[binds_option_of]](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds_option_of.html)
+method attribute in a [#[module]](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html)
 
 ```rust,no_run,noplayground
 {{#include ../../tests/module_binds_option_of.rs:binds}}

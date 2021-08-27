@@ -20,7 +20,7 @@ usages like this implies the module has mutable state and generally is a bad ide
 
 Instead of passing the runtime modules to the component one by one, they are collected in a single
 `struct` annotated by
-the [`#[builder_modules]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html)
+the [`#[builder_modules]`](https://docs.rs/lockjaw/latest/lockjaw/attr.builder_modules.html)
 attribute.
 
 ```rust,no_run,noplayground
@@ -32,7 +32,7 @@ required by the compiler/IDE while exposing the least amount of generated code(w
 users and IDEs to understand, it is better to spell everything out in visible code.).
 
 The `#[builder_modules]` can then be installed in the component using
-the [`builder_modules` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules)
+the [`builder_modules` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#builder_modules)
 
 ```rust,no_run,noplayground
 {{#include ../projects/builder/src/lib.rs:component}}
@@ -42,17 +42,17 @@ The component only accepts one`#[builder_modules]`, which is likely to be specif
 the component. The modules itself can be shared.
 
 The `builder_modules` metadata can be used at the same time with
-the [`modules` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#modules).
+the [`modules` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#modules).
 `modules` should be preferred whenever possible as they are easier to use.
 
 ## Creating components with builder modules
 
 If
-the [`builder_modules` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#builder_modules)
+the [`builder_modules` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#builder_modules)
 is specified,
-the  [`#[builder_modules] struct`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.builder_modules.html)
+the  [`#[builder_modules] struct`](https://docs.rs/lockjaw/latest/lockjaw/attr.builder_modules.html)
 will become the parameter for
-the [`build()` method](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#component-builder)
+the [`build()` method](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#component-builder)
 of the component which the user must pass.
 
 ```rust,no_run,noplayground

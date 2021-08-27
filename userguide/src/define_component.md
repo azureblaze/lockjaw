@@ -1,8 +1,8 @@
 # Defined components
 
 One of the issues with
-using [`#[component]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.component.html#)
-and [`#[subcomponent]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.subcomponent.html) is that
+using [`#[component]`](https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#)
+and [`#[subcomponent]`](https://docs.rs/lockjaw/latest/lockjaw/attr.subcomponent.html) is that
 modules still has to be listed, which means anything using the component will depend on everything.
 The component is also generated in the crate, so other crates depending on it is not able to expand
 the dependency graph, which makes [multibindings](multibindings.md) less useful. Additionally, unit
@@ -12,8 +12,8 @@ In a large project there maybe tens and even hundreds of modules, and this will 
 difficult to manage.
 
 Instead of `#[component]` and `#[subcomponent]`, Lockjaw also
-provides [`#[define_component]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.define_component.html)
-and[`#[define_subcomponent]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.define_subcomponent.html)
+provides [`#[define_component]`](https://docs.rs/lockjaw/latest/lockjaw/attr.define_component.html)
+and[`#[define_subcomponent]`](https://docs.rs/lockjaw/latest/lockjaw/attr.define_subcomponent.html)
 which automatically collects modules from the entire build dependency tree, so they no longer need
 to be manually installed.
 
@@ -24,8 +24,8 @@ crates depending on the current crate may still want to add to the dependency gr
 
 Lockjaw needs to know which crate is the root crate that is not depended on by other crates, which
 is done by passing
-the [`root` identifier](https://docs.rs/lockjaw/0.2.0/lockjaw/macro.epilogue.html#root) to
-the [`epilogue!()` macro](https://docs.rs/lockjaw/0.2.0/lockjaw/macro.epilogue.html)
+the [`root` identifier](https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html#root) to
+the [`epilogue!()` macro](https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html)
 
 ```
 epilogue!(root);
@@ -37,9 +37,9 @@ a root crate.
 
 ## Automatically installing modules
 
-[`#[modules]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html) can be automatically
+[`#[modules]`](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html) can be automatically
 installed in a component by using
-the [`install_in` metadata](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.module.html#install_in). The
+the [`install_in` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#install_in). The
 metadata takes a path to a `#[define_component]` `trait`. Alternatively, it can also be a path to
 [`Singleton`](https://docs.rs/lockjaw/latest/lockjaw/trait.Singleton.html), which means it should be
 installed in every `#[define_component]` but not `#[define_subcomponent]`.
@@ -61,7 +61,7 @@ These kinds of usage will cause the [requesting methods](request.md) in a compon
 add redundant dependencies or cycle issues to everyone that uses the component.
 
 With `#[define_component]`
-, [`#[entry_point]`](https://docs.rs/lockjaw/0.2.0/lockjaw/attr.entry_point.html) can be used.
+, [`#[entry_point]`](https://docs.rs/lockjaw/latest/lockjaw/attr.entry_point.html) can be used.
 
 An `#[entry_point]` has binding requesting methods just like a component.
 The [`install_in` metadata]() needs to be used to install the `#[entry_point]` in a component. Once

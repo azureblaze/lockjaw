@@ -31,7 +31,10 @@
 ---
 
 - [Caveats](caveats.md)
-
+  - [Path resolution](path_resolution.md)
+  - [Cross macro communication](cross_macro_communication.md)
+  - [Bypassing visibility](visibility_bypass.md)
+  - [Late implementation generation](late_impl_generation.md)
 ---
 
 [Code of conduct](code-of-conduct.md)

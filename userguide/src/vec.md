@@ -1,9 +1,9 @@
 # `Vec<T>` multibindings
 
-A [`#[provides]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html) or
-[`#[binds]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.binds.html) binding can
+A [`#[provides]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.provides.html) or
+[`#[binds]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds.html) binding can
 also be marked with
-the [`#[into_vec]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.into_vec.html)
+the [`#[into_vec]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.into_vec.html)
 attribute, which means instead of directly binding to `T`, the binding should be collected into a
 `Vec<T>`.
 
@@ -36,7 +36,7 @@ Which allows `Vec<Cl<dyn Foo>>` to be injected. This is a common way to implemen
 ## Providing multiple items
 
 A method marked
-with [`#[elements_into_vec]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.elements_into_vec.html)
+with [`#[elements_into_vec]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.elements_into_vec.html)
 can return `Vec<T>`, which will get merged with other `#[into_vec]` and `#[elements_into_vec]`.
 
 ```rust,no_run,noplayground

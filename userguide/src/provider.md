@@ -7,9 +7,9 @@ the depending object. This may not be ideal since the depending object might:
 * Have cyclic dependency at **runtime**
 
 For every binding `T`, Lockjaw also automatically creates a binding
-to [`Provider<T>`](https://docs.rs/lockjaw/0.2.0/lockjaw/struct.Provider.html), which creates a new
+to [`Provider<T>`](https://docs.rs/lockjaw/latest/lockjaw/struct.Provider.html), which creates a new
 instance of `T`
-everytime [`get()`](https://docs.rs/lockjaw/0.2.0/lockjaw/struct.Provider.html#method.get)  is
+everytime [`get()`](https://docs.rs/lockjaw/latest/lockjaw/struct.Provider.html#method.get)  is
 called.
 
 Since a `Provider` needs to use the component to create the instance, its lifetime is bound by the

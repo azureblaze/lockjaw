@@ -3,7 +3,7 @@
 ## `#[provides]` trait
 
 A `trait` can be provided using
-the [`#[provides]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.provides.html)
+the [`#[provides]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.provides.html)
 binding.
 
 ```rust,no_run,noplayground
@@ -26,7 +26,7 @@ The `Box` returned by the component must be bound by the component's lifetime(sa
 
 While `#[provides]` kind of works, binding an implementation to a `trait` interface is a common
 operation so Lockjaw has
-the [`#[binds]`](https://docs.rs/lockjaw/0.2.0/lockjaw/module_attributes/attr.binds.html) attribute
+the [`#[binds]`](https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds.html) attribute
 to make them easier to use.
 
 For an interface and an implementation:
@@ -44,7 +44,7 @@ use `StdoutLogger` as the actual implementation":
 
 The method body must be empty, as Lockjaw will replace it.
 
-The[`Cl`](https://docs.rs/lockjaw/0.2.0/lockjaw/enum.Cl.html) in the return type means
+The[`Cl`](https://docs.rs/lockjaw/latest/lockjaw/enum.Cl.html) in the return type means
 **C**omponent **l**ifetimed, which is a wrapper around a type forcing it not outlive the component.
 Having this wrapper makes it easier for the compiler to deduce the lifetime.
 
