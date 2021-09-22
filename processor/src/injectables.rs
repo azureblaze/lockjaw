@@ -106,6 +106,10 @@ pub fn handle_injectable_attribute(
                 for attr in &type_.attrs {
                     match parsing::get_attribute(attr).as_str() {
                         "qualified" => {
+                            type_validator.add_path(
+                                &parsing::get_parenthesized_path(&attr.tokens)?,
+                                attr.span(),
+                            );
                             dependency.type_data.qualifier =
                                 Some(Box::new(parsing::get_parenthesized_type(&attr.tokens)?))
                         }
@@ -256,7 +260,7 @@ fn get_container(
                     "the 'container' metadata should only be used with an injectable that also has 'scope'",
                 );
             }
-            type_validator.add_path(path, span.clone(), element_type);
+            type_validator.add_path_and_arg(path, span.clone(), element_type);
             let container = TypeData::from_path_with_span(path, span.clone())?;
             return Ok(Some(container));
         } else {

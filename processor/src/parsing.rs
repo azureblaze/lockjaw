@@ -56,6 +56,14 @@ pub fn get_parenthesized_field_values(
     get_attribute_field_values(strip_parentheses(attr)?)
 }
 
+pub fn get_parenthesized_path(attr: &TokenStream) -> Result<syn::Path, TokenStream> {
+    if attr.is_empty() {
+        return spanned_compile_error(attr.span(), "path expected");
+    }
+    syn::parse2(strip_parentheses(attr.clone())?)
+        .map_spanned_compile_error(attr.span(), "path expected")
+}
+
 pub fn get_parenthesized_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
     if attr.is_empty() {
         return spanned_compile_error(attr.span(), "path expected");
