@@ -199,6 +199,14 @@ impl Node for SubcomponentNode {
         Ok(component_sections)
     }
 
+    fn can_depend(
+        &self,
+        _target_node: &dyn Node,
+        _ancestors: &Vec<String>,
+    ) -> Result<(), TokenStream> {
+        Ok(())
+    }
+
     fn get_type(&self) -> &TypeData {
         &self.type_
     }
