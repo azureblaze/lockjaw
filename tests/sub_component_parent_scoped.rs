@@ -13,26 +13,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{define_component, define_subcomponent, module, prologue, Cl};
+use lockjaw::{component, module, prologue, subcomponent, Cl};
 
-prologue!("tests/sub_component_parent.rs");
+prologue!("tests/sub_component_parent_scoped.rs");
 
 struct Submodule {}
 
-#[module(install_in: MySubcomponent)]
-impl Submodule {
-    #[provides]
+#[module]
+impl Submodule {}
+
+#[subcomponent(modules: [Submodule])]
+pub trait MySubcomponent<'a> {
+    fn i32(&self) -> i32;
+}
+
+struct MyModule {}
+
+#[module(subcomponents: [MySubcomponent])]
+impl MyModule {
+    #[provides(scope: MyComponent)]
     pub fn provide_i32() -> i32 {
         11
     }
 }
 
-#[define_subcomponent(parent: MyComponent)]
-pub trait MySubcomponent<'a> {
-    fn i32(&self) -> i32;
-}
-
-#[define_component]
+#[component(modules: [MyModule])]
 pub trait MyComponent {
     fn sub(&'_ self) -> Cl<dyn MySubcomponentBuilder<'_>>;
 }
