@@ -82,7 +82,7 @@ impl Node for ScopedNode {
                 };
                 let once_type =
                     component_visibles::visible_type(graph.manifest, &self.target).syn_type();
-                quote! {#once_type#lifetime}
+                quote! {#once_type #lifetime}
             };
         result.add_fields(quote! {
             #once_name : lockjaw::Once<#once_inner_type>,

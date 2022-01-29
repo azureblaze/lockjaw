@@ -19,7 +19,7 @@ description = "proc_macro processor for lockjaw"
 license = "Apache-2.0"
 version = "0.2.1"
 authors = ["Ta-wei Yen"]
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/azureblaze/lockjaw"
 documentation = "https://docs.rs/lockjaw/"
 

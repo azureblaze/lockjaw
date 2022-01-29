@@ -33,7 +33,7 @@ pub trait MyComponent {
 }
 
 fn main() {
-    let component = MyComponent::build(MyBuilderModules{
+    let component = <dyn MyComponent>::build(MyBuilderModules{
         module: StringModule{
             string: "foo".to_owned()
         }
