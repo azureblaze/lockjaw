@@ -301,7 +301,7 @@ fn handle_provides(
     if let Some(scope) = provides_attr.get("scope") {
         let scopes = parsing::get_types(Some(scope), attr.span())?;
         for scope in &scopes {
-            type_validator.add_type(scope, attr.span());
+            type_validator.add_dyn_type(scope, attr.span());
         }
         for (path, span) in scope.get_paths()? {
             type_validator.add_dyn_path(&path, span);
@@ -380,7 +380,7 @@ fn handle_binds(
     if let Some(scope) = provides_attr.get("scope") {
         let scopes = parsing::get_types(Some(scope), attr.span())?;
         for scope in &scopes {
-            type_validator.add_type(scope, attr.span());
+            type_validator.add_dyn_type(scope, attr.span());
         }
         for (path, span) in scope.get_paths()? {
             type_validator.add_dyn_path(&path, span);

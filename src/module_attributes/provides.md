@@ -45,7 +45,7 @@ pub trait MyComponent {
 }
 
 pub fn main() {
-    let component = MyComponent::build(MyBuilderModules {
+    let component = <dyn MyComponent>::build(MyBuilderModules {
         foo : FooModule {
             value:"foo".to_owned()
         }

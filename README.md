@@ -116,7 +116,7 @@ trait MyComponent {
 
 pub fn main() {
     // Creates the component
-    let component = MyComponent::new();
+    let component = <dyn MyComponent>::new();
     // Creates a greeter.
     let greeter = component.greeter();
     assert_eq!(greeter.greet(), "helloworld 1");

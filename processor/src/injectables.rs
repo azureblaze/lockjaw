@@ -152,7 +152,7 @@ pub fn handle_injectable_attribute(
     injectable.type_data = TypeData::from_local(&type_name, item.self_ty.span())?;
     let scopes = parsing::get_types(attributes.get("scope"), item.self_ty.span())?;
     for scope in &scopes {
-        type_validator.add_type(scope, attr.span())
+        type_validator.add_dyn_type(scope, attr.span())
     }
     if let Some(scope) = attributes.get("scope") {
         for (path, span) in scope.get_paths()? {
@@ -183,11 +183,13 @@ pub fn handle_injectable_attribute(
 
     let type_check = type_validator.validate(identifier);
     let prologue_check = prologue_check(item.span());
-    Ok(quote! {
+    let result = quote! {
         #item
         #type_check
         #prologue_check
-    })
+    };
+    //log!("{}", result.to_string());
+    Ok(result)
 }
 
 fn get_ctor(
