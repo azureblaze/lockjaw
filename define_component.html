@@ -1,14 +1,16 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Defined components - Lockjaw User Guide</title>
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
         <link rel="icon" href="favicon.svg">
         <link rel="shortcut icon" href="favicon.png">
@@ -16,25 +18,31 @@
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
         <link rel="stylesheet" href="css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
         <link rel="stylesheet" href="fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-    </head>
-    <body>
+
+
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
-
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -50,50 +58,58 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
-            html.classList.remove('no-js')
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            html.classList.add("js");
         </script>
 
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
-            var html = document.querySelector('html');
-            var sidebar = 'hidden';
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
+            sidebar_toggle.checked = sidebar === 'visible';
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li><li class="chapter-item expanded "><a href="empty_multibinding.html"><strong aria-hidden="true">13.3.</strong> Empty multibindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html" class="active"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="path_resolution.html"><strong aria-hidden="true">16.1.</strong> Path resolution</a></li><li class="chapter-item expanded "><a href="cross_macro_communication.html"><strong aria-hidden="true">16.2.</strong> Cross macro communication</a></li><li class="chapter-item expanded "><a href="visibility_bypass.html"><strong aria-hidden="true">16.3.</strong> Bypassing visibility</a></li><li class="chapter-item expanded "><a href="late_impl_generation.html"><strong aria-hidden="true">16.4.</strong> Late implementation generation</a></li><li class="spacer"></li></ol></li><li class="chapter-item expanded "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
                 <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky bordered">
+                <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
-                        </button>
+                        </label>
                         <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -110,6 +126,7 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+
                     </div>
                 </div>
 
@@ -123,8 +140,9 @@
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -173,15 +191,14 @@ installed in every <code>#[define_component]</code> but not <code>#[define_subco
 impl MyModule {
     #[provides]
     pub fn provide_string() -&gt; String {
-        &quot;string&quot;.to_owned()
+        "string".to_owned()
     }
 }
 
 #[define_component]
 pub trait MyComponent {
     fn string(&amp;self) -&gt; String;
-}
-</code></pre>
+}</code></pre>
 <h2 id="entry-points"><a class="header" href="#entry-points">Entry points</a></h2>
 <p>Ideally a component should only be used at the program's entry point, and rest of the program should
 all use dependency injection, instead of trying to pass the component around. However sometimes
@@ -194,8 +211,7 @@ add redundant dependencies or cycle issues to everyone that uses the component.<
 <p>An <code>#[entry_point]</code> has binding requesting methods just like a component.
 The <a href=""><code>install_in</code> metadata</a> needs to be used to install the <code>#[entry_point]</code> in a component. Once
 installed, the</p>
-<pre><code class="language-rust no_run noplayground">&lt;dyn FooEntryPoint&gt;::get(component : &amp;dyn FooComponent) -&gt; &amp;dyn FooEntryPoint
-</code></pre>
+<pre><code class="language-rust no_run noplayground">&lt;dyn FooEntryPoint&gt;::get(component : &amp;dyn FooComponent) -&gt; &amp;dyn FooEntryPoint</code></pre>
 <p>method can be used to cast the opaque component into the entry point, and access the dependency
 graph.</p>
 <pre><code class="language-rust no_run noplayground">#[entry_point(install_in: MyComponent)]
@@ -211,14 +227,13 @@ pub fn main() {
     let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::new();
 
     assert_eq!(&lt;dyn MyEntryPoint&gt;::get(component.as_ref()).i(), 42)
-}
-</code></pre>
+}</code></pre>
 <h2 id="testing-with-define_component"><a class="header" href="#testing-with-define_component">Testing with <code>#[define_component]</code></a></h2>
 <p>While compiling tests, Lockjaw gathers <code>install_in</code> modules only from the <code>[dev-dependencies]</code>
 section of <code>Cargo.toml</code> instead of the regular <code>[dependencies]</code>, even though <code>[dev-dependencies]</code>
 inherits <code>[dependencies]</code>. This is due to tests often have conflicting modules with prod code. any
 prod modules that need to be used in tests has to be relisted again in the <code>[dev-dependencies]</code>
-section. </p>
+section.</p>
 
                     </main>
 
@@ -227,9 +242,11 @@ section. </p>
                             <a rel="prev" href="subcomponent.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                            <a rel="next" href="caveats.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+
+                            <a rel="next prefetch" href="caveats.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
@@ -239,23 +256,33 @@ section. </p>
                     <a rel="prev" href="subcomponent.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                    <a rel="next" href="caveats.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+
+                    <a rel="next prefetch" href="caveats.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
 
         </div>
 
-        <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
+
+
+    </div>
     </body>
 </html>

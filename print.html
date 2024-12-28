@@ -1,15 +1,17 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Lockjaw User Guide</title>
-        <meta name="robots" content="noindex" />
+        <meta name="robots" content="noindex">
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
         <link rel="icon" href="favicon.svg">
         <link rel="shortcut icon" href="favicon.png">
@@ -17,25 +19,31 @@
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
         <link rel="stylesheet" href="css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
         <link rel="stylesheet" href="fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-    </head>
-    <body>
+
+
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
-
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -51,50 +59,58 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
-            html.classList.remove('no-js')
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            html.classList.add("js");
         </script>
 
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
-            var html = document.querySelector('html');
-            var sidebar = 'hidden';
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
+            sidebar_toggle.checked = sidebar === 'visible';
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="before.html">Before using</a></li><li class="chapter-item expanded affix "><a href="glossary.html">Glossary</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="inject.html"><strong aria-hidden="true">2.</strong> Injecting Objects</a></li><li class="chapter-item expanded "><a href="request.html"><strong aria-hidden="true">3.</strong> Requesting Objects</a></li><li class="chapter-item expanded "><a href="provides.html"><strong aria-hidden="true">4.</strong> Providing Objects</a></li><li class="chapter-item expanded "><a href="builder.html"><strong aria-hidden="true">5.</strong> Builder Modules</a></li><li class="chapter-item expanded "><a href="binds.html"><strong aria-hidden="true">6.</strong> Binding traits</a></li><li class="chapter-item expanded "><a href="scoped.html"><strong aria-hidden="true">7.</strong> Scoped Bindings</a></li><li class="chapter-item expanded "><a href="qualifiers.html"><strong aria-hidden="true">8.</strong> Qualifiers</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="provider.html"><strong aria-hidden="true">9.</strong> Provider</a></li><li class="chapter-item expanded "><a href="lazy.html"><strong aria-hidden="true">10.</strong> Lazy</a></li><li class="chapter-item expanded "><a href="factory.html"><strong aria-hidden="true">11.</strong> Factory</a></li><li class="chapter-item expanded "><a href="optional.html"><strong aria-hidden="true">12.</strong> Optional Bindings</a></li><li class="chapter-item expanded "><a href="multibindings.html"><strong aria-hidden="true">13.</strong> Multibindings</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vec.html"><strong aria-hidden="true">13.1.</strong> Vec bindings</a></li><li class="chapter-item expanded "><a href="map.html"><strong aria-hidden="true">13.2.</strong> Map bindings</a></li><li class="chapter-item expanded "><a href="empty_multibinding.html"><strong aria-hidden="true">13.3.</strong> Empty multibindings</a></li></ol></li><li class="chapter-item expanded "><a href="subcomponent.html"><strong aria-hidden="true">14.</strong> Subcomponents</a></li><li class="chapter-item expanded "><a href="define_component.html"><strong aria-hidden="true">15.</strong> Defined components</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="caveats.html"><strong aria-hidden="true">16.</strong> Caveats</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="path_resolution.html"><strong aria-hidden="true">16.1.</strong> Path resolution</a></li><li class="chapter-item expanded "><a href="cross_macro_communication.html"><strong aria-hidden="true">16.2.</strong> Cross macro communication</a></li><li class="chapter-item expanded "><a href="visibility_bypass.html"><strong aria-hidden="true">16.3.</strong> Bypassing visibility</a></li><li class="chapter-item expanded "><a href="late_impl_generation.html"><strong aria-hidden="true">16.4.</strong> Late implementation generation</a></li><li class="spacer"></li></ol></li><li class="chapter-item expanded "><a href="code-of-conduct.html">Code of conduct</a></li><li class="chapter-item expanded affix "><a href="contributing.html">Contributing</a></li></ol>
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
                 <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky bordered">
+                <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
-                        </button>
+                        </label>
                         <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -111,6 +127,7 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+
                     </div>
                 </div>
 
@@ -124,8 +141,9 @@
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -220,7 +238,7 @@ tries to answer:</p>
 </li>
 <li>What are the hurdles when trying to implement a dependency injection framework in Rust?</li>
 </ul>
-<p>Currently lockjaw focuses on &quot;can&quot; instead of &quot;should&quot;. If there is any hacky undocumented compiler
+<p>Currently lockjaw focuses on "can" instead of "should". If there is any hacky undocumented compiler
 behavior we can abuse to implement a feature, It <strong>will</strong> be used. While we try to make it bug-free
 and generate safe code in the current version of Rust, there are no guarantee it will continue to
 work in the future.</p>
@@ -249,16 +267,16 @@ version if it breaks Lockjaw.</li>
 prepared first before the instance can be created), and a way to transform the dependencies into
 a new instance, either by a user supplied method or Lockjaw internal generation.</p>
 <h2 id="module"><a class="header" href="#module">Module</a></h2>
-<p>In all Lockjaw documentations, &quot;module&quot; refers to a <em>dependency injection module</em>. When referring to
+<p>In all Lockjaw documentations, "module" refers to a <em>dependency injection module</em>. When referring to
 Rust modules <code>mod</code> will be used instead.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
 <h2 id="cargo"><a class="header" href="#cargo">Cargo</a></h2>
 <p>Add lockjaw to the <code>[dependencies]</code> and <code>[build_dependencies]</code> section of your <code>Cargo.toml</code>:</p>
 <pre><code class="language-toml">[dependencies]
-lockjaw = &quot;*&quot;
+lockjaw = "*"
 
 [build-dependencies]
-lockjaw = &quot;*&quot;
+lockjaw = "*"
 </code></pre>
 <p>The proc_macro and runtime library are packaged into the same crate, so this is the only target you
 need. While the <code>proc_macro</code> library is heavy, Rust should be able to optimize them away in the
@@ -273,16 +291,14 @@ in <code>main()</code> inside it:</p>
 <pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/build.rs
 fn main() {
     lockjaw::build_script();
-}
-</code></pre>
+}</code></pre>
 <p>Lockjaw will ask you to do this if this step is missing.</p>
 <h2 id="prologue-macro"><a class="header" href="#prologue-macro">Prologue macro</a></h2>
 <p>Before using any Lockjaw attribute macros, the
 lockjaw <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.prologue.html"><code>prologue!()</code></a> macro must be
 called:</p>
 <pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
-lockjaw::prologue!(&quot;src/main.rs&quot;);
-</code></pre>
+lockjaw::prologue!("src/main.rs");</code></pre>
 <p>The file path of the current source file should be passed to the prologue.</p>
 <p>Lockjaw need to perform some static analysis on the current source file to understand type names,
 which is an integral part of a dependency injection framework. If a type is encountered, what is its
@@ -297,8 +313,7 @@ the <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html"><code>l
 root of your crate (<code>lib.rs</code> or
 <code>main.rs</code>) after all other uses of lockjaw, preferably at the end of the file.</p>
 <pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
-lockjaw::epilogue!();
-</code></pre>
+lockjaw::epilogue!();</code></pre>
 <p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/">Source</a> of this chapter</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="injecting-objects"><a class="header" href="#injecting-objects">Injecting Objects</a></h1>
 <p>Lockjaw can create objects for you, but you need to let lockjaw know how to create the object and
@@ -322,8 +337,7 @@ impl Foo {
     pub fn new() -&gt; Foo {
         Foo {}
     }
-}
-</code></pre>
+}</code></pre>
 <p>Now Lockjaw understands when trying to create <code>Foo</code>, it should call <code>Foo::new()</code>.</p>
 <p>Note that since it is an associated method, constructor injection only works on a type you <em>own</em> (
 you can actually change its implementation). For foreign types like imported crates a different
@@ -348,8 +362,7 @@ impl Bar {
     pub fn new(foo: Foo) -&gt; Bar {
         Bar { foo, i: 42 }
     }
-}
-</code></pre>
+}</code></pre>
 <p>If the struct has other fields that can be initialized without injection, like <code>i</code>, it can be
 directly assigned. If the object needs a runtime value (for example, if <code>i</code> needs to be assigned by
 the caller with a user input), then <a href="factory.html">factories</a> will be needed, which will be discussed
@@ -375,8 +388,7 @@ fn test() {
 
     let _foo = factory.create_foo();
     let _bar = factory.create_bar();
-}
-</code></pre>
+}</code></pre>
 <p>Note that there is one method for each binding, only taking <code>&amp;self</code> and returning the binding type.
 Inside the method it calls the constructor method we just marked, and calls other binding methods to
 generate the argument.</p>
@@ -405,8 +417,7 @@ fn test() {
 
     let _foo = factory.create_foo();
     let _bar = factory.create_bar();
-}
-</code></pre>
+}</code></pre>
 <p>Now we will ask Lockjaw to automatically generate it. A factory generating objects using a certain
 dependency graph is called a <code>Component</code> in Dagger terminology.</p>
 <h2 id="defining-the-component"><a class="header" href="#defining-the-component">Defining the component</a></h2>
@@ -415,8 +426,7 @@ trait MyComponent {
     fn create_foo(&amp;self) -&gt; Foo;
 
     fn create_bar(&amp;self) -&gt; Bar;
-}
-</code></pre>
+}</code></pre>
 <p>Comparing to the manual factory there are not a lot of changes. Since Lockjaw Cannot generate the
 implementation immediately, we use a <code>trait</code> instead of a <code>struct</code> as the interface has to be
 abstract. The <code>trait</code> is then annotated with
@@ -442,8 +452,7 @@ fn test() {
 
     let _foo = component.create_foo();
     let _bar = component.create_bar();
-}
-</code></pre>
+}</code></pre>
 <p><code>build()</code> returns <code>Box&lt;dyn COMPONENT&gt;</code>. Most IDE today does not understand symbols generated by
 procedural macros, so you might want to manually hint the type in the <code>let</code> expression.</p>
 <p>Once the component is created, the trait methods can be used to create the objects.</p>
@@ -470,8 +479,8 @@ defines the type itself.).
 </ul>
 <h2 id="modules"><a class="header" href="#modules">Modules</a></h2>
 <p>Obviously Lockjaw is not going to ask the world to use it or the user to rewrite everything they use
-with it, so it gives other ways to bind types. Since these bindings are no longer the &quot;one true way
-to create things&quot;, and different bindings for the same type may be needed within the same program,
+with it, so it gives other ways to bind types. Since these bindings are no longer the "one true way
+to create things", and different bindings for the same type may be needed within the same program,
 the user needs to be able to select which bindings to use in each dependency graph.</p>
 <p>In Lockjaw, these elective bindings are defined in <em>modules</em>, and the component can choose what
 modules to <em>install</em>, which imports its bindings. Note that in Lockjaw documentation <em>modules</em>
@@ -484,8 +493,7 @@ used to mark the <code>impl</code> block of a struct.</p>
 #[module]
 impl My Module {
   ...
-}
-</code></pre>
+}</code></pre>
 <p>The <code>impl</code> block will contain the binding definitions.</p>
 <p>For now the modules should be static (without fields). Modules with fields will be discussed
 in <a href="builder.html">builder modules</a></p>
@@ -495,16 +503,14 @@ binding annotates a method that returns the type.</p>
 <pre><code class="language-rust no_run noplayground">    #[provides]
     pub fn provide_i32() -&gt; i32 {
         42
-    }
-</code></pre>
+    }</code></pre>
 <p>Like <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a>,
 the <code>#[provides]</code> method can also request other bindings from the dependency graph, and produce the
 target value with it.</p>
 <pre><code class="language-rust no_run noplayground">    #[provides]
     pub fn provides_string(i: i32) -&gt; String {
-        format!(&quot;{}&quot;, i)
-    }
-</code></pre>
+        format!("{}", i)
+    }</code></pre>
 <h2 id="installing-modules"><a class="header" href="#installing-modules">Installing modules</a></h2>
 <p><code>#[module]</code> on its own is just a collection of bindings and does not do anything. It must be
 installed in a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.component.html"><code>#[component]</code></a> to joint
@@ -516,8 +522,7 @@ trait MyComponent {
     fn i32(&amp;self) -&gt; i32;
 
     fn string(&amp;self) -&gt; String;
-}
-</code></pre>
+}</code></pre>
 <p>A lot of Lockjaw attribute macros also takes <em>metadata arguments</em>, which is comma
 separated <code>key : value</code> pairs in a parenthesis. The values are usually string literal, integers,
 types, arrays of values (<code>foo : [value 1, value 2]</code>), or more metadata (<code>foo : { key : value }</code>). In
@@ -540,8 +545,7 @@ impl MyModule {
     pub fn provide_i32(&amp;self) -&gt; i32 {
         self.i
     }
-}
-</code></pre>
+}</code></pre>
 <p>Since the <code>struct</code> now has fields Lockjaw can no longer automatically create it, the user must
 manually pass in the modules when creating the component.</p>
 <p><em>Implementation note: While Lockjaw can also try to
@@ -555,8 +559,7 @@ attribute.</p>
 <pre><code class="language-rust no_run noplayground">#[builder_modules]
 struct MyBuilderModules {
     my_module: MyModule,
-}
-</code></pre>
+}</code></pre>
 <p>Every field in the struct should be a module. Using a <code>struct</code> makes sure each module will be
 required by the compiler/IDE while exposing the least amount of generated code(which is harder for
 users and IDEs to understand, it is better to spell everything out in visible code.).</p>
@@ -565,8 +568,7 @@ the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.component.html#builder_
 <pre><code class="language-rust no_run noplayground">#[component(builder_modules: MyBuilderModules)]
 trait MyComponent {
     fn i32(&amp;self) -&gt; i32;
-}
-</code></pre>
+}</code></pre>
 <p>The component only accepts one<code>#[builder_modules]</code>, which is likely to be specifically tailored for
 the component. The modules itself can be shared.</p>
 <p>The <code>builder_modules</code> metadata can be used at the same time with
@@ -591,8 +593,7 @@ fn test() {
         my_module: MyModule { i: 123 },
     });
     assert_eq!(other_component.i32(), 123);
-}
-</code></pre>
+}</code></pre>
 <p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/builder/">Source</a> of this
 chapter</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="binding-traits"><a class="header" href="#binding-traits">Binding traits</a></h1>
@@ -603,8 +604,7 @@ binding.</p>
 <pre><code class="language-rust no_run noplayground">    #[provides]
     pub fn provide_i32_maker(impl_: I32MakerImpl) -&gt; Box&lt;dyn I32Maker&gt; {
         Box::new(impl_)
-    }
-</code></pre>
+    }</code></pre>
 <p>However, Lockjaw is going to be particular when trying to request a trait object from the dependency
 graph. The concrete implementation of the trait may contain <a href="scoped.html">reference to the component</a>,
 but ideally this is not something the consumer of the trait should care about, so Lockjaw enforces
@@ -614,8 +614,7 @@ assumed, so consumers don't have to change when it actually happens.</p>
 <pre><code class="language-rust no_run noplayground">#[component(modules: [MyModule])]
 trait ProvideComponent {
     fn i32_maker(&amp;'_ self) -&gt; Box&lt;dyn I32Maker + '_&gt;;
-}
-</code></pre>
+}</code></pre>
 <h2 id="binds-trait"><a class="header" href="#binds-trait"><code>#[binds]</code> trait</a></h2>
 <p>While <code>#[provides]</code> kind of works, binding an implementation to a <code>trait</code> interface is a common
 operation so Lockjaw has
@@ -638,15 +637,13 @@ impl StdoutLogger {
 
 impl Logger for StdoutLogger {
     fn log(&amp;self, msg: &amp;str) {
-        println!(&quot;{}&quot;, msg);
+        println!("{}", msg);
     }
-}
-</code></pre>
-<p><code>#[binds]</code> can be used to create binding that says &quot;when the <code>Logger</code> interface is needed,
-use <code>StdoutLogger</code> as the actual implementation&quot;:</p>
+}</code></pre>
+<p><code>#[binds]</code> can be used to create binding that says "when the <code>Logger</code> interface is needed,
+use <code>StdoutLogger</code> as the actual implementation":</p>
 <pre><code class="language-rust no_run noplayground">    #[binds]
-    pub fn bind_stdout_logger(_impl: StdoutLogger) -&gt; Cl&lt;dyn Logger&gt; {}
-</code></pre>
+    pub fn bind_stdout_logger(_impl: StdoutLogger) -&gt; Cl&lt;dyn Logger&gt; {}</code></pre>
 <p>The method body must be empty, as Lockjaw will replace it.</p>
 <p>The<a href="https://docs.rs/lockjaw/latest/lockjaw/enum.Cl.html"><code>Cl</code></a> in the return type means
 <strong>C</strong>omponent <strong>l</strong>ifetimed, which is a wrapper around a type forcing it not outlive the component.
@@ -665,10 +662,9 @@ impl Greeter&lt;'_&gt; {
     }
 
     pub fn greet(&amp;self) {
-        self.logger.log(&quot;helloworld!&quot;);
+        self.logger.log("helloworld!");
     }
-}
-</code></pre>
+}</code></pre>
 <p>Note that <code>Logger</code> still has to be injected as <code>Cl&lt;dyn Logger&gt;</code>, and <code>Greeter</code> is also bound by the
 lifetime of the component.</p>
 <h2 id="unit-testing-with-dependency-injection"><a class="header" href="#unit-testing-with-dependency-injection">Unit testing with dependency injection</a></h2>
@@ -728,11 +724,10 @@ pub mod testing {
 
         assert_eq!(
             component.test_logger().get_messages(),
-            vec![&quot;helloworld!&quot;.to_owned()]
+            vec!["helloworld!".to_owned()]
         );
     }
 }
-
 </code></pre>
 <p>Generally, a library should also provide a test implementation and a module that binds the test
 implementation. The consumer of the library can then test by installing the test module instead of
@@ -779,7 +774,6 @@ instances if you have multiple components).</p>
             self.messages.borrow_mut().push(msg.to_owned())
         }
     }
-
 </code></pre>
 <p>Other types can depend on a scoped type as a reference (<code>&amp;T</code>) or <code>Cl&lt;T&gt;</code></p>
 <pre><code class="language-rust no_run noplayground">        fn test_logger(&amp;self) -&gt; Cl&lt;TestLogger&gt;;
@@ -793,17 +787,15 @@ instances if you have multiple components).</p>
 
         assert_eq!(
             component.test_logger().get_messages(),
-            vec![&quot;helloworld!&quot;.to_owned()]
+            vec!["helloworld!".to_owned()]
         );
     }
 }
 
-epilogue!();
-</code></pre>
+epilogue!();</code></pre>
 <p>Although <code>#[binds]</code> has to explicitly ask for <code>&amp;TestLogger</code></p>
 <pre><code class="language-rust no_run noplayground">        #[binds]
-        pub fn bind_test_logger(_impl: &amp;TestLogger) -&gt; Cl&lt;dyn Logger&gt; {}
-</code></pre>
+        pub fn bind_test_logger(_impl: &amp;TestLogger) -&gt; Cl&lt;dyn Logger&gt; {}</code></pre>
 <p>Note that <code>Greeter</code> hasn't changed at
 all. <a href="https://docs.rs/lockjaw/latest/lockjaw/enum.Cl.html"><code>Cl&lt;T&gt;</code></a> allows a type to decouple itself
 from whether the type depended on is scoped or not. It may be an owned instance or a shared
@@ -821,7 +813,7 @@ even when the <code>TestLogger</code> itself is immutable.</p>
 or <a href="https://doc.rust-lang.org/std/sync/struct.RwLock.html"><code>RwLock</code></a>.
 The <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html#container"><code>container</code> metadata</a>
 can be used on a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.injectable.html"><code>#[injectable]</code></a> to
-bind the type as <code>&amp;CONTAINER&lt;T&gt;</code> instead of <code>&amp;T</code> </p>
+bind the type as <code>&amp;CONTAINER&lt;T&gt;</code> instead of <code>&amp;T</code></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="qualifiers"><a class="header" href="#qualifiers">Qualifiers</a></h1>
 <p>Sometimes users may need multiple shared instances of the same type for different purposes. For
 example the application may need
@@ -852,7 +844,6 @@ working with third party libraries.</p>
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.qualifier.html"><code>#[qualifier]</code></a> attribute macro.</p>
 <pre><code class="language-rust no_run noplayground">#[qualifier]
 pub struct Q1;
-
 </code></pre>
 <p>The struct body does not matter and probably should be empty.</p>
 <p>Once the qualifier is declared, it can then be used in
@@ -863,22 +854,21 @@ marking the return type as qualified. Lockjaw will treat the bindings as distinc
 impl MyModule {
     #[provides]
     pub fn provide_string() -&gt; String {
-        &quot;string&quot;.to_owned()
+        "string".to_owned()
     }
 
     #[provides]
     #[qualified(Q1)]
     pub fn provide_q1_string() -&gt; String {
-        &quot;q1_string&quot;.to_owned()
+        "q1_string".to_owned()
     }
 
     #[provides]
     #[qualified(Q2)]
     pub fn provide_q2_string() -&gt; String {
-        &quot;q2_string&quot;.to_owned()
+        "q2_string".to_owned()
     }
-}
-</code></pre>
+}</code></pre>
 <p>Qualified types can be injected using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/component_attributes/attr.qualified.html"><code>#[qualified]</code></a>
 attribute on the parameter, or the component method.</p>
@@ -889,13 +879,11 @@ pub trait MyComponent {
     fn q1_string(&amp;self) -&gt; String;
     #[qualified(Q2)]
     fn q2_string(&amp;self) -&gt; String;
-}
-</code></pre>
+}</code></pre>
 <pre><code class="language-rust no_run noplayground">    #[inject]
     pub fn new(#[qualified(Q)] s: String) -&gt; Foo {
         Foo { s }
-    }
-</code></pre>
+    }</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="providert"><a class="header" href="#providert"><code>Provider&lt;T&gt;</code></a></h1>
 <p>Normally when injecting a dependency, <em>one</em> instance of the dependency is <em>created before</em> creating
 the depending object. This may not be ideal since the depending object might:</p>
@@ -927,8 +915,7 @@ impl Foo{
     pub fn add_more_bar(&amp;mut self){
        self.bars.push(self.bar_provider.get())
     }
-}
-</code></pre>
+}</code></pre>
 <h2 id="bypassing-runtime-cyclic-dependency"><a class="header" href="#bypassing-runtime-cyclic-dependency">Bypassing runtime cyclic dependency</a></h2>
 <p>Since regular dependencies must be created before instantiating an object, cyclic dependencies will
 result in a recursive stack overflow when the constructor is called. Lockjaw will detect this
@@ -962,8 +949,7 @@ impl&lt;'component&gt; Bar&lt;'component&gt; {
     pub fn new(foo: Box&lt;Foo&lt;'component&gt;&gt;) -&gt; Bar&lt;'component&gt; {
         Self { foo }
     }
-}
-</code></pre>
+}</code></pre>
 <p>In this example, while instantiating <code>Bar</code>, instantiates a <code>Foo</code>, <code>Bar</code> won't be created
 until <code>Foo.create_bar()</code> is called, hence creating either won't trigger a stack overflow.</p>
 <p>Trying to call <code>Provider.get</code> may still lead to a stack overflow, and Lockjaw cannot check this for
@@ -1000,8 +986,7 @@ impl FooFacotory&lt;'_&gt; {
     pub fn create(&amp;self, i: i32) -&gt; Foo {
        Foo { i, s : self.s_provider.get() }
     }
-}
-</code></pre>
+}</code></pre>
 <p>This is a lot of boilerplate, and can be automated by
 using <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html"><code>#[factory]</code></a>
 instead
@@ -1012,15 +997,13 @@ impl Foo {
     fn create(#[runtime] i: i32, s: String) -&gt; Self {
         Self { i, s }
     }
-}
-</code></pre>
+}</code></pre>
 <p>Runtime parameters needs to be marked with
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html#runtime"><code>#[runtime]</code></a>
 attribute.</p>
 <p><code>FooFactory</code> will be created by Lockjaw, with a method with the same name as the marked method
 taking only runtime parameters.</p>
-<pre><code class="language-rust no_run noplayground">    let foo = component.foo_factory().create(42);
-</code></pre>
+<pre><code class="language-rust no_run noplayground">    let foo = component.foo_factory().create(42);</code></pre>
 <h2 id="factory-traits"><a class="header" href="#factory-traits">Factory traits</a></h2>
 <p>The factory can also be instructed to implement a <code>trait</code> by using the
 <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html#implementing"><code>implementing</code> metadata</a>
@@ -1035,13 +1018,11 @@ impl Foo {
     fn create(#[runtime] i: i32, phrase: String) -&gt; Self {
         Self { i, phrase }
     }
-}
-</code></pre>
+}</code></pre>
 <p>The method name and runtime signature must match the <code>trait</code> method the factory should override.</p>
 <p>This is especially useful to bind the factory to a trait</p>
 <pre><code class="language-rust no_run noplayground">    #[binds]
-    pub fn bind_foo_creator(impl_: FooFactory) -&gt; Cl&lt;dyn FooCreator&gt; {}
-</code></pre>
+    pub fn bind_foo_creator(impl_: FooFactory) -&gt; Cl&lt;dyn FooCreator&gt; {}</code></pre>
 <h2 id="examples-1"><a class="header" href="#examples-1">Examples</a></h2>
 <p>https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory.rs
 https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory_implementing.rs</p>
@@ -1054,19 +1035,17 @@ and detect whether such binding exists.</p>
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds_option_of.html">#[binds_option_of]</a>
 method attribute in a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html">#[module]</a></p>
 <pre><code class="language-rust no_run noplayground">    #[binds_option_of]
-    pub fn binds_option_of_string() -&gt; String {}
-</code></pre>
+    pub fn binds_option_of_string() -&gt; String {}</code></pre>
 <p>The <code>#[binds_option_of]</code> method should take no parameter and return the type <code>T</code> to bind
 as <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option&lt;T&gt;</code></a>. This does not actually bind
 the <code>T</code>.</p>
-<pre><code class="language-rust no_run noplayground">    fn option_string(&amp;self) -&gt; Option&lt;String&gt;;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">    fn option_string(&amp;self) -&gt; Option&lt;String&gt;;</code></pre>
 <p>If <code>T</code> is actually bound somewhere else, injecting <code>Option&lt;T&gt;</code> will result in <code>Some(T)</code>. Otherwise
 it will be <code>None</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="multibinding"><a class="header" href="#multibinding">Multibinding</a></h1>
 <p>Multibinding is a special type of binding in Lockjaw that allows duplicated bindings. Instead of
 enforcing one binding per type, multibindings gather the bindings into a collection, allowing
-&quot;everything implementing a type&quot; to be injected. This is especially useful to build a plugin system
+"everything implementing a type" to be injected. This is especially useful to build a plugin system
 where an unspecified amount of implementations can be handled.</p>
 <p>Multibindings comes in 2 flavors, a <a href="vec.html"><code>Vec&lt;T&gt;</code> binding</a> that simply collects everything, and
 <a href="map.html"><code>HashMap&lt;K,V&gt;</code> binding</a> where key collisions are checked at compile time.</p>
@@ -1081,25 +1060,23 @@ attribute, which means instead of directly binding to <code>T</code>, the bindin
 <pre><code class="language-rust no_run noplayground">    #[provides]
     #[into_vec]
     pub fn provide_string1() -&gt; String {
-        &quot;string1&quot;.to_owned()
+        "string1".to_owned()
     }
 
     #[provides]
     #[into_vec]
     pub fn provide_string2() -&gt; String {
-        &quot;string2&quot;.to_owned()
-    }
-</code></pre>
-<p><code>Vec&lt;String&gt;</code> can be injected with the values <code>[&quot;string1&quot;, &quot;string2&quot;]</code>. This works across all
+        "string2".to_owned()
+    }</code></pre>
+<p><code>Vec&lt;String&gt;</code> can be injected with the values <code>["string1", "string2"]</code>. This works across all
 modules that are installed.</p>
 <p><code>#[into_vec]</code> can also be <a href="qualifiers.html"><code>#[qualified]</code></a></p>
 <pre><code class="language-rust no_run noplayground">    #[provides]
     #[qualified(Q)]
     #[into_vec]
     pub fn provide_q_string1() -&gt; String {
-        &quot;q_string1&quot;.to_owned()
-    }
-</code></pre>
+        "q_string1".to_owned()
+    }</code></pre>
 <p>Which result in <code>#[qualified(Q)] Vec&lt;String&gt;</code>. Note that the container is qualified instead of the
 content.</p>
 <p><code>#[into_vec]</code> also works with <a href="binds.html"><code>#[binds]</code></a></p>
@@ -1109,8 +1086,7 @@ content.</p>
 
     #[binds]
     #[into_vec]
-    pub fn bind_baz(impl_: crate::Baz) -&gt; Cl&lt;dyn crate::Foo&gt; {}
-</code></pre>
+    pub fn bind_baz(impl_: crate::Baz) -&gt; Cl&lt;dyn crate::Foo&gt; {}</code></pre>
 <p>Which allows <code>Vec&lt;Cl&lt;dyn Foo&gt;&gt;</code> to be injected. This is a common way to implement event callbacks.</p>
 <h2 id="providing-multiple-items"><a class="header" href="#providing-multiple-items">Providing multiple items</a></h2>
 <p>A method marked
@@ -1119,9 +1095,8 @@ can return <code>Vec&lt;T&gt;</code>, which will get merged with other <code>#[i
 <pre><code class="language-rust no_run noplayground">    #[provides]
     #[elements_into_vec]
     pub fn provide_strings() -&gt; Vec&lt;String&gt; {
-        vec![&quot;string3&quot;.to_owned(), &quot;string4&quot;.to_owned()]
-    }
-</code></pre>
+        vec!["string3".to_owned(), "string4".to_owned()]
+    }</code></pre>
 <p>This allows multiple bindings to be provided at once. It also allows a binding method to decide not
 to provide anything at runtime, by returning an empty <code>Vec</code>.</p>
 <h2 id="duplication-behaviors"><a class="header" href="#duplication-behaviors">Duplication behaviors</a></h2>
@@ -1134,8 +1109,7 @@ most once when generating the <code>Vec</code>.</p>
 <pre><code class="language-rust no_run noplayground">#[provides]
 pub fn vec_string_to_set_string(v: Vec&lt;String&gt;) -&gt; HashSet&lt;String&gt; {
     HashSet::from_iter(v)
-}
-</code></pre>
+}</code></pre>
 <h2 id="examples-2"><a class="header" href="#examples-2">Examples</a></h2>
 <p>https://github.com/azureblaze/lockjaw/blob/main/tests/module_provides_into_vec.rs</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="hashmapkv-multibinding"><a class="header" href="#hashmapkv-multibinding"><code>HashMap&lt;K,V&gt;</code> multibinding</a></h1>
@@ -1158,17 +1132,16 @@ a <a href="https://doc.rust-lang.org/std/string/struct.String.html"><code>String
 literal, lockjaw is unable to resolve more complex compile time constants.</p>
 <p>This example binds to <code>HashMap&lt;String,String&gt;</code>:</p>
 <pre><code class="language-rust no_run noplayground">    #[provides]
-    #[into_map(string_key: &quot;1&quot;)]
+    #[into_map(string_key: "1")]
     pub fn provide_string1() -&gt; String {
-        &quot;string1&quot;.to_owned()
+        "string1".to_owned()
     }
 
     #[provides]
-    #[into_map(string_key: &quot;2&quot;)]
+    #[into_map(string_key: "2")]
     pub fn provide_string2() -&gt; String {
-        &quot;string2&quot;.to_owned()
-    }
-</code></pre>
+        "string2".to_owned()
+    }</code></pre>
 <h3 id="i32_key"><a class="header" href="#i32_key"><code>i32_key</code></a></h3>
 <p><code>i32_key</code> specifies the map key is an <code>i32</code>. The value must be an i32 literal, lockjaw is unable to
 resolve more complex compile time constants.</p>
@@ -1176,15 +1149,14 @@ resolve more complex compile time constants.</p>
 <pre><code class="language-rust no_run noplayground">    #[provides]
     #[into_map(i32_key: 1)]
     pub fn provide_i32_string1() -&gt; String {
-        &quot;string1&quot;.to_owned()
+        "string1".to_owned()
     }
 
     #[provides]
     #[into_map(i32_key: 2)]
     pub fn provide_i32_string2() -&gt; String {
-        &quot;string2&quot;.to_owned()
-    }
-</code></pre>
+        "string2".to_owned()
+    }</code></pre>
 <p>Other types are not implemented. <code>i32</code> ought to be enough for everyone.</p>
 <h3 id="enum_key"><a class="header" href="#enum_key"><code>enum_key</code></a></h3>
 <p><code>i32_key</code> specifies the map key is an <code>enum</code>. Since the <code>enum</code> is going to be used as the map key,
@@ -1197,21 +1169,19 @@ enough).</p>
 pub enum E {
     Foo,
     Bar,
-}
-</code></pre>
+}</code></pre>
 <p>This example binds to <code>HashMap&lt;E,String&gt;</code>:</p>
 <pre><code class="language-rust no_run noplayground">    #[provides]
     #[into_map(enum_key: E::Foo)]
     pub fn provide_enum_string1() -&gt; String {
-        &quot;string1&quot;.to_owned()
+        "string1".to_owned()
     }
 
     #[provides]
     #[into_map(enum_key: Bar)]
     pub fn provide_enum_string2() -&gt; String {
-        &quot;string2&quot;.to_owned()
-    }
-</code></pre>
+        "string2".to_owned()
+    }</code></pre>
 <p>Lockjaw is able to infer the enum type (<code>E</code>) if the value is imported (<code>use E::Bar</code>), but the code
 maybe be more readable if the type is explicitly spelled out, especially most IDEs today cannot
 properly inspect tokens inside the metadata.</p>
@@ -1219,11 +1189,10 @@ properly inspect tokens inside the metadata.</p>
 <p><code>#[into_map]</code> can also be <a href="qualifiers.html"><code>#[qualified]</code></a></p>
 <pre><code class="language-rust no_run noplayground">    #[provides]
     #[qualified(Q)]
-    #[into_map(string_key: &quot;1&quot;)]
+    #[into_map(string_key: "1")]
     pub fn provide_q_string1() -&gt; String {
-        &quot;q_string1&quot;.to_owned()
-    }
-</code></pre>
+        "q_string1".to_owned()
+    }</code></pre>
 <p>Which result in <code> #[qualified(Q)] HashMap&lt;String, String&gt;</code>. Note that the container is qualified
 instead of the content.</p>
 <h2 id="dynamic-map-entries"><a class="header" href="#dynamic-map-entries">Dynamic map entries</a></h2>
@@ -1258,8 +1227,7 @@ impl MyModule {
     #[multibinds]
     #[qualified(Q)]
     fn q_map_string_string() -&gt; HashMap&lt;String, String&gt; {}
-}
-</code></pre>
+}</code></pre>
 <p><code>#[multibinds]</code> also serves as documentation on the <code>#[module]</code> specifying it is expecting the
 multibinding.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="subcomponents"><a class="header" href="#subcomponents">Subcomponents</a></h1>
@@ -1274,8 +1242,7 @@ for each session:</p>
          component: &lt;dyn SessionComponent&gt;::build({url,...})
       }
     }
-}
-</code></pre>
+}</code></pre>
 <p>However, there are also some resource that belongs to the whole server shared by all sessions, for
 example, an IO bound thread pool. We have to rebind this in every <code>SessionComponent</code></p>
 <pre><code class="language-rust no_run noplayground">impl Server{
@@ -1291,8 +1258,7 @@ example, an IO bound thread pool. We have to rebind this in every <code>SessionC
             })
         }
     }
-}
-</code></pre>
+}</code></pre>
 <p>Managing these will soon get ugly.</p>
 <p>Instead we can create
 a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.subcomponent.html"><code>#[subcomponent]</code></a> which can have
@@ -1304,8 +1270,7 @@ distinct scoped bindings, modules, but also has access to bindings in its parent
 a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#"><code>#[module]</code></a> using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#subcomponents"><code>subcomponents</code> metadata</a></p>
 <pre><code class="language-rust no_run noplayground">#[module(subcomponents: [MySubcomponent])]
-impl ParentComponentModule {
-</code></pre>
+impl ParentComponentModule {</code></pre>
 <p>Then installing the <code>#[module]</code> in a parent component. The parent component can be either a regular
 component or another subcomponent.</p>
 <h2 id="creating-a-instance-of-the-subcomponent"><a class="header" href="#creating-a-instance-of-the-subcomponent">Creating a instance of the subcomponent</a></h2>
@@ -1360,15 +1325,14 @@ installed in every <code>#[define_component]</code> but not <code>#[define_subco
 impl MyModule {
     #[provides]
     pub fn provide_string() -&gt; String {
-        &quot;string&quot;.to_owned()
+        "string".to_owned()
     }
 }
 
 #[define_component]
 pub trait MyComponent {
     fn string(&amp;self) -&gt; String;
-}
-</code></pre>
+}</code></pre>
 <h2 id="entry-points"><a class="header" href="#entry-points">Entry points</a></h2>
 <p>Ideally a component should only be used at the program's entry point, and rest of the program should
 all use dependency injection, instead of trying to pass the component around. However sometimes
@@ -1381,8 +1345,7 @@ add redundant dependencies or cycle issues to everyone that uses the component.<
 <p>An <code>#[entry_point]</code> has binding requesting methods just like a component.
 The <a href=""><code>install_in</code> metadata</a> needs to be used to install the <code>#[entry_point]</code> in a component. Once
 installed, the</p>
-<pre><code class="language-rust no_run noplayground">&lt;dyn FooEntryPoint&gt;::get(component : &amp;dyn FooComponent) -&gt; &amp;dyn FooEntryPoint
-</code></pre>
+<pre><code class="language-rust no_run noplayground">&lt;dyn FooEntryPoint&gt;::get(component : &amp;dyn FooComponent) -&gt; &amp;dyn FooEntryPoint</code></pre>
 <p>method can be used to cast the opaque component into the entry point, and access the dependency
 graph.</p>
 <pre><code class="language-rust no_run noplayground">#[entry_point(install_in: MyComponent)]
@@ -1398,14 +1361,13 @@ pub fn main() {
     let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::new();
 
     assert_eq!(&lt;dyn MyEntryPoint&gt;::get(component.as_ref()).i(), 42)
-}
-</code></pre>
+}</code></pre>
 <h2 id="testing-with-define_component"><a class="header" href="#testing-with-define_component">Testing with <code>#[define_component]</code></a></h2>
 <p>While compiling tests, Lockjaw gathers <code>install_in</code> modules only from the <code>[dev-dependencies]</code>
 section of <code>Cargo.toml</code> instead of the regular <code>[dependencies]</code>, even though <code>[dev-dependencies]</code>
 inherits <code>[dependencies]</code>. This is due to tests often have conflicting modules with prod code. any
 prod modules that need to be used in tests has to be relisted again in the <code>[dev-dependencies]</code>
-section. </p>
+section.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="caveats"><a class="header" href="#caveats">Caveats</a></h1>
 <p>This section discusses the <em>creative solutions</em> Lockjaw used to achieve its goal. They are abhorrent
 engineering practices that abuses undocumented behaviors of Rust, and are the main reasons you
@@ -1483,10 +1445,7 @@ but limiting the position of file <code>mod</code> does not seem too bad.</p>
 <ol>
 <li>A first pass on the file to <a href="path_resolution.html">generate mod info for path resolution</a></li>
 <li>Generating binding definition, with paths resolved to fully qualified path using info from step
-<ol>
-<li></li>
-</ol>
-</li>
+1.</li>
 <li>Actual generation of the components, after all bindings are defined.</li>
 </ol>
 <p>Additionally the binding info in step 2. may be needed across crates.</p>
@@ -1651,31 +1610,43 @@ pull requests.</p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
             </nav>
 
         </div>
 
-        <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script type="text/javascript">
+
+        <script>
         window.addEventListener('load', function() {
             window.setTimeout(window.print, 100);
         });
         </script>
+
+    </div>
     </body>
 </html>
