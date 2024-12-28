@@ -29,9 +29,7 @@ pub struct Counter {
 impl Counter {
     #[inject]
     pub fn new() -> Self {
-        Self {
-            counter: 0,
-        }
+        Self { counter: 0 }
     }
 
     pub fn get(&self) -> i32 {

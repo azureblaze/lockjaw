@@ -232,7 +232,7 @@ pub fn handle_prologue(input: TokenStream, for_test: bool) -> Result<TokenStream
 
     let mut parser = tree_sitter::Parser::new();
     parser
-        .set_language(tree_sitter_rust::language())
+        .set_language(&tree_sitter_rust::LANGUAGE.into())
         .map_compile_error("cannot load rust parser")?;
     let ast = parser
         .parse(&src, None)
@@ -301,22 +301,28 @@ fn validate_prologue(
     let mut epilogue_found = false;
     for n in ast.root_node().children(&mut ast.root_node().walk()) {
         let node: tree_sitter::Node = n;
-        if node.kind() == "macro_invocation" {
-            let macro_name = node
-                .child_by_field_name("macro")
-                .unwrap()
-                .utf8_text(&src.as_bytes())
-                .unwrap();
-            if prologue.contains(macro_name) {
-                for i in 0..node.child_count() {
-                    let child = node.child(i).unwrap();
-                    if child.kind() == "token_tree" {
-                        byte_offset =
-                            Some(to_range(input_span.clone()).start - child.byte_range().start);
+
+        if node.kind() == "expression_statement" {
+            for c in node.children(&mut node.walk()) {
+                if c.kind() == "macro_invocation" {
+                    let macro_name = c
+                        .child_by_field_name("macro")
+                        .unwrap()
+                        .utf8_text(&src.as_bytes())
+                        .unwrap();
+                    if prologue.contains(macro_name) {
+                        for i in 0..c.child_count() {
+                            let child = c.child(i).unwrap();
+                            if child.kind() == "token_tree" {
+                                byte_offset = Some(
+                                    to_range(input_span.clone()).start - child.byte_range().start,
+                                );
+                            }
+                        }
+                    } else if epilogue.contains(macro_name) {
+                        epilogue_found = true;
                     }
                 }
-            } else if epilogue.contains(macro_name) {
-                epilogue_found = true;
             }
         } else if node.kind() == "attribute_item" {
             let attr = path_pattern

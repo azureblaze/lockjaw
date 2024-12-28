@@ -16,24 +16,26 @@ limitations under the License.
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::type_data::TypeData;
-use proc_macro2::{Delimiter, Span, TokenStream, TokenTree};
+use proc_macro2::{Span, TokenStream};
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::process::Command;
 use syn::parse::Parser;
 #[allow(unused_imports)] // somehow rust think this is unused.
 use syn::spanned::Spanned;
+use syn::Meta;
 
 pub fn is_attribute(syn_attr: &syn::Attribute, attr: &str) -> bool {
     get_attribute(syn_attr).eq(attr)
 }
 
 pub fn get_attribute(syn_attr: &syn::Attribute) -> String {
-    if syn_attr.path.segments.len() != 1 {
+    if syn_attr.meta.path().segments.len() != 1 {
         "".to_owned()
     } else {
         syn_attr
-            .path
+            .meta
+            .path()
             .segments
             .first()
             .expect("missing segments")
@@ -47,50 +49,32 @@ pub fn has_attribute(attrs: &Vec<syn::Attribute>, attr: &str) -> bool {
 }
 
 pub fn get_parenthesized_field_values(
-    attr: TokenStream,
+    meta: &Meta,
 ) -> Result<HashMap<String, FieldValue>, TokenStream> {
-    if attr.is_empty() {
-        return Ok(HashMap::new());
+    match meta {
+        Meta::Path(_) => Ok(HashMap::new()),
+        Meta::List(list) => get_attribute_field_values(list.tokens.clone()),
+        Meta::NameValue(_) => {
+            panic!("list expected")
+        }
     }
-
-    get_attribute_field_values(strip_parentheses(attr)?)
 }
 
-pub fn get_parenthesized_path(attr: &TokenStream) -> Result<syn::Path, TokenStream> {
+pub fn get_path(attr: &TokenStream) -> Result<syn::Path, TokenStream> {
     if attr.is_empty() {
         return spanned_compile_error(attr.span(), "path expected");
     }
-    syn::parse2(strip_parentheses(attr.clone())?)
-        .map_spanned_compile_error(attr.span(), "path expected")
+    syn::parse2(attr.clone()).map_spanned_compile_error(attr.span(), "path expected")
 }
 
-pub fn get_parenthesized_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
+pub fn get_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
     if attr.is_empty() {
         return spanned_compile_error(attr.span(), "path expected");
     }
     TypeData::from_path_with_span(
-        &syn::parse2(strip_parentheses(attr.clone())?)
-            .map_spanned_compile_error(attr.span(), "path expected")?,
+        &syn::parse2(attr.clone()).map_spanned_compile_error(attr.span(), "path expected")?,
         attr.span(),
     )
-}
-
-fn strip_parentheses(attr: TokenStream) -> Result<TokenStream, TokenStream> {
-    let mut iter = attr.clone().into_iter();
-    let token_tree = iter
-        .next()
-        .map_spanned_compile_error(attr.span(), "tokens expected")?;
-    if let Some(tree) = iter.next() {
-        return spanned_compile_error(tree.span(), "only 1 token tree expected");
-    }
-    if let TokenTree::Group(group) = token_tree {
-        if group.delimiter() != Delimiter::Parenthesis {
-            return spanned_compile_error(group.span(), "(...)expected");
-        }
-        Ok(group.stream())
-    } else {
-        return spanned_compile_error(token_tree.span(), "(...)expected");
-    }
 }
 
 #[derive(Debug, Clone)]

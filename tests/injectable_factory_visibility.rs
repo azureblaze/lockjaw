@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw::{component, epilogue, injectable, component_visible};
+use lockjaw::{component, component_visible, epilogue, injectable};
 
 lockjaw::prologue!("tests/injectable_factory_visibility.rs");
 

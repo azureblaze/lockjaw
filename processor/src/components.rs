@@ -18,6 +18,7 @@ use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::ops::Deref;
 
+use base64::engine::Engine;
 use lazy_static::lazy_static;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote_spanned;
@@ -81,7 +82,7 @@ pub fn handle_component_attribute(
 
     let builder_modules = if let Some(value) = attributes.get("builder_modules") {
         if let FieldValue::Path(span, ref path) = value {
-            let type_ = TypeData::from_path_with_span(path.borrow(), span.clone())?;
+            let type_ = TypeData::from_path_with_span(path, span.clone())?;
             type_validator.add_type(&type_, span.clone());
             Some(type_)
         } else {
@@ -219,12 +220,10 @@ pub fn handle_component_attribute(
 pub fn builder_name(component: &Component) -> Ident {
     format_ident!(
         "lockjaw_component_builder_{}",
-        base64::encode_config(
-            format!("{}", component.type_data.identifier().to_string(),),
-            base64::Config::new(base64::CharacterSet::Standard, false)
-        )
-        .replace("+", "_P")
-        .replace("/", "_S")
+        base64::prelude::BASE64_STANDARD_NO_PAD
+            .encode(format!("{}", component.type_data.identifier().to_string(),))
+            .replace("+", "_P")
+            .replace("/", "_S")
     )
 }
 
@@ -234,14 +233,16 @@ pub fn get_provisions(
 ) -> Result<Vec<Dependency>, TokenStream> {
     let mut provisions = Vec::<Dependency>::new();
     for item in &mut item_trait.items {
-        if let syn::TraitItem::Method(ref mut method) = item {
+        if let syn::TraitItem::Fn(ref mut method) = item {
             let mut provision = Dependency::new();
             let mut qualifier: Option<TypeData> = None;
             let mut new_attrs: Vec<Attribute> = Vec::new();
             for attr in &method.attrs {
                 match parsing::get_attribute(attr).as_str() {
                     "qualified" => {
-                        qualifier = Some(parsing::get_parenthesized_type(&attr.tokens)?);
+                        qualifier = Some(parsing::get_type(
+                            &attr.meta.require_list().unwrap().tokens,
+                        )?);
                         type_validator.add_type(qualifier.as_ref().unwrap(), attr.span());
                     }
                     _ => new_attrs.push(attr.clone()),

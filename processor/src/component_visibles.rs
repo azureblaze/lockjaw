@@ -21,7 +21,7 @@ use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{ItemStruct, ItemTrait, VisPublic, Visibility};
+use syn::{ItemStruct, ItemTrait, Token, Visibility};
 
 pub fn handle_component_visible_attribute(
     _attr: TokenStream,
@@ -43,9 +43,7 @@ fn handle_item_struct(mut item_struct: ItemStruct) -> Result<TokenStream, TokenS
     let exported_ident = format_ident!("lockjaw_export_type_{}", original_ident);
 
     item_struct.ident = exported_ident.clone();
-    item_struct.vis = Visibility::Public(VisPublic {
-        pub_token: syn::token::Pub(item_struct.span()),
-    });
+    item_struct.vis = Visibility::Public(Token![pub](item_struct.span()));
 
     let type_ = TypeData::from_local(&original_ident.to_string(), original_ident.span())?;
     let crate_type = TypeData::from_local(&exported_ident.to_string(), original_ident.span())?;
@@ -80,9 +78,7 @@ fn handle_item_trait(mut item_trait: ItemTrait) -> Result<TokenStream, TokenStre
     let exported_ident = format_ident!("lockjaw_export_type_{}", original_ident);
 
     item_trait.ident = exported_ident.clone();
-    item_trait.vis = Visibility::Public(VisPublic {
-        pub_token: syn::token::Pub(item_trait.span()),
-    });
+    item_trait.vis = Visibility::Public(syn::token::Pub(item_trait.span()));
 
     let mut type_ = TypeData::from_local(&original_ident.to_string(), original_ident.span())?;
     type_.trait_object = true;

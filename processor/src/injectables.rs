@@ -20,7 +20,7 @@ use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{FnArg, GenericArgument, ImplItem, ImplItemMethod, Pat, PathArguments, Visibility};
+use syn::{FnArg, GenericArgument, ImplItem, ImplItemFn, Pat, PathArguments, Visibility};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::{Dependency, Injectable};
@@ -69,7 +69,6 @@ pub fn handle_injectable_attribute(
             return spanned_compile_error(attr.span(), &format!("unknown key: {}", key));
         }
     }
-
     let (ctor_type, ctor, fields) = get_ctor(item.span(), &mut item.items)?;
     if ctor_type == CtorType::Factory {
         let factory = handle_factory(item.self_ty.clone(), ctor.clone(), fields.clone())?;
@@ -107,11 +106,12 @@ pub fn handle_injectable_attribute(
                     match parsing::get_attribute(attr).as_str() {
                         "qualified" => {
                             type_validator.add_path(
-                                &parsing::get_parenthesized_path(&attr.tokens)?,
+                                &parsing::get_path(&attr.meta.require_list().unwrap().tokens)?,
                                 attr.span(),
                             );
-                            dependency.type_data.qualifier =
-                                Some(Box::new(parsing::get_parenthesized_type(&attr.tokens)?))
+                            dependency.type_data.qualifier = Some(Box::new(parsing::get_type(
+                                &attr.meta.require_list().unwrap().tokens,
+                            )?))
                         }
                         _ => new_attrs.push(attr.clone()),
                     }
@@ -195,10 +195,10 @@ pub fn handle_injectable_attribute(
 fn get_ctor(
     span: Span,
     items: &mut Vec<ImplItem>,
-) -> Result<(CtorType, &mut ImplItemMethod, HashMap<String, FieldValue>), TokenStream> {
+) -> Result<(CtorType, &mut ImplItemFn, HashMap<String, FieldValue>), TokenStream> {
     let mut ctors = 0;
     for item in &mut *items {
-        if let ImplItem::Method(ref mut method) = item {
+        if let ImplItem::Fn(ref mut method) = item {
             if parsing::has_attribute(&method.attrs, "inject")
                 || parsing::has_attribute(&method.attrs, "factory")
             {
@@ -219,15 +219,14 @@ fn get_ctor(
         );
     }
     for item in items {
-        if let ImplItem::Method(ref mut method) = item {
+        if let ImplItem::Fn(ref mut method) = item {
             if parsing::has_attribute(&method.attrs, "inject") {
                 let index = method
                     .attrs
                     .iter()
                     .position(|a| parsing::is_attribute(a, "inject"))
                     .unwrap();
-                let fields =
-                    parsing::get_parenthesized_field_values(method.attrs[index].tokens.clone())?;
+                let fields = parsing::get_parenthesized_field_values(&method.attrs[index].meta)?;
                 method.attrs.remove(index);
                 return Ok((CtorType::Inject, method, fields));
             }
@@ -237,8 +236,7 @@ fn get_ctor(
                     .iter()
                     .position(|a| parsing::is_attribute(a, "factory"))
                     .unwrap();
-                let fields =
-                    parsing::get_parenthesized_field_values(method.attrs[index].tokens.clone())?;
+                let fields = parsing::get_parenthesized_field_values(&method.attrs[index].meta)?;
                 method.attrs.remove(index);
                 return Ok((CtorType::Factory, method, fields));
             }
@@ -274,7 +272,7 @@ fn get_container(
 
 fn handle_factory(
     mut self_ty: Box<syn::Type>,
-    method: ImplItemMethod,
+    method: ImplItemFn,
     metadata: HashMap<String, FieldValue>,
 ) -> Result<TokenStream, TokenStream> {
     for (k, v) in &metadata {
@@ -286,7 +284,6 @@ fn handle_factory(
     let mut fields_arg = quote! {};
     let mut runtime_args = quote! {};
     let mut args = quote! {};
-
     for arg in method.sig.inputs.iter() {
         if let FnArg::Receiver(ref receiver) = arg {
             return spanned_compile_error(receiver.span(), &format!("self not allowed"));

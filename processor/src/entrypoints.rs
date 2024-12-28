@@ -21,12 +21,13 @@ use crate::prologue::prologue_check;
 use crate::type_data::TypeData;
 use crate::type_validator::TypeValidator;
 use crate::{components, environment, parsing};
+use base64::engine::Engine;
 use lazy_static::lazy_static;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use std::collections::HashSet;
 use syn::spanned::Spanned;
-use syn::{VisPublic, Visibility};
+use syn::{Token, Visibility};
 
 lazy_static! {
     static ref ENTRY_POINT_METADATA_KEYS: HashSet<String> = {
@@ -79,9 +80,7 @@ pub fn handle_entry_point_attribute(
     let exported_ident = format_ident!("lockjaw_export_type_{}", original_ident);
 
     item_trait.ident = exported_ident.clone();
-    item_trait.vis = Visibility::Public(VisPublic {
-        pub_token: syn::token::Pub(item_trait.span()),
-    });
+    item_trait.vis = Visibility::Public(Token![pub](item_trait.span()));
 
     let type_ = TypeData::from_local(&original_ident.to_string(), original_ident.span())?;
     let crate_type = TypeData::from_local(&exported_ident.to_string(), original_ident.span())?;
@@ -135,15 +134,13 @@ pub fn handle_entry_point_attribute(
 pub fn getter_name(entry_point: &EntryPoint) -> Ident {
     format_ident!(
         "lockjaw_entry_point_getter_{}",
-        base64::encode_config(
-            format!(
+        base64::prelude::BASE64_STANDARD_NO_PAD
+            .encode(format!(
                 "{}_{}",
                 entry_point.type_data.identifier().to_string(),
                 entry_point.component.identifier().to_string()
-            ),
-            base64::Config::new(base64::CharacterSet::Standard, false)
-        )
-        .replace("+", "_P")
-        .replace("/", "_S")
+            ))
+            .replace("+", "_P")
+            .replace("/", "_S")
     )
 }

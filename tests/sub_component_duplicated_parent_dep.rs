@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, module, prologue, subcomponent, Cl, injectable};
+use lockjaw::{component, injectable, module, prologue, subcomponent, Cl};
 
 prologue!("tests/sub_component_duplicated_parent_dep.rs");
 
@@ -25,9 +25,7 @@ pub struct A {
 impl A {
     #[inject]
     pub fn new(i: i32) -> A {
-        A {
-            i
-        }
+        A { i }
     }
 }
 
@@ -39,9 +37,7 @@ pub struct B {
 impl B {
     #[inject]
     pub fn new(i: i32) -> B {
-        B {
-            i
-        }
+        B { i }
     }
 }
 

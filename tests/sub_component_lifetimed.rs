@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, module, prologue, subcomponent, injectable, Cl};
+use lockjaw::{component, injectable, module, prologue, subcomponent, Cl};
 
 prologue!("tests/sub_component.rs");
 
@@ -35,12 +35,9 @@ pub struct ScopedWithScopeDep<'a> {
 impl ScopedWithScopeDep<'_> {
     #[inject]
     pub fn new(scoped: &Scoped) -> ScopedWithScopeDep {
-        ScopedWithScopeDep {
-            scoped
-        }
+        ScopedWithScopeDep { scoped }
     }
 }
-
 
 #[subcomponent]
 pub trait MySubcomponent<'a> {

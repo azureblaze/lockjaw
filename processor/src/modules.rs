@@ -20,11 +20,11 @@ use std::ops::{Deref, DerefMut};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
+use syn::parse_quote;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::Token;
-use syn::{parse_quote, ImplItemMethod};
 use syn::{Attribute, GenericArgument};
+use syn::{ImplItemFn, Token};
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::manifest::BindingType::{Binds, BindsOptionOf, Multibinds, Provides};
@@ -81,7 +81,7 @@ fn handle_module_attribute_internal(
     for i in 0..item_impl.items.len() {
         #[allow(unused_mut)] // required
         let mut item = item_impl.items.get_mut(i).unwrap();
-        if let syn::ImplItem::Method(ref mut method) = item {
+        if let syn::ImplItem::Fn(ref mut method) = item {
             bindings.push(parse_binding(method, &mut type_validator)?);
         }
     }
@@ -132,7 +132,7 @@ fn handle_module_attribute_internal(
 }
 
 fn parse_binding(
-    method: &mut ImplItemMethod,
+    method: &mut ImplItemFn,
     type_validator: &mut TypeValidator,
 ) -> Result<Binding, TokenStream> {
     let mut option_binding: Option<Binding> = None;
@@ -187,11 +187,13 @@ fn parse_binding(
                 multibinding = MultibindingType::ElementsIntoVec;
             }
             "qualified" => {
-                qualifier = Some(Box::new(parsing::get_parenthesized_type(&attr.tokens)?));
+                qualifier = Some(Box::new(parsing::get_type(
+                    &attr.meta.require_list().unwrap().tokens,
+                )?));
             }
             "into_map" => {
                 multibinding = MultibindingType::IntoMap;
-                let fields = get_parenthesized_field_values(attr.tokens.clone())?;
+                let fields = get_parenthesized_field_values(&attr.meta)?;
                 if let Some(field) = fields.get("string_key") {
                     if let FieldValue::StringLiteral(_, ref string) = field {
                         map_key = MultibindingMapKey::String(string.clone());
@@ -297,7 +299,7 @@ fn handle_provides(
             }
         }
     }
-    let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
+    let provides_attr = parsing::get_parenthesized_field_values(&attr.meta)?;
     if let Some(scope) = provides_attr.get("scope") {
         let scopes = parsing::get_types(Some(scope), attr.span())?;
         for scope in &scopes {
@@ -376,7 +378,7 @@ fn handle_binds(
             binds.dependencies.push(dependency);
         }
     }
-    let provides_attr = parsing::get_parenthesized_field_values(attr.tokens.clone())?;
+    let provides_attr = parsing::get_parenthesized_field_values(&attr.meta)?;
     if let Some(scope) = provides_attr.get("scope") {
         let scopes = parsing::get_types(Some(scope), attr.span())?;
         for scope in &scopes {
