@@ -78,6 +78,7 @@ pub fn get_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum FieldValue {
     StringLiteral(Span, String),
     IntLiteral(Span, i64),

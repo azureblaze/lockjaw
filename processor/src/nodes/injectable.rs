@@ -26,7 +26,6 @@ use std::any::Any;
 pub struct InjectableNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
-    pub scoped: bool,
 
     pub injectable: crate::manifest::Injectable,
 }
@@ -47,7 +46,6 @@ impl InjectableNode {
                 .iter()
                 .map(|dep| dep.type_data.clone())
                 .collect(),
-            scoped: false,
             injectable: injectable.clone(),
         })
     }
