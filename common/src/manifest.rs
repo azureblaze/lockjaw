@@ -260,3 +260,10 @@ pub struct ExpandedVisibility {
     pub exported_name: TypeData,
     pub crate_local_name: TypeData,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DepManifests {
+    pub prod_manifest: Manifest,
+    pub test_manifest: Manifest,
+    pub root_manifests: HashMap<String, Manifest>,
+}

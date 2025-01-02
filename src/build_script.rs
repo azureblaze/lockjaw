@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use lockjaw_common::manifest::{DepManifests, Manifest};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::process::Command;
@@ -103,21 +104,70 @@ pub fn build_manifest() {
         .id
         .clone();
     log!("package_id: {}", package_id);
-    log!("toml:{:#?}", toml_map.get(&package_id).unwrap());
-    log!("node:{:#?}", dep_map.get(&package_id).unwrap());
-    let prod_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, false);
+    //log!("toml:{:#?}", toml_map.get(&package_id).unwrap());
+    //log!("node:{:#?}", dep_map.get(&package_id).unwrap());
+
+    let toml = toml_map.get(&package_id).unwrap();
+    //log!("{:#?}", toml);
+    let mut target_packages: HashMap<String, LockjawPackage> = HashMap::new();
+    for target in &toml.targets {
+        if target.kind == vec!["custom-build".to_string()] {
+            continue;
+        }
+        target_packages.insert(
+            target.name.clone(),
+            LockjawPackage {
+                id: toml.id.clone(),
+                name: toml.name.clone(),
+                src_path: target.src_path.clone(),
+            },
+        );
+    }
+    log!("target packages:{:#?}", target_packages);
+
+    let prod_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, true, false);
     log!("prod packages:{:#?}", prod_packages);
-    let test_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, true);
+    let test_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, true, true);
     log!("test packages:{:#?}", test_packages);
+
+    let dep_manifest = DepManifests {
+        prod_manifest: parse_manifest(&prod_packages),
+        test_manifest: parse_manifest(&test_packages),
+        root_manifests: target_packages
+            .iter()
+            .map(|entry| (entry.0.clone(), parse_manifest(&vec![entry.1.clone()])))
+            .collect(),
+    };
+
+    let dep_manifest_path = format!("{}dep_manifest.json", std::env::var("OUT_DIR").unwrap());
+
+    std::fs::write(
+        &dep_manifest_path,
+        serde_json::to_string_pretty(&dep_manifest).expect("cannot serialize manifest"),
+    )
+    .expect("cannot write manifest");
+
+    log!(
+        "dep manifest written to file:///{}",
+        dep_manifest_path.replace("\\", "/")
+    );
+    println!(
+        "cargo::rustc-env=LOCKJAW_DEP_MANIFEST={}",
+        &dep_manifest_path
+    )
 }
 
-#[derive(Debug)]
+fn parse_manifest(_lockjaw_package: &Vec<LockjawPackage>) -> Manifest {
+    Manifest::new()
+}
+
+#[derive(Debug, Clone)]
 enum LockjawPackageKind {
     Prod,
     Test,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct LockjawPackage {
     id: String,
     name: String,
@@ -127,6 +177,7 @@ fn gather_lockjaw_packages(
     id: &String,
     toml_map: &HashMap<String, CargoMetadataPackage>,
     dep_map: &HashMap<String, CargoNode>,
+    root: bool,
     for_test: bool,
 ) -> Vec<LockjawPackage> {
     let mut result = Vec::<LockjawPackage>::new();
@@ -136,22 +187,20 @@ fn gather_lockjaw_packages(
         return result;
     }
     let toml = toml_map.get(id).unwrap();
-    let target = toml
-        .targets
-        .iter()
-        .find(|target| target.kind.contains(&"lib".to_string()))
-        .or_else(|| {
-            toml.targets
-                .iter()
-                .find(|target| target.kind.contains(&"bin".to_string()))
-        })
-        .expect(&format!("no bin or lib target for {}", toml.name));
 
-    result.push(LockjawPackage {
-        id: node.id.clone(),
-        name: toml.name.clone(),
-        src_path: target.src_path.clone(),
-    });
+    if !root {
+        let target = toml
+            .targets
+            .iter()
+            .find(|target| target.kind.contains(&"lib".to_string()))
+            .expect(&format!("no lib target for {}", toml.name));
+
+        result.push(LockjawPackage {
+            id: node.id.clone(),
+            name: toml.name.clone(),
+            src_path: target.src_path.clone(),
+        });
+    }
 
     for dep in &node.deps {
         if dep.name == "lockjaw" {
@@ -170,7 +219,7 @@ fn gather_lockjaw_packages(
         }
 
         result.extend(gather_lockjaw_packages(
-            &dep.pkg, toml_map, dep_map, for_test,
+            &dep.pkg, toml_map, dep_map, false, for_test,
         ));
     }
 

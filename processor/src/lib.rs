@@ -30,7 +30,7 @@ use error::handle_error;
 
 use crate::error::{compile_error, CompileError};
 use lockjaw_common::environment::current_crate;
-use lockjaw_common::manifest::{ComponentType, Manifest};
+use lockjaw_common::manifest::{ComponentType, DepManifests, Manifest};
 use proc_macro2::Span;
 use std::ops::Deref;
 use syn::spanned::Spanned;
@@ -392,6 +392,30 @@ fn merge_manifest(
             epilogue!(root) generates #[define_component] implementations and may only be called once in a binary, typically at the root binary crate", dep));
         }
         result.merge_from(&dep_manifest);
+    }
+    if !config.for_test {
+        let reader = BufReader::new(
+            File::open(
+                std::env::var("LOCKJAW_DEP_MANIFEST")
+                    .expect("manifest missing, is the build script called?"),
+            )
+            .expect("cannot find manifest file"),
+        );
+        let dep_manifest: DepManifests =
+            serde_json::from_reader(reader).expect("cannot read manifest");
+        if config.for_test {
+            result.merge_from(&dep_manifest.test_manifest)
+        } else {
+            result.merge_from(&dep_manifest.prod_manifest)
+        }
+        if let Ok(bin_name) = std::env::var("CARGO_BIN_NAME") {
+            result.merge_from(
+                dep_manifest
+                    .root_manifests
+                    .get(&bin_name)
+                    .expect("CARGO_BIN_NAME not in manifest"),
+            );
+        }
     }
     Ok(result)
 }

@@ -92,10 +92,6 @@ pub use once::Once;
 /// }
 /// ```
 pub fn build_script() {
-    // Do nothing. just forcing env var OUT_DIR to be set.
-}
-
-pub fn build_manifest() {
     build_script::build_manifest()
 }
 
