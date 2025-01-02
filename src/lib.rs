@@ -17,6 +17,9 @@ limitations under the License.
 #![allow(stable_features)]
 #![doc = include_str ! ("../README.md")]
 
+mod build_script;
+mod lazy;
+
 #[doc = include_str ! ("component.md")]
 pub use lockjaw_processor::component;
 
@@ -92,11 +95,13 @@ pub fn build_script() {
     // Do nothing. just forcing env var OUT_DIR to be set.
 }
 
+pub fn build_manifest() {
+    build_script::build_manifest()
+}
+
 mod provider;
 
 pub use provider::Provider;
-
-mod lazy;
 
 pub use lazy::Lazy;
 

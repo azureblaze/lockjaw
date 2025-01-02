@@ -14,6 +14,7 @@
 
 [workspace]
 members = [
+    "common",
     "processor",
     "example",
     "example/printer",
@@ -46,11 +47,14 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lockjaw_processor = { path = "processor", version = "0.2.1" }
+lockjaw_processor = { path = "processor" }
+lockjaw_common = { path = "common" }
 regex = "1"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.134"
 
 [build-dependencies]
 rustc_version = "0.3"
 
 [dev-dependencies]
-test_dep = {path="tests/test_dep"}
+test_dep = { path = "tests/test_dep" }

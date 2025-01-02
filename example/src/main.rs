@@ -63,6 +63,7 @@ struct BuilderModules {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Foo {
     i: i32,
     phrase: String,
@@ -106,7 +107,7 @@ trait MyComponent {}
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::build(BuilderModules {
         my_module: MyModule {
-            phrase: "helloworld".to_owned(),
+            phrase: "hello world".to_owned(),
         },
     });
 
