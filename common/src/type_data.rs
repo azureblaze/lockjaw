@@ -18,49 +18,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::environment;
 use crate::manifest::TypeRoot;
-use lazy_static::lazy_static;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
-
-lazy_static! {
-    /// auto used types that does not need fully qualified paths.
-    static ref PRELUDE_V1: HashMap<String, String> = {
-        let mut m = HashMap::<String, String>::new();
-        m.insert("Box".into(), "std::boxed::Box".into());
-        m.insert("Option".into(), "std::option::Option".into());
-        m.insert("Result".into(), "std::result::Result".into());
-        m.insert("String".into(), "std::string::String".into());
-        m.insert("Vec".into(), "std::vec::Vec".into());
-        m.insert("Cl".into(),"lockjaw::Cl".into() );
-        m.insert("Provider".into(),"lockjaw::Provider".into() );
-        m.insert("Lazy".into(),"lockjaw::Lazy".into() );
-        m
-    };
-}
-
-lazy_static! {
-    /// primitive data types with no path
-    static ref PRIMITIVES: HashSet<String> = {
-        let mut m = HashSet::<String>::new();
-        m.insert("i8".to_owned());
-        m.insert("u8".to_owned());
-        m.insert("i16".to_owned());
-        m.insert("u16".to_owned());
-        m.insert("i32".to_owned());
-        m.insert("u32".to_owned());
-        m.insert("i64".to_owned());
-        m.insert("u64".to_owned());
-        m.insert("i128".to_owned());
-        m.insert("u128".to_owned());
-        m.insert("isize".to_owned());
-        m.insert("usize".to_owned());
-        m.insert("f32".to_owned());
-        m.insert("f64".to_owned());
-        m.insert("bool".to_owned());
-        m.insert("char".to_owned());
-        m
-    };
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, Eq)]
 pub struct TypeData {

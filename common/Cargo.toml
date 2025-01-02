@@ -26,22 +26,4 @@ documentation = "https://docs.rs/lockjaw/"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-quote = "1.0"
-proc-macro2 = "1.0"
-regex = "1"
-lazy_static = "1"
-backtrace = "0.3"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tree-sitter = "0.24"
-tree-sitter-rust = "0.23"
-base64 = "0.22"
-[dependencies.syn]
-version = "2.0"
-features = ["full", "extra-traits"]
-
-[build-dependencies]
-rustc_version = "0.4"
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nightly)'] }
