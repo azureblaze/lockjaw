@@ -20,9 +20,10 @@ use quote::quote;
 use crate::component_visibles;
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::{Binding, TypeRoot};
 use crate::nodes::node::Node;
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::manifest::{Binding, TypeRoot};
+use lockjaw_common::type_data::TypeData;
 use std::any::Any;
 
 #[derive(Debug, Clone)]

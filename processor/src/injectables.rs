@@ -16,19 +16,18 @@ limitations under the License.
 
 use std::collections::{HashMap, HashSet};
 
+use crate::error::{spanned_compile_error, CompileError};
+use crate::parsing::FieldValue;
+use crate::prologue::prologue_check;
+use crate::type_validator::TypeValidator;
+use crate::{manifest, parsing};
 use lazy_static::lazy_static;
+use lockjaw_common::manifest::{Dependency, Injectable};
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
 use syn::{FnArg, GenericArgument, ImplItem, ImplItemFn, Pat, PathArguments, Visibility};
-
-use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::{Dependency, Injectable};
-use crate::parsing::FieldValue;
-use crate::prologue::prologue_check;
-use crate::type_data::TypeData;
-use crate::type_validator::TypeValidator;
-use crate::{manifest, parsing};
 
 lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
@@ -100,7 +99,7 @@ pub fn handle_injectable_attribute(
         if let FnArg::Typed(ref mut type_) = arg {
             if let Pat::Ident(ref ident) = *type_.pat {
                 let mut dependency = Dependency::new();
-                dependency.type_data = TypeData::from_syn_type(&type_.ty)?;
+                dependency.type_data = crate::type_data::from_syn_type(&type_.ty)?;
                 let mut new_attrs = Vec::new();
                 for attr in &type_.attrs {
                     match parsing::get_attribute(attr).as_str() {
@@ -149,7 +148,7 @@ pub fn handle_injectable_attribute(
     }
 
     let mut injectable = Injectable::new();
-    injectable.type_data = TypeData::from_local(&type_name, item.self_ty.span())?;
+    injectable.type_data = crate::type_data::from_local(&type_name, item.self_ty.span())?;
     let scopes = parsing::get_types(attributes.get("scope"), item.self_ty.span())?;
     for scope in &scopes {
         type_validator.add_dyn_type(scope, attr.span())
@@ -170,7 +169,7 @@ pub fn handle_injectable_attribute(
     injectable.type_data.scopes.extend(scopes);
     injectable.ctor_name = ctor.sig.ident.to_string();
     injectable.dependencies.extend(dependencies);
-    let identifier = injectable.type_data.identifier().to_string();
+    let identifier = injectable.type_data.identifier_string();
 
     manifest::with_manifest(|mut manifest| {
         if has_lifetime {
@@ -261,7 +260,7 @@ fn get_container(
                 );
             }
             type_validator.add_path_and_arg(path, span.clone(), element_type);
-            let container = TypeData::from_path_with_span(path, span.clone())?;
+            let container = crate::type_data::from_path_with_span(path, span.clone())?;
             return Ok(Some(container));
         } else {
             return spanned_compile_error(span, "path expected for 'container'");

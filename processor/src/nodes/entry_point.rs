@@ -18,10 +18,12 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 
 use crate::graph::{ComponentSections, Graph};
-use crate::manifest::{ComponentType, EntryPoint};
+use crate::manifest::ProcessorComponent;
 use crate::nodes::node::{DependencyData, Node};
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
 use crate::{component_visibles, entrypoints};
+use lockjaw_common::manifest::{ComponentType, EntryPoint};
+use lockjaw_common::type_data::TypeData;
 use std::any::Any;
 
 #[derive(Debug, Clone)]

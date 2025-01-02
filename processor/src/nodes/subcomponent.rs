@@ -17,12 +17,14 @@ limitations under the License.
 use crate::component_visibles;
 use crate::error::CompileError;
 use crate::graph::{build_graph, ComponentSections, Graph};
-use crate::manifest::{Component, Manifest, MultibindingType};
+use crate::manifest::ProcessorComponent;
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::map::MapNode;
 use crate::nodes::node::{DependencyData, Node};
 use crate::nodes::vec::VecNode;
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::manifest::{Component, Manifest, MultibindingType};
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::any::Any;

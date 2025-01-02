@@ -16,9 +16,10 @@ limitations under the License.
 
 use crate::component_visibles;
 use crate::graph::{ComponentSections, Graph};
-use crate::manifest::{MultibindingType, TypeRoot};
 use crate::nodes::node::{DependencyData, Node};
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::manifest::{MultibindingType, TypeRoot};
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use std::any::{Any, TypeId};

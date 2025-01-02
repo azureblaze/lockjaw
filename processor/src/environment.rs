@@ -16,10 +16,6 @@ limitations under the License.
 use crate::error::CompileError;
 use proc_macro2::TokenStream;
 
-pub fn current_crate() -> String {
-    std::env::var("CARGO_CRATE_NAME").expect("missing crate name env var")
-}
-
 pub fn cargo_manifest_dir() -> String {
     std::env::var("CARGO_MANIFEST_DIR")
         .expect("missing manifest dir env var")

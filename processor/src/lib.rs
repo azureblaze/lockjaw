@@ -26,11 +26,11 @@ use std::process::Command;
 
 use quote::{quote, quote_spanned};
 
-use crate::manifest::Manifest;
 use error::handle_error;
 
 use crate::error::{compile_error, CompileError};
-use manifest::ComponentType;
+use lockjaw_common::environment::current_crate;
+use lockjaw_common::manifest::{ComponentType, Manifest};
 use proc_macro2::Span;
 use std::ops::Deref;
 use syn::spanned::Spanned;
@@ -205,7 +205,7 @@ pub fn prologue(input: TokenStream) -> TokenStream {
 pub fn private_prologue(input: TokenStream) -> TokenStream {
     handle_error(|| {
         // rustdoc --test does not run with #[cfg(test)] and will reach here.
-        let for_test = environment::current_crate().eq("lockjaw");
+        let for_test = current_crate().eq("lockjaw");
         prologue::handle_prologue(input.into(), for_test)
     })
 }
@@ -240,7 +240,7 @@ pub fn private_root_epilogue(input: TokenStream) -> TokenStream {
         let mut config = EpilogueConfig {
             ..create_epilogue_config(input)
         };
-        if environment::current_crate().eq("lockjaw") {
+        if current_crate().eq("lockjaw") {
             // rustdoc --test does not run with #[cfg(test)] and will reach here.
             config.for_test = true;
             config.root = true;
@@ -300,7 +300,7 @@ fn internal_epilogue(
                 Path::new(&format!(
                     "{}/{}.manifest_path",
                     environment::proc_artifact_dir(),
-                    environment::current_crate()
+                    current_crate()
                 )),
                 &manifest_path,
             )
@@ -344,7 +344,7 @@ fn internal_epilogue(
             let path = format!(
                 "{}debug_{}.rs",
                 environment::lockjaw_output_dir()?,
-                environment::current_crate()
+                current_crate()
             );
             log!("writing debug output to {}", path);
             std::fs::create_dir_all(Path::new(&environment::lockjaw_output_dir()?))

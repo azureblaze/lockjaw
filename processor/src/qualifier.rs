@@ -17,7 +17,6 @@ limitations under the License.
 use crate::error::CompileError;
 use crate::manifest::with_manifest;
 use crate::prologue::prologue_check;
-use crate::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::spanned::Spanned;
@@ -31,7 +30,7 @@ pub fn handle_qualifier_attribute(
         syn::parse2(input).map_spanned_compile_error(span, "struct block expected")?;
 
     let r: Result<(), TokenStream> = with_manifest(|mut manifest| {
-        Ok(manifest.qualifiers.push(TypeData::from_local(
+        Ok(manifest.qualifiers.push(crate::type_data::from_local(
             &item.ident.to_string(),
             item.ident.span(),
         )?))

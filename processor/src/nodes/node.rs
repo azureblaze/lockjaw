@@ -20,13 +20,14 @@ use quote::format_ident;
 
 use crate::error::compile_error;
 use crate::graph::{ComponentSections, Graph};
-use crate::manifest::{BuilderModules, TypeRoot};
 use crate::nodes::boxed::BoxedNode;
 use crate::nodes::component_lifetime::ComponentLifetimeNode;
 use crate::nodes::lazy::LazyNode;
 use crate::nodes::provider::ProviderNode;
 use crate::nodes::scoped::ScopedNode;
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::manifest::{BuilderModules, TypeRoot};
+use lockjaw_common::type_data::TypeData;
 use std::any::Any;
 use std::cell::Cell;
 use std::collections::HashMap;

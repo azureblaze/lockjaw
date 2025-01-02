@@ -18,24 +18,26 @@ use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::ops::Deref;
 
+use crate::error::{spanned_compile_error, CompileError};
+use crate::manifest::with_manifest;
+use crate::parsing;
+use crate::parsing::FieldValue;
+use crate::prologue::prologue_check;
+use crate::type_data::ProcessorTypeData;
+use crate::type_validator::TypeValidator;
+use crate::{graph, type_data};
 use base64::engine::Engine;
 use lazy_static::lazy_static;
+use lockjaw_common::environment::current_crate;
+use lockjaw_common::manifest::{
+    BuilderModules, Component, ComponentType, Dependency, Manifest, TypeRoot,
+};
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote_spanned;
 use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::{Attribute, ItemTrait};
-
-use crate::error::{spanned_compile_error, CompileError};
-use crate::graph;
-use crate::manifest::{
-    with_manifest, BuilderModules, Component, ComponentType, Dependency, Manifest, TypeRoot,
-};
-use crate::parsing::FieldValue;
-use crate::prologue::prologue_check;
-use crate::type_data::TypeData;
-use crate::type_validator::TypeValidator;
-use crate::{environment, parsing};
 
 lazy_static! {
     static ref COMPONENT_METADATA_KEYS: HashSet<String> = {
@@ -82,7 +84,7 @@ pub fn handle_component_attribute(
 
     let builder_modules = if let Some(value) = attributes.get("builder_modules") {
         if let FieldValue::Path(span, ref path) = value {
-            let type_ = TypeData::from_path_with_span(path, span.clone())?;
+            let type_ = type_data::from_path_with_span(path, span.clone())?;
             type_validator.add_type(&type_, span.clone());
             Some(type_)
         } else {
@@ -95,7 +97,7 @@ pub fn handle_component_attribute(
     let modules = if let Some(value) = attributes.get("modules") {
         match value {
             FieldValue::Path(span, ref path) => {
-                let type_ = TypeData::from_path_with_span(&path, span.clone())?;
+                let type_ = type_data::from_path_with_span(&path, span.clone())?;
                 type_validator.add_type(&type_, span.clone());
                 Some(vec![type_])
             }
@@ -103,7 +105,7 @@ pub fn handle_component_attribute(
                 let mut result = Vec::new();
                 for field in array {
                     if let FieldValue::Path(span, ref path) = field {
-                        let type_ = TypeData::from_path_with_span(&path, span.clone())?;
+                        let type_ = type_data::from_path_with_span(&path, span.clone())?;
                         type_validator.add_type(&type_, span.clone());
                         result.push(type_)
                     } else {
@@ -122,7 +124,7 @@ pub fn handle_component_attribute(
 
     let mut component = Component::new();
     component.type_data =
-        TypeData::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
+        type_data::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
     component.component_type = component_type;
     component.provisions.extend(provisions);
     if let Some(ref m) = builder_modules {
@@ -132,7 +134,7 @@ pub fn handle_component_attribute(
         component.modules = m.clone();
     }
     component.definition_only = definition_only;
-    let identifier = component.type_data.identifier().to_string();
+    let identifier = component.type_data.identifier_string();
     let component_vis = item_trait.vis.clone();
 
     let component_builder = if component.component_type == ComponentType::Subcomponent {
@@ -254,7 +256,7 @@ pub fn get_provisions(
                 if is_trait_object_without_lifetime(ty.deref())? {
                     return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
                 }
-                provision.type_data = TypeData::from_syn_type(ty.deref())?;
+                provision.type_data = type_data::from_syn_type(ty.deref())?;
                 provision.type_data.qualifier = qualifier.map(Box::new);
             } else {
                 return spanned_compile_error(
@@ -269,7 +271,7 @@ pub fn get_provisions(
 }
 
 fn is_trait_object_without_lifetime(ty: &syn::Type) -> Result<bool, TokenStream> {
-    let type_ = TypeData::from_syn_type(ty)?;
+    let type_ = type_data::from_syn_type(ty)?;
     if type_.root == TypeRoot::GLOBAL && type_.path == "lockjaw::Cl" {
         return Ok(false);
     }
@@ -301,12 +303,12 @@ pub fn handle_builder_modules_attribute(
             .as_ref()
             .map_spanned_compile_error(span, "#[builder_modules] cannot be tuples")?;
         dep.name = name.to_string();
-        dep.type_data = TypeData::from_syn_type(field.ty.borrow())?;
+        dep.type_data = type_data::from_syn_type(field.ty.borrow())?;
         modules.push(dep);
     }
 
     let mut builder_modules = BuilderModules::new();
-    builder_modules.type_data = Some(TypeData::from_local(
+    builder_modules.type_data = Some(type_data::from_local(
         &item_struct.ident.to_string(),
         item_struct.ident.span(),
     )?);
@@ -331,11 +333,7 @@ pub fn generate_components(
             if !root {
                 continue;
             }
-        } else if component
-            .type_data
-            .field_crate
-            .ne(&environment::current_crate())
-        {
+        } else if component.type_data.field_crate.ne(&current_crate()) {
             continue;
         }
         if component.component_type != ComponentType::Component {

@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, quote_spanned};
 

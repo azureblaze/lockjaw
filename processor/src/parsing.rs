@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::type_data::TypeData;
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
@@ -71,7 +71,7 @@ pub fn get_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
     if attr.is_empty() {
         return spanned_compile_error(attr.span(), "path expected");
     }
-    TypeData::from_path_with_span(
+    crate::type_data::from_path_with_span(
         &syn::parse2(attr.clone()).map_spanned_compile_error(attr.span(), "path expected")?,
         attr.span(),
     )
@@ -122,7 +122,7 @@ impl FieldValue {
     pub fn get_types(&self) -> Result<Vec<TypeData>, TokenStream> {
         let mut result = Vec::new();
         for (path, span) in self.get_paths()? {
-            result.push(TypeData::from_path_with_span(&path, span.clone())?)
+            result.push(crate::type_data::from_path_with_span(&path, span.clone())?)
         }
         Ok(result)
     }
@@ -201,14 +201,15 @@ pub fn get_types(types: Option<&FieldValue>, span: Span) -> Result<Vec<TypeData>
         return Ok(Vec::new());
     }
     match types.unwrap() {
-        FieldValue::Path(span, ref path) => {
-            Ok(vec![TypeData::from_path_with_span(path, span.clone())?])
-        }
+        FieldValue::Path(span, ref path) => Ok(vec![crate::type_data::from_path_with_span(
+            path,
+            span.clone(),
+        )?]),
         FieldValue::Array(span, ref paths) => {
             let mut result = Vec::new();
             for field in paths {
                 if let FieldValue::Path(span, ref path) = field {
-                    result.push(TypeData::from_path_with_span(path, span.clone())?);
+                    result.push(crate::type_data::from_path_with_span(path, span.clone())?);
                 } else {
                     return spanned_compile_error(span.clone(), "field in array is not a path");
                 }

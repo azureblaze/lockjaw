@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::environment::{cargo_manifest_dir, current_crate};
+use crate::environment::cargo_manifest_dir;
 use crate::error::{compile_error, spanned_compile_error, CompileError};
-use crate::manifest::TypeRoot;
-use crate::type_data::TypeData;
-use crate::{environment, parsing};
+use crate::parsing;
+use lockjaw_common::environment::current_crate;
+use lockjaw_common::manifest::TypeRoot;
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use regex::Regex;
@@ -557,7 +558,7 @@ fn process_use(
     let items = get_use_items(captures.name("remainder").unwrap().as_str());
     for item in items {
         let crate_ = if type_root == TypeRoot::CRATE {
-            environment::current_crate()
+            current_crate()
         } else if segments.len() >= 1 {
             segments[0].clone()
         } else {

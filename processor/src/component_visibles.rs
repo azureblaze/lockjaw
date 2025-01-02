@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::environment;
 use crate::error::spanned_compile_error;
-use crate::manifest::{with_manifest, ExpandedVisibility, Manifest, TypeRoot};
-use crate::type_data::TypeData;
+use crate::manifest::with_manifest;
+use crate::type_data;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::manifest::{ExpandedVisibility, Manifest, TypeRoot};
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
@@ -45,14 +47,14 @@ fn handle_item_struct(mut item_struct: ItemStruct) -> Result<TokenStream, TokenS
     item_struct.ident = exported_ident.clone();
     item_struct.vis = Visibility::Public(Token![pub](item_struct.span()));
 
-    let type_ = TypeData::from_local(&original_ident.to_string(), original_ident.span())?;
-    let crate_type = TypeData::from_local(&exported_ident.to_string(), original_ident.span())?;
+    let type_ = type_data::from_local(&original_ident.to_string(), original_ident.span())?;
+    let crate_type = type_data::from_local(&exported_ident.to_string(), original_ident.span())?;
 
     with_manifest(|mut manifest| {
         let mut exported_type = TypeData::new();
         exported_type.root = TypeRoot::CRATE;
         exported_type.path = type_.identifier().to_string();
-        exported_type.field_crate = environment::current_crate();
+        exported_type.field_crate = lockjaw_common::environment::current_crate();
 
         manifest.expanded_visibilities.insert(
             type_.canonical_string_path(),
@@ -80,15 +82,15 @@ fn handle_item_trait(mut item_trait: ItemTrait) -> Result<TokenStream, TokenStre
     item_trait.ident = exported_ident.clone();
     item_trait.vis = Visibility::Public(syn::token::Pub(item_trait.span()));
 
-    let mut type_ = TypeData::from_local(&original_ident.to_string(), original_ident.span())?;
+    let mut type_ = type_data::from_local(&original_ident.to_string(), original_ident.span())?;
     type_.trait_object = true;
-    let crate_type = TypeData::from_local(&exported_ident.to_string(), original_ident.span())?;
+    let crate_type = type_data::from_local(&exported_ident.to_string(), original_ident.span())?;
 
     with_manifest(|mut manifest| {
         let mut exported_type = TypeData::new();
         exported_type.root = TypeRoot::CRATE;
         exported_type.path = type_.identifier().to_string();
-        exported_type.field_crate = environment::current_crate();
+        exported_type.field_crate = lockjaw_common::environment::current_crate();
         exported_type.trait_object = true;
 
         manifest.expanded_visibilities.insert(

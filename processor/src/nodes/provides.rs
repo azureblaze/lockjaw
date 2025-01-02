@@ -19,12 +19,13 @@ use quote::{format_ident, quote};
 use crate::component_visibles;
 use crate::graph::ComponentSections;
 use crate::graph::Graph;
-use crate::manifest::{Binding, BuilderModules, MultibindingType};
 use crate::nodes::map::MapNode;
 use crate::nodes::node;
 use crate::nodes::node::{DependencyData, ModuleInstance, Node};
 use crate::nodes::vec::VecNode;
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::manifest::{Binding, BuilderModules, MultibindingType};
+use lockjaw_common::type_data::TypeData;
 use std::any::Any;
 
 #[derive(Debug, Clone)]

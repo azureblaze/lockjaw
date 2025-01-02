@@ -19,9 +19,10 @@ use quote::{format_ident, quote};
 
 use crate::component_visibles;
 use crate::graph::{ComponentSections, Graph};
-use crate::manifest::{Component, Dependency};
 use crate::nodes::node::{DependencyData, Node};
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::manifest::{Component, Dependency};
+use lockjaw_common::type_data::TypeData;
 use std::any::Any;
 
 #[derive(Debug, Clone)]

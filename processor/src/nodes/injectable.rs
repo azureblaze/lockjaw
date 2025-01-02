@@ -17,7 +17,9 @@ limitations under the License.
 use crate::component_visibles;
 use crate::graph::{ComponentSections, Graph};
 use crate::nodes::node::{DependencyData, Node};
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
+use lockjaw_common::manifest::Injectable;
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::any::Any;
@@ -27,11 +29,11 @@ pub struct InjectableNode {
     pub type_: TypeData,
     pub dependencies: Vec<TypeData>,
 
-    pub injectable: crate::manifest::Injectable,
+    pub injectable: Injectable,
 }
 
 impl InjectableNode {
-    pub fn new(injectable: &crate::manifest::Injectable) -> Box<dyn Node> {
+    pub fn new(injectable: &Injectable) -> Box<dyn Node> {
         let type_ = if injectable.container.is_some() {
             let mut container = injectable.container.as_ref().unwrap().clone();
             container.args.push(injectable.type_data.clone());

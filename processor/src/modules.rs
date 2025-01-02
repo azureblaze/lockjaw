@@ -27,15 +27,16 @@ use syn::{Attribute, GenericArgument};
 use syn::{ImplItemFn, Token};
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::BindingType::{Binds, BindsOptionOf, Multibinds, Provides};
-use crate::manifest::{
-    with_manifest, Binding, BindingType, Dependency, Module, MultibindingMapKey, MultibindingType,
-};
+use crate::manifest::with_manifest;
 use crate::parsing;
 use crate::parsing::{get_parenthesized_field_values, FieldValue};
 use crate::prologue::prologue_check;
-use crate::type_data::TypeData;
 use crate::type_validator::TypeValidator;
+use lockjaw_common::manifest::BindingType::{Binds, BindsOptionOf, Multibinds, Provides};
+use lockjaw_common::manifest::{
+    Binding, BindingType, Dependency, Module, MultibindingMapKey, MultibindingType,
+};
+use lockjaw_common::type_data::TypeData;
 use std::convert::TryFrom;
 use std::iter::FromIterator;
 
@@ -87,7 +88,7 @@ fn handle_module_attribute_internal(
     }
 
     let mut module = Module::new();
-    module.type_data = TypeData::from_local(&module_path.to_owned(), item_impl.span())?;
+    module.type_data = crate::type_data::from_local(&module_path.to_owned(), item_impl.span())?;
     module.bindings.extend(bindings);
     if let Some(subcomponents) = attributes.get("subcomponents") {
         let types = subcomponents.get_types()?;
@@ -112,7 +113,7 @@ fn handle_module_attribute_internal(
         module.install_in = HashSet::from_iter(types);
     }
 
-    let validate_type = type_validator.validate(module.type_data.identifier().to_string());
+    let validate_type = type_validator.validate(module.type_data.identifier_string());
     with_manifest(|mut manifest| {
         for existing_module in &manifest.modules {
             if existing_module.type_data.eq(&module.type_data) {
@@ -217,7 +218,7 @@ fn parse_binding(
                     }
                 } else if let Some(field) = fields.get("enum_key") {
                     if let FieldValue::Path(span, ref path) = field {
-                        let value_type = TypeData::from_path_with_span(path, span.clone())?;
+                        let value_type = crate::type_data::from_path_with_span(path, span.clone())?;
                         let mut enum_type = value_type.clone();
                         enum_type.path.truncate(
                             enum_type.path.rfind("::").map_spanned_compile_error(
@@ -275,7 +276,7 @@ fn handle_provides(
     let mut provides = Binding::new(Provides);
     provides.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref ty) = signature.output {
-        provides.type_data = TypeData::from_syn_type(ty.deref())?;
+        provides.type_data = crate::type_data::from_syn_type(ty.deref())?;
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -294,7 +295,7 @@ fn handle_provides(
                 } else {
                     return spanned_compile_error(args.span(), "identifier expected");
                 }
-                dependency.type_data = TypeData::from_syn_type(type_.ty.deref())?;
+                dependency.type_data = crate::type_data::from_syn_type(type_.ty.deref())?;
                 provides.dependencies.push(dependency);
             }
         }
@@ -328,7 +329,7 @@ fn handle_binds(
     let mut binds = Binding::new(Binds);
     binds.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
-        let return_type = TypeData::from_syn_type(ty.deref())?;
+        let return_type = crate::type_data::from_syn_type(ty.deref())?;
         match return_type.path.as_str() {
             "lockjaw::Cl" => {}
             "Cl" => {}
@@ -374,7 +375,7 @@ fn handle_binds(
             } else {
                 return spanned_compile_error(args.span(), "identifier expected");
             }
-            dependency.type_data = TypeData::from_syn_type(type_.ty.deref())?;
+            dependency.type_data = crate::type_data::from_syn_type(type_.ty.deref())?;
             binds.dependencies.push(dependency);
         }
     }
@@ -407,7 +408,7 @@ fn handle_binds_option_of(
 
     let mut binds_option_of = Binding::new(BindsOptionOf);
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
-        let return_type = TypeData::from_syn_type(ty.deref())?;
+        let return_type = crate::type_data::from_syn_type(ty.deref())?;
         if let syn::Type::Path(ref mut type_path) = ty.deref_mut() {
             if let syn::PathArguments::AngleBracketed(ref mut angle_bracketed) =
                 type_path.path.segments.last_mut().unwrap().arguments
@@ -444,7 +445,7 @@ fn handle_multibinds(
     let mut binds = Binding::new(Multibinds);
     binds.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
-        let return_type = TypeData::from_syn_type(ty.deref())?;
+        let return_type = crate::type_data::from_syn_type(ty.deref())?;
         match return_type.path.as_str() {
             "std::vec::Vec" => {}
             "std::collections::HashMap" => {}

@@ -23,9 +23,7 @@ use quote::format_ident;
 use quote::quote;
 
 use crate::error::compile_error;
-use crate::manifest::{
-    BindingType, BuilderModules, Component, ComponentType, Manifest, MultibindingType, TypeRoot,
-};
+use crate::manifest::ProcessorComponent;
 use crate::nodes::binds::BindsNode;
 use crate::nodes::binds_option_of::BindsOptionOfNode;
 use crate::nodes::entry_point::EntryPointNode;
@@ -38,8 +36,12 @@ use crate::nodes::provision::ProvisionNode;
 use crate::nodes::scoped::ScopedNode;
 use crate::nodes::subcomponent::SubcomponentNode;
 use crate::nodes::vec::VecNode;
-use crate::type_data::TypeData;
+use crate::type_data::ProcessorTypeData;
 use crate::{component_visibles, components};
+use lockjaw_common::manifest::{
+    BindingType, BuilderModules, Component, ComponentType, Manifest, MultibindingType, TypeRoot,
+};
+use lockjaw_common::type_data::TypeData;
 use std::iter::FromIterator;
 
 /// Dependency graph and other related data
