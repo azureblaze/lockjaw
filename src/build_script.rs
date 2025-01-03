@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
-use lockjaw_common::manifest::{DepManifests, Manifest};
+use crate::manifest_parser::parse_manifest;
+use lockjaw_common::manifest::DepManifests;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::process::Command;
@@ -12,6 +13,8 @@ macro_rules! log {
         }
     }
 }
+
+pub(crate) use log;
 
 #[derive(Deserialize, Debug, Default, Clone)]
 struct CargoMetadata {
@@ -104,11 +107,8 @@ pub fn build_manifest() {
         .id
         .clone();
     log!("package_id: {}", package_id);
-    //log!("toml:{:#?}", toml_map.get(&package_id).unwrap());
-    //log!("node:{:#?}", dep_map.get(&package_id).unwrap());
 
     let toml = toml_map.get(&package_id).unwrap();
-    //log!("{:#?}", toml);
     let mut target_packages: HashMap<String, LockjawPackage> = HashMap::new();
     for target in &toml.targets {
         if target.kind == vec!["custom-build".to_string()] {
@@ -120,6 +120,18 @@ pub fn build_manifest() {
                 id: toml.id.clone(),
                 name: toml.name.clone(),
                 src_path: target.src_path.clone(),
+                direct_crate_deps: toml
+                    .dependencies
+                    .iter()
+                    .filter(|dep| {
+                        if target.kind.contains(&"test".to_string()) {
+                            dep.kind == Some("dev".to_string())
+                        } else {
+                            dep.kind == None
+                        }
+                    })
+                    .map(|dep| dep.name.clone())
+                    .collect(),
             },
         );
     }
@@ -131,11 +143,17 @@ pub fn build_manifest() {
     log!("test packages:{:#?}", test_packages);
 
     let dep_manifest = DepManifests {
-        prod_manifest: parse_manifest(&prod_packages),
-        test_manifest: parse_manifest(&test_packages),
+        prod_manifest: prod_packages
+            .iter()
+            .map(|package| parse_manifest(package))
+            .collect(),
+        test_manifest: test_packages
+            .iter()
+            .map(|package| parse_manifest(package))
+            .collect(),
         root_manifests: target_packages
             .iter()
-            .map(|entry| (entry.0.clone(), parse_manifest(&vec![entry.1.clone()])))
+            .map(|entry| (entry.0.clone(), parse_manifest(entry.1)))
             .collect(),
     };
 
@@ -157,10 +175,6 @@ pub fn build_manifest() {
     )
 }
 
-fn parse_manifest(_lockjaw_package: &Vec<LockjawPackage>) -> Manifest {
-    Manifest::new()
-}
-
 #[derive(Debug, Clone)]
 enum LockjawPackageKind {
     Prod,
@@ -168,10 +182,11 @@ enum LockjawPackageKind {
 }
 
 #[derive(Debug, Clone)]
-struct LockjawPackage {
-    id: String,
-    name: String,
-    src_path: String,
+pub(crate) struct LockjawPackage {
+    pub id: String,
+    pub name: String,
+    pub src_path: String,
+    pub direct_crate_deps: Vec<String>,
 }
 fn gather_lockjaw_packages(
     id: &String,
@@ -187,6 +202,18 @@ fn gather_lockjaw_packages(
         return result;
     }
     let toml = toml_map.get(id).unwrap();
+    let mut direct_crate_deps: Vec<String> = Vec::new();
+    for dep in &toml.dependencies {
+        if for_test {
+            if dep.kind == Some("dev".to_string()) {
+                direct_crate_deps.push(dep.name.clone());
+            }
+        } else {
+            if dep.kind == None {
+                direct_crate_deps.push(dep.name.clone());
+            }
+        }
+    }
 
     if !root {
         let target = toml
@@ -199,6 +226,7 @@ fn gather_lockjaw_packages(
             id: node.id.clone(),
             name: toml.name.clone(),
             src_path: target.src_path.clone(),
+            direct_crate_deps,
         });
     }
 

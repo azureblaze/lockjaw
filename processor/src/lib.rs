@@ -404,9 +404,13 @@ fn merge_manifest(
         let dep_manifest: DepManifests =
             serde_json::from_reader(reader).expect("cannot read manifest");
         if config.for_test {
-            result.merge_from(&dep_manifest.test_manifest)
+            for dep in &dep_manifest.test_manifest {
+                result.merge_from(dep)
+            }
         } else {
-            result.merge_from(&dep_manifest.prod_manifest)
+            for dep in &dep_manifest.prod_manifest {
+                result.merge_from(dep)
+            }
         }
         if let Ok(bin_name) = std::env::var("CARGO_BIN_NAME") {
             result.merge_from(

@@ -68,7 +68,7 @@ impl SourceData {
         } else {
             return spanned_compile_error(
                 span,
-                &format!("Unable to resolve path tho current location. Is lockjaw::prologue!() called before using any other lockjaw attributes?"),
+                &format!("Unable to resolve path to current location. Is lockjaw::prologue!() called before using any other lockjaw attributes?"),
             );
         }
 

@@ -263,7 +263,7 @@ pub struct ExpandedVisibility {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DepManifests {
-    pub prod_manifest: Manifest,
-    pub test_manifest: Manifest,
+    pub prod_manifest: Vec<Manifest>,
+    pub test_manifest: Vec<Manifest>,
     pub root_manifests: HashMap<String, Manifest>,
 }
