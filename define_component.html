@@ -187,18 +187,7 @@ metadata takes a path to a <code>#[define_component]</code> <code>trait</code>. 
 <a href="https://docs.rs/lockjaw/latest/lockjaw/trait.Singleton.html"><code>Singleton</code></a>, which means it should be
 installed in every <code>#[define_component]</code> but not <code>#[define_subcomponent]</code>.</p>
 <p>Such modules cannot have fields.</p>
-<pre><code class="language-rust no_run noplayground">#[module(install_in: MyComponent)]
-impl MyModule {
-    #[provides]
-    pub fn provide_string() -&gt; String {
-        "string".to_owned()
-    }
-}
-
-#[define_component]
-pub trait MyComponent {
-    fn string(&amp;self) -&gt; String;
-}</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_install_in.rs:install_in}}</code></pre>
 <h2 id="entry-points"><a class="header" href="#entry-points">Entry points</a></h2>
 <p>Ideally a component should only be used at the program's entry point, and rest of the program should
 all use dependency injection, instead of trying to pass the component around. However sometimes
@@ -214,20 +203,7 @@ installed, the</p>
 <pre><code class="language-rust no_run noplayground">&lt;dyn FooEntryPoint&gt;::get(component : &amp;dyn FooComponent) -&gt; &amp;dyn FooEntryPoint</code></pre>
 <p>method can be used to cast the opaque component into the entry point, and access the dependency
 graph.</p>
-<pre><code class="language-rust no_run noplayground">#[entry_point(install_in: MyComponent)]
-pub trait MyEntryPoint {
-    fn i(&amp;self) -&gt; i32;
-}
-
-#[define_component]
-pub trait MyComponent {}
-
-#[test]
-pub fn main() {
-    let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::new();
-
-    assert_eq!(&lt;dyn MyEntryPoint&gt;::get(component.as_ref()).i(), 42)
-}</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/entry_point.rs:entry_point}}</code></pre>
 <h2 id="testing-with-define_component"><a class="header" href="#testing-with-define_component">Testing with <code>#[define_component]</code></a></h2>
 <p>While compiling tests, Lockjaw gathers <code>install_in</code> modules only from the <code>[dev-dependencies]</code>
 section of <code>Cargo.toml</code> instead of the regular <code>[dependencies]</code>, even though <code>[dev-dependencies]</code>

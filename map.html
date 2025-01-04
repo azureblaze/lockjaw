@@ -171,32 +171,12 @@ be specified by a metadata in the <code>#[into_map]</code> attribute.</p>
 a <a href="https://doc.rust-lang.org/std/string/struct.String.html"><code>String</code></a>. The value must be a string
 literal, lockjaw is unable to resolve more complex compile time constants.</p>
 <p>This example binds to <code>HashMap&lt;String,String&gt;</code>:</p>
-<pre><code class="language-rust no_run noplayground">    #[provides]
-    #[into_map(string_key: "1")]
-    pub fn provide_string1() -&gt; String {
-        "string1".to_owned()
-    }
-
-    #[provides]
-    #[into_map(string_key: "2")]
-    pub fn provide_string2() -&gt; String {
-        "string2".to_owned()
-    }</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:string_key}}</code></pre>
 <h3 id="i32_key"><a class="header" href="#i32_key"><code>i32_key</code></a></h3>
 <p><code>i32_key</code> specifies the map key is an <code>i32</code>. The value must be an i32 literal, lockjaw is unable to
 resolve more complex compile time constants.</p>
 <p>This example binds to <code>HashMap&lt;i32,String&gt;</code>:</p>
-<pre><code class="language-rust no_run noplayground">    #[provides]
-    #[into_map(i32_key: 1)]
-    pub fn provide_i32_string1() -&gt; String {
-        "string1".to_owned()
-    }
-
-    #[provides]
-    #[into_map(i32_key: 2)]
-    pub fn provide_i32_string2() -&gt; String {
-        "string2".to_owned()
-    }</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:i32_key}}</code></pre>
 <p>Other types are not implemented. <code>i32</code> ought to be enough for everyone.</p>
 <h3 id="enum_key"><a class="header" href="#enum_key"><code>enum_key</code></a></h3>
 <p><code>i32_key</code> specifies the map key is an <code>enum</code>. Since the <code>enum</code> is going to be used as the map key,
@@ -205,34 +185,15 @@ implementing <a href="https://doc.rust-lang.org/std/cmp/trait.Eq.html"><code>Eq<
 and <a href="https://doc.rust-lang.org/std/hash/trait.Hash.html"><code>Hash</code></a>. It also must be a simple enum with
 no fields so Lockjaw knows how to compare them at compile time (meaning comparing the name is
 enough).</p>
-<pre><code class="language-rust no_run noplayground">#[derive(Eq, PartialEq, Hash)]
-pub enum E {
-    Foo,
-    Bar,
-}</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:enum}}</code></pre>
 <p>This example binds to <code>HashMap&lt;E,String&gt;</code>:</p>
-<pre><code class="language-rust no_run noplayground">    #[provides]
-    #[into_map(enum_key: E::Foo)]
-    pub fn provide_enum_string1() -&gt; String {
-        "string1".to_owned()
-    }
-
-    #[provides]
-    #[into_map(enum_key: Bar)]
-    pub fn provide_enum_string2() -&gt; String {
-        "string2".to_owned()
-    }</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:enum_key}}</code></pre>
 <p>Lockjaw is able to infer the enum type (<code>E</code>) if the value is imported (<code>use E::Bar</code>), but the code
 maybe be more readable if the type is explicitly spelled out, especially most IDEs today cannot
 properly inspect tokens inside the metadata.</p>
 <h2 id="qualifiers"><a class="header" href="#qualifiers">Qualifiers</a></h2>
 <p><code>#[into_map]</code> can also be <a href="qualifiers.html"><code>#[qualified]</code></a></p>
-<pre><code class="language-rust no_run noplayground">    #[provides]
-    #[qualified(Q)]
-    #[into_map(string_key: "1")]
-    pub fn provide_q_string1() -&gt; String {
-        "q_string1".to_owned()
-    }</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:qualified}}</code></pre>
 <p>Which result in <code> #[qualified(Q)] HashMap&lt;String, String&gt;</code>. Note that the container is qualified
 instead of the content.</p>
 <h2 id="dynamic-map-entries"><a class="header" href="#dynamic-map-entries">Dynamic map entries</a></h2>

@@ -191,8 +191,7 @@ distinct scoped bindings, modules, but also has access to bindings in its parent
 <p>A <code>#[subcomponent]</code> is installed by first listing it in
 a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#"><code>#[module]</code></a> using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#subcomponents"><code>subcomponents</code> metadata</a></p>
-<pre><code class="language-rust no_run noplayground">#[module(subcomponents: [MySubcomponent])]
-impl ParentComponentModule {</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/sub_component.rs:list}}</code></pre>
 <p>Then installing the <code>#[module]</code> in a parent component. The parent component can be either a regular
 component or another subcomponent.</p>
 <h2 id="creating-a-instance-of-the-subcomponent"><a class="header" href="#creating-a-instance-of-the-subcomponent">Creating a instance of the subcomponent</a></h2>

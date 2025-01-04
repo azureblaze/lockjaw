@@ -160,46 +160,21 @@ the <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.into_
 attribute, which means instead of directly binding to <code>T</code>, the binding should be collected into a
 <code>Vec&lt;T&gt;</code>.</p>
 <p>With the bindings:</p>
-<pre><code class="language-rust no_run noplayground">    #[provides]
-    #[into_vec]
-    pub fn provide_string1() -&gt; String {
-        "string1".to_owned()
-    }
-
-    #[provides]
-    #[into_vec]
-    pub fn provide_string2() -&gt; String {
-        "string2".to_owned()
-    }</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_vec.rs:into_vec}}</code></pre>
 <p><code>Vec&lt;String&gt;</code> can be injected with the values <code>["string1", "string2"]</code>. This works across all
 modules that are installed.</p>
 <p><code>#[into_vec]</code> can also be <a href="qualifiers.html"><code>#[qualified]</code></a></p>
-<pre><code class="language-rust no_run noplayground">    #[provides]
-    #[qualified(Q)]
-    #[into_vec]
-    pub fn provide_q_string1() -&gt; String {
-        "q_string1".to_owned()
-    }</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_vec.rs:qualified}}</code></pre>
 <p>Which result in <code>#[qualified(Q)] Vec&lt;String&gt;</code>. Note that the container is qualified instead of the
 content.</p>
 <p><code>#[into_vec]</code> also works with <a href="binds.html"><code>#[binds]</code></a></p>
-<pre><code class="language-rust no_run noplayground">    #[binds]
-    #[into_vec]
-    pub fn bind_bar(impl_: crate::Bar) -&gt; Cl&lt;dyn crate::Foo&gt; {}
-
-    #[binds]
-    #[into_vec]
-    pub fn bind_baz(impl_: crate::Baz) -&gt; Cl&lt;dyn crate::Foo&gt; {}</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_vec.rs:binds}}</code></pre>
 <p>Which allows <code>Vec&lt;Cl&lt;dyn Foo&gt;&gt;</code> to be injected. This is a common way to implement event callbacks.</p>
 <h2 id="providing-multiple-items"><a class="header" href="#providing-multiple-items">Providing multiple items</a></h2>
 <p>A method marked
 with <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.elements_into_vec.html"><code>#[elements_into_vec]</code></a>
 can return <code>Vec&lt;T&gt;</code>, which will get merged with other <code>#[into_vec]</code> and <code>#[elements_into_vec]</code>.</p>
-<pre><code class="language-rust no_run noplayground">    #[provides]
-    #[elements_into_vec]
-    pub fn provide_strings() -&gt; Vec&lt;String&gt; {
-        vec!["string3".to_owned(), "string4".to_owned()]
-    }</code></pre>
+<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_vec.rs:elements_into_vec}}</code></pre>
 <p>This allows multiple bindings to be provided at once. It also allows a binding method to decide not
 to provide anything at runtime, by returning an empty <code>Vec</code>.</p>
 <h2 id="duplication-behaviors"><a class="header" href="#duplication-behaviors">Duplication behaviors</a></h2>
