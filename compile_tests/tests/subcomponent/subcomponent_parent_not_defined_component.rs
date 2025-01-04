@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/subcomponent/subcomponent_parent_not_defined_component.rs",
-    ""
+    "",
+    "test"
 );
 struct BazModule {}
 

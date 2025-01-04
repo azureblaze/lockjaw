@@ -17,7 +17,11 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!("../../../compile_tests/tests/module/module_non_impl.rs", "");
+lockjaw::prologue!(
+    "../../../compile_tests/tests/module/module_non_impl.rs",
+    "",
+    "test"
+);
 #[module]
 struct S {}
 lockjaw::epilogue!(test);

@@ -15,7 +15,8 @@ limitations under the License.
 */
 lockjaw::prologue!(
     "../../../compile_tests/tests/prologue/file_mod_after_prologue.rs",
-    ""
+    "",
+    "test"
 );
 
 mod foo;

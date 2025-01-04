@@ -17,6 +17,10 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!("../../../compile_tests/tests/template/template.rs", "");
+lockjaw::prologue!(
+    "../../../compile_tests/tests/template/template.rs",
+    "",
+    "test"
+);
 
 lockjaw::epilogue!(test);

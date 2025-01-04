@@ -140,6 +140,7 @@ impl TypeData {
                 .replace("::", "ⵆ")
                 .replace("<", "ᐸ")
                 .replace(">", "ᐳ")
+                .replace("-", "_")
                 .replace(" ", "_")
                 .replace("\'", "ᐠ")
                 .replace("&", "ε")

@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/binds_no_identifier.rs",
-    ""
+    "",
+    "test"
 );
 pub struct S {}
 

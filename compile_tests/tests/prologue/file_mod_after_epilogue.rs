@@ -16,7 +16,8 @@ limitations under the License.
 extern crate lockjaw;
 lockjaw::prologue!(
     "../../../compile_tests/tests/prologue/file_mod_after_epilogue.rs",
-    ""
+    "",
+    "test"
 );
 
 lockjaw::epilogue!(test);

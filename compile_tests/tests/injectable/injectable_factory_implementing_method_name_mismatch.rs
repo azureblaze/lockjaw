@@ -19,7 +19,7 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/injectable/injectable_factory_implementing_method_name_mismatch.rs",
-    ""
+    "","test"
 );
 struct S;
 

@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/graph/graph_missing_binding.rs",
-    ""
+    "",
+    "test"
 );
 struct Foo {}
 

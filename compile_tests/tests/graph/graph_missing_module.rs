@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/graph/graph_missing_module.rs",
-    ""
+    "",
+    "test"
 );
 #[component(modules: crate::Mm)]
 trait S {}

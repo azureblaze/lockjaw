@@ -42,7 +42,7 @@ pub fn get_attribute(syn_attr: &Attribute) -> String {
             .to_string()
     }
 }
-
+#[allow(dead_code)]
 pub fn find_attribute<'a, 'b>(attrs: &'a Vec<Attribute>, attr: &'b str) -> Option<&'a Attribute> {
     attrs.iter().find(|a| is_attribute(a, attr))
 }
@@ -60,7 +60,7 @@ pub fn get_parenthesized_field_values(meta: &Meta) -> Result<HashMap<String, Fie
         }
     }
 }
-
+#[allow(dead_code)]
 pub fn get_path(attr: &TokenStream) -> Result<syn::Path> {
     if attr.is_empty() {
         bail!("path expected");
@@ -91,6 +91,7 @@ pub enum FieldValue {
 }
 
 impl FieldValue {
+    #[allow(dead_code)]
     pub fn get_paths(&self) -> Result<Vec<syn::Path>> {
         match self {
             FieldValue::Path(ref path) => Ok(vec![path.clone()]),
@@ -107,7 +108,7 @@ impl FieldValue {
             _ => bail!("path expected"),
         }
     }
-
+    #[allow(dead_code)]
     pub fn get_types(&self, mod_: &Mod) -> Result<Vec<TypeData>> {
         let mut result = Vec::new();
         for path in self.get_paths()? {

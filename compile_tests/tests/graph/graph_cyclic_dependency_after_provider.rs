@@ -21,7 +21,8 @@ use lockjaw::{
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/graph/graph_cyclic_dependency_after_provider.rs",
-    ""
+    "",
+    "test"
 );
 struct Foo {
     bar: Box<crate::Bar>,

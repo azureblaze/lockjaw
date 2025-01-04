@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/into_map_i32_key_collision.rs",
-    ""
+    "",
+    "test"
 );
 
 pub struct MyModule {}

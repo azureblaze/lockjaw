@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/builder_modules/builder_module_tuple_builder.rs",
-    ""
+    "",
+    "test"
 );
 
 #[builder_modules]

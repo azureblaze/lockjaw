@@ -19,7 +19,8 @@ mod foo;
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/prologue/file_mod_before_prologue.rs",
-    ""
+    "",
+    "test"
 );
 
 lockjaw::epilogue!(test);

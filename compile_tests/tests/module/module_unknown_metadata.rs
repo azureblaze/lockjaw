@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/module_unknown_metadata.rs",
-    ""
+    "",
+    "test"
 );
 struct S {}
 

@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/component/component_modules_not_path.rs",
-    ""
+    "",
+    "test"
 );
 
 #[component(modules: "crate::foo,crate::bar")]

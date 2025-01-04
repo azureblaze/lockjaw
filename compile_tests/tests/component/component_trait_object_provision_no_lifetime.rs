@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/component/component_trait_object_provision_no_lifetime.rs",
-    ""
+    "",
+    "test"
 );
 
 pub trait Foo {}

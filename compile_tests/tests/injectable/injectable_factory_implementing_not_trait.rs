@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/injectable/injectable_factory_implementing_not_path.rs",
-    ""
+    "",
+    "test"
 );
 struct S;
 

@@ -19,7 +19,8 @@ use lockjaw::component;
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/component/component_provision_no_return_type.rs",
-    ""
+    "",
+    "test"
 );
 
 #[component]

@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/provides_move_self.rs",
-    ""
+    "",
+    "test"
 );
 pub struct S {}
 

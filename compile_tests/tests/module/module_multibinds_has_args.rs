@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/module_multibinds_has_args.rs",
-    ""
+    "",
+    "test"
 );
 pub struct S {}
 

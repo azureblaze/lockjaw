@@ -21,7 +21,8 @@ use lockjaw::{
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/component/entry_point_not_installed_in_defined_component.rs",
-    ""
+    "",
+    "test"
 );
 
 #[component]

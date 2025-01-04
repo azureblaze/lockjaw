@@ -31,6 +31,7 @@ use error::handle_error;
 use crate::error::{compile_error, CompileError};
 use lockjaw_common::environment::current_crate;
 use lockjaw_common::manifest::{ComponentType, DepManifests, Manifest};
+use lockjaw_common::manifest_parser::LockjawPackage;
 use proc_macro2::Span;
 use std::ops::Deref;
 use syn::spanned::Spanned;
@@ -390,44 +391,58 @@ fn merge_manifest(
         }
         result.merge_from(&dep_manifest);
     }
-    let manifest = std::env::var("LOCKJAW_DEP_MANIFEST")
-        .expect("manifest missing, is the build script called?");
-    let reader = BufReader::new(File::open(manifest).expect("cannot find manifest file"));
-    let dep_manifest: DepManifests = serde_json::from_reader(reader).expect("cannot read manifest");
-    if config.for_test {
-        for dep in &dep_manifest.test_manifest {
-            result.merge_from(dep)
-        }
-    } else {
-        for dep in &dep_manifest.prod_manifest {
-            result.merge_from(dep)
-        }
-    }
-    if let Ok(bin_name) = std::env::var("CARGO_BIN_NAME") {
-        result.merge_from(
-            dep_manifest
-                .root_manifests
-                .get(&bin_name)
-                .expect("CARGO_BIN_NAME not in manifest"),
-        );
-    } else {
+    if let Ok(manifest) = std::env::var("LOCKJAW_DEP_MANIFEST") {
+        let reader = BufReader::new(File::open(manifest).expect("cannot find manifest file"));
+        let dep_manifest: DepManifests =
+            serde_json::from_reader(reader).expect("cannot read manifest");
         if config.for_test {
-            let test_target = std::env::var("CARGO_CRATE_NAME").unwrap();
-            let mut test_manifest = dep_manifest
-                .root_manifests
-                .get(&test_target)
-                .unwrap()
-                .clone();
-
-            //log!("test manifest: {:#?}", test_manifest);
-            result.merge_from(&test_manifest);
+            for dep in &dep_manifest.test_manifest {
+                result.merge_from(dep)
+            }
         } else {
+            for dep in &dep_manifest.prod_manifest {
+                result.merge_from(dep)
+            }
+        }
+        if let Ok(bin_name) = std::env::var("CARGO_BIN_NAME") {
             result.merge_from(
                 dep_manifest
                     .root_manifests
-                    .get(&std::env::var("CARGO_CRATE_NAME").unwrap())
+                    .get(&bin_name)
                     .expect("CARGO_BIN_NAME not in manifest"),
-            )
+            );
+        } else {
+            if config.for_test {
+                let test_target = std::env::var("CARGO_CRATE_NAME").unwrap();
+                let test_manifest = dep_manifest
+                    .root_manifests
+                    .get(&test_target)
+                    .unwrap()
+                    .clone();
+
+                //log!("test manifest: {:#?}", test_manifest);
+                result.merge_from(&test_manifest);
+            } else {
+                result.merge_from(
+                    dep_manifest
+                        .root_manifests
+                        .get(&std::env::var("CARGO_CRATE_NAME").unwrap())
+                        .expect("CARGO_BIN_NAME not in manifest"),
+                )
+            }
+        }
+    } else {
+        if config.for_test {
+            let test_manifest = lockjaw_common::manifest_parser::parse_manifest(&LockjawPackage {
+                id: "".to_string(),
+                name: std::env::var("CARGO_PKG_NAME").unwrap().replace("-", "_"),
+                src_path: prologue::get_test_source(),
+                direct_crate_deps: vec![],
+            });
+            result.merge_from(&test_manifest);
+            return Ok(result);
+        } else {
+            panic!("manifest missing, is the build script called?");
         }
     }
     Ok(result)

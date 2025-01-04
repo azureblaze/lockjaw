@@ -22,7 +22,8 @@ struct Module {}
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/prologue/attr_before_prologue.rs",
-    ""
+    "",
+    "test"
 );
 
 lockjaw::epilogue!(test);

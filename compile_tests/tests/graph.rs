@@ -19,7 +19,7 @@ fn graph_missing_binding() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(
         "tests/graph/graph_missing_binding.rs",
-        vec!["missing bindings for ::$CRATE::Foo"],
+        vec!["missing bindings for ::compile_tests_tests::Foo"],
     )
 }
 
@@ -39,8 +39,8 @@ fn graph_cyclic_dependency_after_provider() {
         "tests/graph/graph_cyclic_dependency_after_provider.rs",
         vec![
             "Cyclic dependency detected",
-            "Provider<::$CRATE::Foo>",
-            "::$CRATE::S.foo",
+            "Provider<::compile_tests_tests::Foo>",
+            "::compile_tests_tests::S.foo",
         ],
     )
 }
@@ -50,7 +50,7 @@ fn graph_duplicated_binding() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(
         "tests/graph/graph_duplicated_binding.rs",
-        vec!["found duplicated bindings for ::$CRATE::Foo"],
+        vec!["found duplicated bindings for ::compile_tests_tests::Foo"],
     )
 }
 
@@ -59,6 +59,6 @@ fn graph_missing_module() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(
         "tests/graph/graph_missing_module.rs",
-        vec!["module ::$CRATE::Mm not found, required by ::$CRATE::S"],
+        vec!["module ::compile_tests_tests::Mm not found, required by ::compile_tests_tests::S"],
     )
 }

@@ -20,7 +20,8 @@ use lockjaw::{component, epilogue, injectable};
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/component/scope_not_declared.rs",
-    ""
+    "",
+    "test"
 );
 
 pub struct Foo {}

@@ -21,6 +21,7 @@ struct CargoMetadata {
     resolve: CargoResolve,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone, Default)]
 struct CargoMetadataPackage {
     name: String,
@@ -43,6 +44,7 @@ struct CargoTarget {
     src_path: String,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone, Default)]
 struct CargoResolve {
     nodes: Vec<CargoNode>,
@@ -54,6 +56,7 @@ struct CargoNode {
     deps: Vec<CargoNodeDep>,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone, Default)]
 struct CargoNodeDep {
     name: String,
@@ -61,12 +64,14 @@ struct CargoNodeDep {
     dep_kinds: Vec<CargoDepKind>,
     features: Option<Vec<String>>,
 }
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone, Default)]
 struct CargoDepKind {
     kind: Option<String>,
     target: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 enum LockjawPackageKind {
     Prod,
@@ -263,15 +268,17 @@ fn parse_file(
         .with_context(|| "unable to read source")?;
 
     if let Ok(syn_file) = syn::parse_file(&src) {
-        let debug_out_name = format!(
-            "{}/{}_{}_{}.json",
-            std::env::var("OUT_DIR").unwrap().replace('\\', "/"),
-            lockjaw_package.name,
-            parents.join("_"),
-            if name == "(src)" { "" } else { name }
-        );
-        log!("debug ast: file:///{}", &debug_out_name);
-        std::fs::write(&debug_out_name, format!("{:#?}", syn_file)).unwrap();
+        if let Ok(out_dir) = std::env::var("OUT_DIR") {
+            let debug_out_name = format!(
+                "{}/{}_{}_{}.json",
+                out_dir.replace('\\', "/"),
+                lockjaw_package.name,
+                parents.join("_"),
+                if name == "(src)" { "" } else { name }
+            );
+            log!("debug ast: file:///{}", &debug_out_name);
+            std::fs::write(&debug_out_name, format!("{:#?}", syn_file)).unwrap();
+        }
 
         parse_mods(src_path, name, &syn_file.items, parents, &lockjaw_package)
     } else {
@@ -298,8 +305,6 @@ fn parse_mods(
         parents: parents.clone(),
         uses,
     };
-    //log!("{:#?}", mod_);
-
     let mut result = Manifest::new();
     for item in items.iter() {
         match item {
@@ -396,6 +401,11 @@ fn get_uses(
     // default deps
     deps.insert("std".to_owned());
     deps.insert("core".to_owned());
+    for item in items.iter() {
+        if let Item::ExternCrate(extern_crate) = item {
+            deps.insert(extern_crate.ident.to_string());
+        }
+    }
 
     let mut result = HashMap::<String, UsePath>::new();
     for item in items.iter() {

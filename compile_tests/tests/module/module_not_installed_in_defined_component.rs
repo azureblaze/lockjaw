@@ -21,7 +21,8 @@ use lockjaw::{
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/module_not_installed_in_defined_component.rs",
-    ""
+    "",
+    "test"
 );
 
 struct S;

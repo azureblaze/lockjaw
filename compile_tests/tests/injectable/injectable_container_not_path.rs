@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/injectable/injectable_container_not_path.rs",
-    ""
+    "",
+    "test"
 );
 
 pub struct Foo {}

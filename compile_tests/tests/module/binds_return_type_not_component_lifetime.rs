@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/binds_return_type_not_component_lifetime.rs",
-    ""
+    "",
+    "test"
 );
 pub struct S {}
 

@@ -19,7 +19,8 @@ use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomp
 
 lockjaw::prologue!(
     "../../../compile_tests/tests/module/provides_elements_into_vec_not_vec.rs",
-    ""
+    "",
+    "test"
 );
 pub struct S {}
 

@@ -198,7 +198,15 @@ pub fn resolve_path(identifier: &str, span: Span) -> Option<TypeData> {
     SOURCE_DATA.with(|source_data| source_data.borrow().resolve_path(identifier, span))
 }
 
-pub fn handle_prologue(input: TokenStream, for_test: bool) -> Result<TokenStream, TokenStream> {
+thread_local! {
+    static TEST_SOURCE :RefCell<String> = RefCell::new(String::new());
+}
+
+pub fn get_test_source() -> String {
+    TEST_SOURCE.with(|test_source| test_source.borrow().clone())
+}
+
+pub fn handle_prologue(input: TokenStream, mut for_test: bool) -> Result<TokenStream, TokenStream> {
     let args = literal_to_strings(&input)?;
     if args.len() == 0 {
         return spanned_compile_error(
@@ -206,7 +214,7 @@ pub fn handle_prologue(input: TokenStream, for_test: bool) -> Result<TokenStream
             "current source file name from cargo.toml expected",
         );
     }
-    if args.len() > 2 {
+    if args.len() > 3 {
         return spanned_compile_error(
             input.span(),
             "too many arguments. expected current source file name, and optional path to source root (src/, tests/, etc.)",
@@ -215,12 +223,19 @@ pub fn handle_prologue(input: TokenStream, for_test: bool) -> Result<TokenStream
 
     let filename = args.get(0).unwrap().replace("\\", "/");
     let full_path = format!("{}/{}", cargo_manifest_dir(), filename);
+    if args.get(2).unwrap() == "test" {
+        for_test = true;
+    }
+    if for_test {
+        TEST_SOURCE.with(|test_source| *test_source.borrow_mut() = full_path.clone())
+    }
+
     let mut source_file = File::open(&full_path).map_spanned_compile_error(
         input.span(),
         &format!("unable to find the source file at {}", &full_path),
     )?;
 
-    let mod_path = if args.len() == 2 {
+    let mod_path = if args.len() >= 2 {
         args.get(1).unwrap().replace("\\", "/")
     } else {
         get_mod_path(&filename)?
