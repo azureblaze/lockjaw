@@ -13,10 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 use lockjaw::{
-    builder_modules, component_visible, define_component, entry_point, injectable, module,
-    prologue, Cl, Singleton,
+    builder_modules, component_visible, define_component, entry_point, module, prologue, Cl,
+    Singleton,
 };
 use printer::Printer;
 #[cfg(test)]
@@ -31,7 +30,7 @@ struct Greeter<'a> {
     printer: Cl<'a, dyn Printer>,
 }
 
-#[injectable]
+#[lockjaw::injectable]
 impl Greeter<'_> {
     #[inject]
     pub fn new<'a>(phrase: String, printer: Cl<'a, dyn Printer>) -> Greeter<'a> {
@@ -73,7 +72,7 @@ pub trait FooCreator {
     fn create(&self, i: i32) -> Foo;
 }
 
-#[injectable]
+#[lockjaw::injectable]
 impl Foo {
     #[factory(implementing: FooCreator)]
     fn create(#[runtime] i: i32, phrase: String) -> Self {
@@ -84,7 +83,7 @@ impl Foo {
 #[component_visible]
 struct RcI {}
 
-#[injectable(scope: Singleton, container: Rc)]
+#[lockjaw::injectable(scope: Singleton, container: Rc)]
 impl RcI {
     #[inject]
     pub fn new() -> Self {

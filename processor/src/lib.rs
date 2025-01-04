@@ -393,33 +393,37 @@ fn merge_manifest(
         }
         result.merge_from(&dep_manifest);
     }
-    if !config.for_test {
-        let reader = BufReader::new(
-            File::open(
-                std::env::var("LOCKJAW_DEP_MANIFEST")
-                    .expect("manifest missing, is the build script called?"),
-            )
-            .expect("cannot find manifest file"),
+    let reader = BufReader::new(
+        File::open(
+            std::env::var("LOCKJAW_DEP_MANIFEST")
+                .expect("manifest missing, is the build script called?"),
+        )
+        .expect("cannot find manifest file"),
+    );
+    let dep_manifest: DepManifests = serde_json::from_reader(reader).expect("cannot read manifest");
+    if config.for_test {
+        for dep in &dep_manifest.test_manifest {
+            result.merge_from(dep)
+        }
+    } else {
+        for dep in &dep_manifest.prod_manifest {
+            result.merge_from(dep)
+        }
+    }
+    if let Ok(bin_name) = std::env::var("CARGO_BIN_NAME") {
+        result.merge_from(
+            dep_manifest
+                .root_manifests
+                .get(&bin_name)
+                .expect("CARGO_BIN_NAME not in manifest"),
         );
-        let dep_manifest: DepManifests =
-            serde_json::from_reader(reader).expect("cannot read manifest");
-        if config.for_test {
-            for dep in &dep_manifest.test_manifest {
-                result.merge_from(dep)
-            }
-        } else {
-            for dep in &dep_manifest.prod_manifest {
-                result.merge_from(dep)
-            }
-        }
-        if let Ok(bin_name) = std::env::var("CARGO_BIN_NAME") {
-            result.merge_from(
-                dep_manifest
-                    .root_manifests
-                    .get(&bin_name)
-                    .expect("CARGO_BIN_NAME not in manifest"),
-            );
-        }
+    } else {
+        result.merge_from(
+            dep_manifest
+                .root_manifests
+                .get(&std::env::var("CARGO_CRATE_NAME").unwrap())
+                .expect("CARGO_BIN_NAME not in manifest"),
+        )
     }
     Ok(result)
 }

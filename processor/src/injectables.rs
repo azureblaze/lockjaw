@@ -17,17 +17,17 @@ limitations under the License.
 use std::collections::{HashMap, HashSet};
 
 use crate::error::{spanned_compile_error, CompileError};
+use crate::parsing;
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_validator::TypeValidator;
-use crate::{manifest, parsing};
 use lazy_static::lazy_static;
 use lockjaw_common::manifest::{Dependency, Injectable};
 use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{FnArg, GenericArgument, ImplItem, ImplItemFn, Pat, PathArguments, Visibility};
+use syn::{FnArg, ImplItem, ImplItemFn, Pat, PathArguments, Visibility};
 
 lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
@@ -119,12 +119,11 @@ pub fn handle_injectable_attribute(
                 dependency.name = ident.ident.to_string();
                 dependencies.push(dependency);
             } else {
-                return spanned_compile_error(type_.span(), &format!("identifier expected"));
+                return spanned_compile_error(type_.span(), &"identifier expected".to_string());
             }
         }
     }
     let type_name;
-    let mut has_lifetime = false;
     if let syn::Type::Path(ref path) = *item.self_ty {
         let segments: Vec<String> = path
             .path
@@ -133,18 +132,8 @@ pub fn handle_injectable_attribute(
             .map(|segment| segment.ident.to_string())
             .collect();
         type_name = segments.join("::");
-        if let PathArguments::AngleBracketed(ref angle) =
-            path.path.segments.last().as_ref().unwrap().arguments
-        {
-            for arg in &angle.args {
-                if let GenericArgument::Lifetime(_) = arg {
-                    has_lifetime = true;
-                    break;
-                }
-            }
-        }
     } else {
-        return spanned_compile_error(item.self_ty.span(), &format!("path expected"));
+        return spanned_compile_error(item.self_ty.span(), &"path expected".to_string());
     }
 
     let mut injectable = Injectable::new();
@@ -170,15 +159,6 @@ pub fn handle_injectable_attribute(
     injectable.ctor_name = ctor.sig.ident.to_string();
     injectable.dependencies.extend(dependencies);
     let identifier = injectable.type_data.identifier_string();
-
-    manifest::with_manifest(|mut manifest| {
-        if has_lifetime {
-            manifest
-                .lifetimed_types
-                .insert(injectable.type_data.clone());
-        }
-        manifest.injectables.push(injectable);
-    });
 
     let type_check = type_validator.validate(identifier);
     let prologue_check = prologue_check(item.span());
@@ -381,7 +361,7 @@ fn handle_factory(
             #fields
             lockjaw_phamtom_data: ::std::marker::PhantomData<&'a ::std::string::String>
         }
-        #[injectable]
+        #[::lockjaw::injectable]
         impl <'a> #factory_ty<'a> {
             #[doc(hidden)]
             #[inject]

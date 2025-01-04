@@ -95,8 +95,11 @@ pub fn build_script() {
     build_script::build_manifest()
 }
 
-mod manifest_parser;
+mod attributes;
+pub(crate) mod manifest_parser;
+mod parsing;
 mod provider;
+mod type_data;
 
 pub use provider::Provider;
 
