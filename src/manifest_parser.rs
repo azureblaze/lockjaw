@@ -1,12 +1,11 @@
 use crate::build_script::{log, LockjawPackage};
 use lockjaw_common::manifest::{Manifest, TypeRoot};
-use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use tree_sitter::TreeCursor;
+use syn::{Item, ItemUse, UseTree};
 
 pub(crate) fn parse_manifest(lockjaw_package: &LockjawPackage) -> Manifest {
     parse_file(
@@ -24,37 +23,34 @@ fn parse_file(
     lockjaw_package: &LockjawPackage,
 ) -> Manifest {
     log!("parsing {}: {:?}", lockjaw_package.name, src_path);
-    let mut parser = tree_sitter::Parser::new();
-    parser
-        .set_language(&tree_sitter_rust::LANGUAGE.into())
-        .expect("cannot load rust parser");
     let mut src = String::new();
     File::open(src_path)
         .expect("source  doesn't exist")
         .read_to_string(&mut src)
         .expect("unable to read source");
-    let ast = parser
-        .parse(&src, None)
-        .expect("source file is not valid rust");
 
-    let mut result = Manifest::new();
-    result.merge_from(&parse_mods(
-        &src,
-        src_path,
-        name,
-        &mut ast.walk(),
-        parents,
-        &lockjaw_package,
-    ));
+    if let Ok(syn_file) = syn::parse_file(&src) {
+        let debug_out_name = format!(
+            "{}/{}_{}_{}.json",
+            std::env::var("OUT_DIR").unwrap().replace('\\', "/"),
+            lockjaw_package.name,
+            parents.join("_"),
+            if name == "(src)" { "" } else { name }
+        );
+        log!("debug ast: file:///{}", &debug_out_name);
+        std::fs::write(&debug_out_name, format!("{:#?}", syn_file)).unwrap();
 
-    result
+        parse_mods(src_path, name, &syn_file.items, parents, &lockjaw_package)
+    } else {
+        log!("{} is not valid rust", src_path.to_str().unwrap());
+        Manifest::new()
+    }
 }
 
 fn parse_mods(
-    src: &str,
     src_path: &Path,
     name: &str,
-    cursor: &mut TreeCursor,
+    items: &Vec<Item>,
     parents: &Vec<String>,
     lockjaw_package: &LockjawPackage,
 ) -> Manifest {
@@ -63,7 +59,7 @@ fn parse_mods(
         new_parents.push(name.to_owned());
     }
 
-    let uses = get_uses(&cursor.node(), src, lockjaw_package, &new_parents);
+    let uses = get_uses(items, lockjaw_package, &new_parents);
 
     log!(
         "{}::{:?}::{} uses {:#?}",
@@ -74,53 +70,37 @@ fn parse_mods(
     );
 
     let mut result = Manifest::new();
-    if cursor.goto_first_child() {
-        loop {
-            match cursor.node().kind() {
-                "mod_item" => {
-                    result.merge_from(&parse_mod_item(
-                        src,
-                        src_path,
-                        name,
-                        cursor,
-                        &new_parents,
-                        lockjaw_package,
-                    ));
-                }
-                _ => {}
+    for item in items.iter() {
+        match item {
+            Item::Mod(item_mod) => {
+                result.merge_from(&parse_mod_item(
+                    src_path,
+                    name,
+                    item_mod,
+                    &new_parents,
+                    lockjaw_package,
+                ));
             }
-            if !cursor.goto_next_sibling() {
-                break;
-            }
+            _ => {}
         }
-        cursor.goto_parent();
     }
     result
 }
 
 fn parse_mod_item(
-    src: &str,
     src_path: &Path,
-    name: &str,
-    cursor: &mut TreeCursor,
+    parent_name: &str,
+    item_mod: &syn::ItemMod,
     parents: &Vec<String>,
     lockjaw_package: &LockjawPackage,
 ) -> Manifest {
-    //log!("{}", cursor.node().to_sexp());
     let mut result = Manifest::new();
-    let mod_name = cursor
-        .node()
-        .child_by_field_name("name")
-        .unwrap()
-        .utf8_text(src.as_bytes())
-        .unwrap()
-        .to_owned();
-    if let Some(declaration_list) = cursor.node().child_by_field_name("body") {
+    let mod_name = item_mod.ident.to_string();
+    if let Some((_, items)) = &item_mod.content {
         result.merge_from(&parse_mods(
-            src,
             src_path,
             &mod_name,
-            &mut declaration_list.walk(),
+            items,
             &parents,
             lockjaw_package,
         ));
@@ -134,7 +114,7 @@ fn parse_mod_item(
         }
         let candidates = vec![
             dir.join(format!("{}.rs", mod_name)),
-            dir.join(format!("{}/{}.rs", name, mod_name)),
+            dir.join(format!("{}/{}.rs", parent_name, mod_name)),
             dir.join(format!("{}/mod.rs", mod_name)),
         ];
         let mod_path = candidates
@@ -142,8 +122,8 @@ fn parse_mod_item(
             .find(|path| path.exists())
             .expect(&format!("cannot find any of {:?}", candidates));
         let mut mod_parents = parents.clone();
-        if name.ne("(src)") {
-            mod_parents.push(name.to_owned());
+        if parent_name.ne("(src)") {
+            mod_parents.push(parent_name.to_owned());
         }
 
         result.merge_from(&parse_file(
@@ -157,8 +137,7 @@ fn parse_mod_item(
 }
 
 fn get_uses(
-    node: &tree_sitter::Node,
-    src: &str,
+    items: &Vec<Item>,
     lockjaw_package: &LockjawPackage,
     parents: &Vec<String>,
 ) -> HashMap<String, UsePath> {
@@ -170,19 +149,9 @@ fn get_uses(
     deps.insert("std".to_owned());
     deps.insert("core".to_owned());
     let mut result = HashMap::<String, UsePath>::new();
-    for i in 0..node.child_count() {
-        let child = node.child(i).unwrap();
-        if child.kind() == "use_declaration" {
-            result.extend(process_use(
-                child
-                    .child_by_field_name("argument")
-                    .unwrap()
-                    .utf8_text(src.as_bytes())
-                    .unwrap(),
-                &deps,
-                parents,
-                lockjaw_package,
-            ))
+    for item in items.iter() {
+        if let Item::Use(item_use) = item {
+            result.extend(process_use(&item_use, &deps, parents, lockjaw_package))
         }
     }
     for dep in &deps {
@@ -219,34 +188,26 @@ impl Debug for UsePath {
 }
 
 fn process_use(
-    use_path: &str,
+    use_item: &ItemUse,
     deps: &HashSet<String>,
     parents: &Vec<String>,
     lockjaw_package: &LockjawPackage,
 ) -> HashMap<String, UsePath> {
     let mut result = HashMap::<String, UsePath>::new();
-    let pattern = Regex::new(
-        r"^(?P<global_prefix>::)?(?P<segments>(?:\w[\w\d_]*::)*)(?P<remainder>\{[\w\d\s,]*\}|[\w\d\s,]*)$",
-    ).unwrap();
-    let captures = pattern
-        .captures(use_path)
-        .expect(&format!("unable to handle use expression {}", use_path));
-    let segments = captures
-        .name("segments")
-        .map(|m| {
-            m.as_str()
-                .split("::")
-                .filter(|s| !s.is_empty())
-                .map(str::to_owned)
-                .collect()
-        })
-        .unwrap_or(Vec::new());
-
+    let mut segments = Vec::<String>::new();
+    let mut tree = &use_item.tree;
+    let remainder = loop {
+        match tree {
+            UseTree::Path(path) => {
+                segments.push(path.ident.to_string());
+                tree = &path.tree;
+            }
+            _ => break tree,
+        }
+    };
     let mut path: Vec<String> = Vec::new();
     let type_root;
-    if captures.name("global_prefix").is_some()
-        || (segments.len() >= 1 && deps.contains(&segments[0]))
-    {
+    if use_item.leading_colon.is_some() || (segments.len() >= 1 && deps.contains(&segments[0])) {
         type_root = TypeRoot::GLOBAL;
         path.extend(segments.clone());
     } else {
@@ -268,7 +229,7 @@ fn process_use(
             break;
         }
     }
-    let items = get_use_items(captures.name("remainder").unwrap().as_str());
+    let items = get_use_items(remainder);
     for item in items {
         if item.name.is_empty() {
             continue;
@@ -304,43 +265,43 @@ fn process_use(
     result
 }
 
+#[derive(Debug)]
 struct UseItem {
     pub item: String,
     pub name: String,
 }
 
-fn get_use_items(remainder: &str) -> Vec<UseItem> {
-    let item_strings = if !remainder.starts_with("{") {
-        vec![remainder.to_owned()]
-    } else {
-        remainder
-            .strip_prefix("{")
-            .unwrap()
-            .strip_suffix("}")
-            .unwrap()
-            .split(",")
-            .filter(|s| !s.is_empty())
-            .map(str::trim)
-            .map(str::to_owned)
-            .collect()
-    };
+fn get_use_items(remainder: &UseTree) -> Vec<UseItem> {
     let mut result = Vec::new();
-    for item_string in item_strings {
-        if item_string == "*" {
-            log!("WARNING: lockjaw is unable to handle * imports");
-            continue;
+    match remainder {
+        UseTree::Path(_) => {
+            panic!("unexpected path");
         }
-        if item_string.contains(" as ") {
-            let split: Vec<_> = item_string.split(" as ").collect();
-            result.push(UseItem {
-                item: split[0].to_owned(),
-                name: split[1].to_owned(),
-            })
-        } else {
-            result.push(UseItem {
-                item: item_string.clone(),
-                name: item_string,
-            })
+        UseTree::Name(name) => result.push(UseItem {
+            item: name.ident.to_string(),
+            name: name.ident.to_string(),
+        }),
+        UseTree::Rename(rename) => result.push(UseItem {
+            item: rename.ident.to_string(),
+            name: rename.rename.to_string(),
+        }),
+        UseTree::Glob(_) => {
+            log!("WARNING: lockjaw is unable to handle * imports");
+        }
+        UseTree::Group(group) => {
+            for item in group.items.iter() {
+                match item {
+                    UseTree::Name(name) => result.push(UseItem {
+                        item: name.ident.to_string(),
+                        name: name.ident.to_string(),
+                    }),
+                    UseTree::Rename(rename) => result.push(UseItem {
+                        item: rename.ident.to_string(),
+                        name: rename.rename.to_string(),
+                    }),
+                    _ => panic!("invalid use group item"),
+                }
+            }
         }
     }
     result

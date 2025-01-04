@@ -13,8 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-mod mod_dir;
-mod mod_file;
 
 use lockjaw::{
     builder_modules, component_visible, define_component, entry_point, injectable, module,
@@ -26,14 +24,6 @@ use printer_test::TestPrinter;
 use std::rc::Rc;
 
 prologue!("src/main.rs");
-
-mod inline_mod {
-    use printer::Printer;
-
-    fn foo() {
-        let p: &dyn Printer;
-    }
-}
 
 #[component_visible]
 struct Greeter<'a> {
