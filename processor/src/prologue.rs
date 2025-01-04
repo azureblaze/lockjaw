@@ -223,7 +223,7 @@ pub fn handle_prologue(input: TokenStream, mut for_test: bool) -> Result<TokenSt
 
     let filename = args.get(0).unwrap().replace("\\", "/");
     let full_path = format!("{}/{}", cargo_manifest_dir(), filename);
-    if args.get(2).unwrap() == "test" {
+    if args.len() >= 3 && args.get(2).unwrap() == "test" {
         for_test = true;
     }
     if for_test {
