@@ -14,18 +14,22 @@
 
 
 [package]
-name = "test_dep"
-version = "0.1.0"
+name = "lockjaw_integration_tests"
+description = "integration tests for lockjaw"
+license = "Apache-2.0"
+version = "0.2.1"
 authors = ["Ta-wei Yen"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-lockjaw = { path = "../../" }
+repository = "https://github.com/azureblaze/lockjaw"
+documentation = "https://docs.rs/lockjaw/"
 
 [build-dependencies]
-lockjaw = { path = "../../" }
+rustc_version = "0.4"
+lockjaw = { path = "../" }
 
 [dev-dependencies]
-lockjaw = { path = "../../" }
+lockjaw = { path = "../" }
+test_dep = { path = "tests/test_dep" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nightly)'] }

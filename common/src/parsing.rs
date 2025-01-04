@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 use crate::manifest_parser::Mod;
+use crate::type_data::TypeData;
 use anyhow::{bail, Context, Result};
-use lockjaw_common::type_data::TypeData;
 use proc_macro2::TokenStream;
 use std::collections::HashMap;
 use syn::parse::Parser;

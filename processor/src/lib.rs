@@ -278,10 +278,7 @@ fn internal_epilogue(
     manifest::with_manifest(|mut manifest| {
         let expanded_visibilities = component_visibles::expand_visibilities(&manifest)?;
         manifest.root = config.root;
-
         let merged_manifest = merge_manifest(&manifest, &config)?;
-
-        //log!("{:#?}", merged_manifest);
 
         if !config.for_test {
             let out_dir = environment::lockjaw_output_dir()?;
@@ -393,13 +390,9 @@ fn merge_manifest(
         }
         result.merge_from(&dep_manifest);
     }
-    let reader = BufReader::new(
-        File::open(
-            std::env::var("LOCKJAW_DEP_MANIFEST")
-                .expect("manifest missing, is the build script called?"),
-        )
-        .expect("cannot find manifest file"),
-    );
+    let manifest = std::env::var("LOCKJAW_DEP_MANIFEST")
+        .expect("manifest missing, is the build script called?");
+    let reader = BufReader::new(File::open(manifest).expect("cannot find manifest file"));
     let dep_manifest: DepManifests = serde_json::from_reader(reader).expect("cannot read manifest");
     if config.for_test {
         for dep in &dep_manifest.test_manifest {
@@ -418,12 +411,24 @@ fn merge_manifest(
                 .expect("CARGO_BIN_NAME not in manifest"),
         );
     } else {
-        result.merge_from(
-            dep_manifest
+        if config.for_test {
+            let test_target = std::env::var("CARGO_CRATE_NAME").unwrap();
+            let mut test_manifest = dep_manifest
                 .root_manifests
-                .get(&std::env::var("CARGO_CRATE_NAME").unwrap())
-                .expect("CARGO_BIN_NAME not in manifest"),
-        )
+                .get(&test_target)
+                .unwrap()
+                .clone();
+
+            //log!("test manifest: {:#?}", test_manifest);
+            result.merge_from(&test_manifest);
+        } else {
+            result.merge_from(
+                dep_manifest
+                    .root_manifests
+                    .get(&std::env::var("CARGO_CRATE_NAME").unwrap())
+                    .expect("CARGO_BIN_NAME not in manifest"),
+            )
+        }
     }
     Ok(result)
 }

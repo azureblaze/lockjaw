@@ -1,18 +1,242 @@
-use crate::build_script::{log, LockjawPackage};
-use crate::{attributes, type_data};
+use crate::attributes;
+use crate::log;
+use crate::manifest::{DepManifests, Manifest, TypeRoot};
+use crate::type_data;
+use crate::type_data::TypeData;
 use anyhow::{bail, Context, Result};
-use lockjaw_common::manifest::{Manifest, TypeRoot};
-use lockjaw_common::type_data::TypeData;
 use proc_macro2::TokenStream;
+use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use std::process::Command;
 use syn::__private::ToTokens;
 use syn::{Item, ItemUse, UseTree};
 
-pub(crate) fn parse_manifest(lockjaw_package: &LockjawPackage) -> Manifest {
+#[derive(Deserialize, Debug, Default, Clone)]
+struct CargoMetadata {
+    packages: Vec<CargoMetadataPackage>,
+    resolve: CargoResolve,
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
+struct CargoMetadataPackage {
+    name: String,
+    id: String,
+    manifest_path: String,
+    dependencies: Vec<CargoMetadataDependency>,
+    targets: Vec<CargoTarget>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+struct CargoMetadataDependency {
+    name: String,
+    kind: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
+struct CargoTarget {
+    name: String,
+    kind: Vec<String>,
+    src_path: String,
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
+struct CargoResolve {
+    nodes: Vec<CargoNode>,
+    root: Option<String>,
+}
+#[derive(Deserialize, Debug, Clone, Default)]
+struct CargoNode {
+    id: String,
+    deps: Vec<CargoNodeDep>,
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
+struct CargoNodeDep {
+    name: String,
+    pkg: String,
+    dep_kinds: Vec<CargoDepKind>,
+    features: Option<Vec<String>>,
+}
+#[derive(Deserialize, Debug, Clone, Default)]
+struct CargoDepKind {
+    kind: Option<String>,
+    target: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+enum LockjawPackageKind {
+    Prod,
+    Test,
+}
+
+pub fn build_manifest() -> DepManifests {
+    let cargo_output = Command::new("cargo")
+        .arg("metadata")
+        .arg("--manifest-path")
+        .arg(std::env::var("CARGO_MANIFEST_PATH").expect("missing manifest dir"))
+        //.arg("--filter-platform")
+        //.arg(std::env::var("TARGET").expect("missing TARGET"))
+        .arg("--frozen")
+        .output()
+        .unwrap();
+
+    let cargo_metadata_json = String::from_utf8(cargo_output.stdout).unwrap();
+
+    log!("{}", String::from_utf8(cargo_output.stderr).unwrap());
+
+    let cargo_metadata: CargoMetadata = serde_json::from_str(&cargo_metadata_json).unwrap();
+
+    let toml_map: HashMap<String, CargoMetadataPackage> = cargo_metadata
+        .packages
+        .iter()
+        .map(|entry| (entry.id.clone(), entry.clone()))
+        .collect();
+    let dep_map: HashMap<String, CargoNode> = cargo_metadata
+        .resolve
+        .nodes
+        .iter()
+        .map(|entry| (entry.id.clone(), entry.clone()))
+        .collect();
+
+    let package_name = std::env::var("CARGO_PKG_NAME").unwrap();
+    log!("package_name: {}", package_name);
+    let package_id = cargo_metadata
+        .packages
+        .iter()
+        .find(|package| package.name == package_name)
+        .unwrap()
+        .id
+        .clone();
+    log!("package_id: {}", package_id);
+
+    let toml = toml_map.get(&package_id).unwrap();
+    let mut target_packages: HashMap<String, LockjawPackage> = HashMap::new();
+    for target in &toml.targets {
+        if target.kind == vec!["custom-build".to_string()] {
+            continue;
+        }
+        target_packages.insert(
+            target.name.clone(),
+            LockjawPackage {
+                id: toml.id.clone(),
+                name: toml.name.clone(),
+                src_path: target.src_path.clone(),
+                direct_crate_deps: toml
+                    .dependencies
+                    .iter()
+                    .filter(|dep| {
+                        if target.kind.contains(&"test".to_string()) {
+                            dep.kind == Some("dev".to_string())
+                        } else {
+                            dep.kind == None
+                        }
+                    })
+                    .map(|dep| dep.name.clone())
+                    .collect(),
+            },
+        );
+    }
+    log!("target packages:{:#?}", target_packages);
+
+    let prod_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, true, false);
+    log!("prod packages:{:#?}", prod_packages);
+    let test_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, true, true);
+    log!("test packages:{:#?}", test_packages);
+
+    DepManifests {
+        crate_name: package_name,
+        prod_manifest: prod_packages
+            .iter()
+            .map(|package| parse_manifest(package))
+            .collect(),
+        test_manifest: test_packages
+            .iter()
+            .map(|package| parse_manifest(package))
+            .collect(),
+        root_manifests: target_packages
+            .iter()
+            .map(|entry| (entry.0.clone(), parse_manifest(entry.1)))
+            .collect(),
+    }
+}
+
+fn gather_lockjaw_packages(
+    id: &String,
+    toml_map: &HashMap<String, CargoMetadataPackage>,
+    dep_map: &HashMap<String, CargoNode>,
+    root: bool,
+    for_test: bool,
+) -> Vec<LockjawPackage> {
+    let mut result = Vec::<LockjawPackage>::new();
+    let node = dep_map.get(id).unwrap();
+    if !node.deps.iter().any(|dep| dep.name == "lockjaw") {
+        return result;
+    }
+    let toml = toml_map.get(id).unwrap();
+    let mut direct_crate_deps: Vec<String> = Vec::new();
+    for dep in &toml.dependencies {
+        if for_test {
+            if dep.kind == Some("dev".to_string()) {
+                direct_crate_deps.push(dep.name.clone());
+            }
+        } else {
+            if dep.kind == None {
+                direct_crate_deps.push(dep.name.clone());
+            }
+        }
+    }
+
+    if !root {
+        let target = toml
+            .targets
+            .iter()
+            .find(|target| target.kind.contains(&"lib".to_string()))
+            .expect(&format!("no lib target for {}", toml.name));
+
+        result.push(LockjawPackage {
+            id: node.id.clone(),
+            name: toml.name.clone(),
+            src_path: target.src_path.clone(),
+            direct_crate_deps,
+        });
+    }
+
+    for dep in &node.deps {
+        if dep.name == "lockjaw" {
+            continue;
+        }
+
+        if !dep.dep_kinds.iter().any(|kind| {
+            kind.kind
+                == if for_test {
+                    Some("dev".to_string())
+                } else {
+                    None
+                }
+        }) {
+            continue;
+        }
+
+        result.extend(gather_lockjaw_packages(
+            &dep.pkg, toml_map, dep_map, false, for_test,
+        ));
+    }
+
+    result
+}
+
+#[derive(Debug, Clone)]
+pub struct LockjawPackage {
+    pub id: String,
+    pub name: String,
+    pub src_path: String,
+    pub direct_crate_deps: Vec<String>,
+}
+pub fn parse_manifest(lockjaw_package: &LockjawPackage) -> Manifest {
     let result = parse_file(
         &Path::new(&lockjaw_package.src_path),
         "(src)",
@@ -74,7 +298,7 @@ fn parse_mods(
         parents: parents.clone(),
         uses,
     };
-    log!("{:#?}", mod_);
+    //log!("{:#?}", mod_);
 
     let mut result = Manifest::new();
     for item in items.iter() {
@@ -91,7 +315,6 @@ fn parse_mods(
             Item::Impl(item_impl) => {
                 for attribute in item_impl.attrs.iter() {
                     let type_data = type_data::from_path(attribute.path(), &mod_)?;
-                    log!("{:?}", type_data.canonical_string_path());
                     match type_data.canonical_string_path().as_str() {
                         "::lockjaw::injectable" => {
                             result.merge_from(
@@ -195,7 +418,7 @@ fn get_uses(
     result
 }
 #[derive(Debug)]
-pub(crate) struct Mod {
+pub struct Mod {
     pub crate_name: String,
     pub name: String,
     pub parents: Vec<String>,
@@ -244,7 +467,7 @@ impl Mod {
     }
 }
 
-pub(crate) struct UsePath {
+pub struct UsePath {
     pub crate_: String,
     pub path: String,
     pub root: TypeRoot,
@@ -282,8 +505,8 @@ fn process_use(
     };
     let mut path: Vec<String> = Vec::new();
     let type_root;
-    log!("deps {:?}", deps);
-    log!("segments {:?}", segments);
+    //log!("deps {:?}", deps);
+    //log!("segments {:?}", segments);
     if segments.is_empty() {
         type_root = TypeRoot::GLOBAL;
     } else if use_item.leading_colon.is_some()

@@ -14,36 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#![allow(dead_code)]
+use lockjaw;
 
-use lockjaw::{component, epilogue};
-
-lockjaw::prologue!("tests/module_inner_path.rs");
-
-pub struct Foo {}
-
-mod m {
-    use lockjaw::module;
-
-    pub struct MyModule {}
-
-    #[module]
-    impl MyModule {
-        #[provides]
-        pub fn provide_foo() -> crate::Foo {
-            crate::Foo {}
-        }
-    }
+fn main() {
+    lockjaw::build_script();
 }
-
-#[component(modules: [m::MyModule])]
-pub trait MyComponent {
-    fn foo(&self) -> crate::Foo;
-}
-
-#[test]
-pub fn main() {
-    let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
-    component.foo();
-}
-epilogue!();

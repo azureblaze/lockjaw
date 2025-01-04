@@ -16,16 +16,16 @@ limitations under the License.
 
 use std::collections::{HashMap, HashSet};
 
+use crate::manifest::{Dependency, Injectable, Manifest, TypeRoot};
 use crate::manifest_parser::Mod;
 use crate::parsing::{
     get_attribute, get_attribute_field_values, get_parenthesized_field_values, get_type, get_types,
     has_attribute, is_attribute, FieldValue,
 };
-use crate::type_data::from_syn_type;
+use crate::type_data::{from_syn_type, TypeData};
 use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
-use lockjaw_common::manifest::{Dependency, Injectable, Manifest, TypeRoot};
-use lockjaw_common::type_data::TypeData;
+
 use proc_macro2::TokenStream;
 use syn::__private::quote::format_ident;
 use syn::{FnArg, GenericArgument, ImplItem, ImplItemFn, Pat, PathArguments};

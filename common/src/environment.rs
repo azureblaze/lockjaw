@@ -1,3 +1,3 @@
 pub fn current_crate() -> String {
-    std::env::var("CARGO_CRATE_NAME").expect("missing crate name env var")
+    std::env::var("CARGO_PKG_NAME").expect("missing pkg name env var")
 }
