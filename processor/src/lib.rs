@@ -394,6 +394,7 @@ fn merge_manifest(
         }
         result.merge_from(&dep_manifest);
     }
+    // build script
     if let Ok(manifest) = std::env::var("LOCKJAW_DEP_MANIFEST") {
         let reader = BufReader::new(File::open(manifest).expect("cannot find manifest file"));
         let dep_manifest: DepManifests =
@@ -408,40 +409,48 @@ fn merge_manifest(
             }
         }
         if let Ok(bin_name) = std::env::var("CARGO_BIN_NAME") {
-            result.merge_from(
-                dep_manifest
-                    .root_manifests
-                    .get(&bin_name)
-                    .expect("CARGO_BIN_NAME not in manifest"),
-            );
+            let root_manifest = dep_manifest
+                .root_manifests
+                .get(&bin_name)
+                .expect("CARGO_BIN_NAME not in manifest");
+            if config.for_test {
+                result.merge_from(&root_manifest.test_manifest);
+            } else {
+                result.merge_from(&root_manifest.prod_manifest);
+            }
         } else {
             if config.for_test {
                 let test_target = std::env::var("CARGO_CRATE_NAME").unwrap();
-                let test_manifest = dep_manifest
+                let test_manifest = &dep_manifest
                     .root_manifests
                     .get(&test_target)
                     .unwrap()
-                    .clone();
+                    .test_manifest;
 
                 //log!("test manifest: {:#?}", test_manifest);
                 result.merge_from(&test_manifest);
             } else {
                 result.merge_from(
-                    dep_manifest
+                    &dep_manifest
                         .root_manifests
                         .get(&std::env::var("CARGO_CRATE_NAME").unwrap())
-                        .expect("CARGO_BIN_NAME not in manifest"),
+                        .expect("CARGO_BIN_NAME not in manifest")
+                        .prod_manifest,
                 )
             }
         }
     } else {
         if config.for_test {
-            let test_manifest = lockjaw_common::manifest_parser::parse_manifest(&LockjawPackage {
-                id: "".to_string(),
-                name: std::env::var("CARGO_PKG_NAME").unwrap().replace("-", "_"),
-                src_path: prologue::get_test_source(),
-                direct_crate_deps: vec![],
-            });
+            let test_manifest = lockjaw_common::manifest_parser::parse_manifest(
+                &LockjawPackage {
+                    id: "".to_string(),
+                    name: std::env::var("CARGO_PKG_NAME").unwrap().replace("-", "_"),
+                    src_path: prologue::get_test_source(),
+                    direct_prod_crate_deps: vec![],
+                    direct_test_crate_deps: vec![],
+                },
+                true,
+            );
             result.merge_from(&test_manifest);
             return Ok(result);
         } else {

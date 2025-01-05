@@ -19,7 +19,6 @@ use std::collections::HashSet;
 use std::ops::Deref;
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::with_manifest;
 use crate::parsing;
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
@@ -29,9 +28,7 @@ use crate::{graph, type_data};
 use base64::engine::Engine;
 use lazy_static::lazy_static;
 use lockjaw_common::environment::current_crate;
-use lockjaw_common::manifest::{
-    BuilderModules, Component, ComponentType, Dependency, Manifest, TypeRoot,
-};
+use lockjaw_common::manifest::{Component, ComponentType, Dependency, Manifest, TypeRoot};
 use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote_spanned;
@@ -125,6 +122,7 @@ pub fn handle_component_attribute(
     let mut component = Component::new();
     component.type_data =
         type_data::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
+
     component.component_type = component_type;
     component.provisions.extend(provisions);
     if let Some(ref m) = builder_modules {
@@ -186,8 +184,6 @@ pub fn handle_component_attribute(
             }
         }
     };
-
-    with_manifest(|mut manifest| manifest.components.push(component));
 
     let parent_module = if let Some(parent) = attributes.get("parent") {
         if let FieldValue::Path(_, path) = parent {
@@ -306,14 +302,6 @@ pub fn handle_builder_modules_attribute(
         dep.type_data = type_data::from_syn_type(field.ty.borrow())?;
         modules.push(dep);
     }
-
-    let mut builder_modules = BuilderModules::new();
-    builder_modules.type_data = Some(type_data::from_local(
-        &item_struct.ident.to_string(),
-        item_struct.ident.span(),
-    )?);
-    builder_modules.builder_modules.extend(modules);
-    with_manifest(|mut manifest| manifest.builder_modules.push(builder_modules));
 
     let prologue_check = prologue_check(item_struct.ident.span());
     Ok(quote_spanned! {span=>

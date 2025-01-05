@@ -26,7 +26,7 @@ use crate::type_data::{from_syn_type, TypeData};
 use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
 
-use crate::{log, type_data};
+use crate::type_data;
 use proc_macro2::TokenStream;
 use syn::__private::quote::format_ident;
 use syn::{FnArg, GenericArgument, ImplItem, ImplItemFn, Pat, PathArguments, Visibility};
@@ -287,7 +287,6 @@ fn handle_factory(
 }
 
 fn add_component_visible(ident: &str, mod_: &Mod, manifest: &mut Manifest) -> Result<()> {
-    log!("{}", ident);
     let exported_ident = format!("lockjaw_export_type_{}", ident);
 
     let type_ = type_data::from_local(ident, mod_)?;
