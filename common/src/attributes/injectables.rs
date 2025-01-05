@@ -16,7 +16,7 @@ limitations under the License.
 
 use std::collections::{HashMap, HashSet};
 
-use crate::manifest::{Dependency, Injectable, Manifest, TypeRoot};
+use crate::manifest::{Dependency, ExpandedVisibility, Injectable, Manifest, TypeRoot};
 use crate::manifest_parser::Mod;
 use crate::parsing::{
     get_attribute, get_attribute_field_values, get_parenthesized_field_values, get_type, get_types,
@@ -26,9 +26,10 @@ use crate::type_data::{from_syn_type, TypeData};
 use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
 
+use crate::{log, type_data};
 use proc_macro2::TokenStream;
 use syn::__private::quote::format_ident;
-use syn::{FnArg, GenericArgument, ImplItem, ImplItemFn, Pat, PathArguments};
+use syn::{FnArg, GenericArgument, ImplItem, ImplItemFn, Pat, PathArguments, Visibility};
 
 lazy_static! {
     static ref INJECTABLE_METADATA_KEYS: HashSet<String> = {
@@ -238,6 +239,7 @@ fn handle_factory(
         }
     }
     let mut factory_ty = self_ty.clone();
+    let factory_ident;
     if let syn::Type::Path(ref mut path) = self_ty.as_mut() {
         let last_segment = path.path.segments.last_mut().unwrap();
         if last_segment.arguments != PathArguments::None {
@@ -245,6 +247,7 @@ fn handle_factory(
         }
 
         let ident = format_ident!("{}Factory", path.path.segments.last().unwrap().ident);
+        factory_ident = ident.to_string();
         if let syn::Type::Path(ref mut factory_path) = factory_ty.as_mut() {
             let last_segment = factory_path.path.segments.last_mut().unwrap();
             last_segment.ident = ident;
@@ -253,19 +256,56 @@ fn handle_factory(
     } else {
         bail!("path expected");
     }
+    let mut result = Manifest::new();
+
+    if let Some(visibility) = metadata.get("visibility") {
+        if let FieldValue::StringLiteral(vis_string) = visibility {
+            let syn_visibility: Visibility = syn::parse_str(vis_string).with_context(|| {
+                "visibility specifier string('pub', 'pub(crate)', 'pub(in some::path)') expected"
+            })?;
+            if let Visibility::Public(_) = syn_visibility {
+            } else {
+                add_component_visible(&factory_ident.to_string(), mod_, &mut result)?;
+            }
+        } else {
+            bail!("string expected for `visibility`");
+        }
+    } else {
+        add_component_visible(&factory_ident.to_string(), mod_, &mut result)?;
+    };
 
     let mut injectable = Injectable::new();
     injectable.type_data = from_syn_type(&factory_ty, mod_)?;
     injectable.ctor_name = "lockjaw_new_factory".to_string();
     injectable.dependencies.extend(dependencies);
 
-    let mut result = Manifest::new();
-
     result.lifetimed_types.insert(injectable.type_data.clone());
 
     result.injectables.push(injectable);
 
     Ok(result)
+}
+
+fn add_component_visible(ident: &str, mod_: &Mod, manifest: &mut Manifest) -> Result<()> {
+    log!("{}", ident);
+    let exported_ident = format!("lockjaw_export_type_{}", ident);
+
+    let type_ = type_data::from_local(ident, mod_)?;
+    let crate_type = type_data::from_local(&exported_ident, mod_)?;
+
+    let mut exported_type = TypeData::new();
+    exported_type.root = TypeRoot::CRATE;
+    exported_type.path = type_.identifier_string();
+    exported_type.field_crate = crate::environment::current_crate();
+
+    manifest.expanded_visibilities.insert(
+        type_.canonical_string_path(),
+        ExpandedVisibility {
+            crate_local_name: crate_type,
+            exported_name: exported_type,
+        },
+    );
+    Ok(())
 }
 
 pub fn provider_type(type_: &TypeData) -> TypeData {

@@ -15,10 +15,9 @@ limitations under the License.
 */
 
 use crate::error::spanned_compile_error;
-use crate::manifest::with_manifest;
 use crate::type_data;
 use crate::type_data::ProcessorTypeData;
-use lockjaw_common::manifest::{ExpandedVisibility, Manifest, TypeRoot};
+use lockjaw_common::manifest::Manifest;
 use lockjaw_common::type_data::TypeData;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -47,24 +46,6 @@ fn handle_item_struct(mut item_struct: ItemStruct) -> Result<TokenStream, TokenS
     item_struct.ident = exported_ident.clone();
     item_struct.vis = Visibility::Public(Token![pub](item_struct.span()));
 
-    let type_ = type_data::from_local(&original_ident.to_string(), original_ident.span())?;
-    let crate_type = type_data::from_local(&exported_ident.to_string(), original_ident.span())?;
-
-    with_manifest(|mut manifest| {
-        let mut exported_type = TypeData::new();
-        exported_type.root = TypeRoot::CRATE;
-        exported_type.path = type_.identifier().to_string();
-        exported_type.field_crate = lockjaw_common::environment::current_crate();
-
-        manifest.expanded_visibilities.insert(
-            type_.canonical_string_path(),
-            ExpandedVisibility {
-                crate_local_name: crate_type,
-                exported_name: exported_type,
-            },
-        );
-    });
-
     Ok(quote! {
         #original_vis use #exported_ident as #original_ident;
 
@@ -84,23 +65,6 @@ fn handle_item_trait(mut item_trait: ItemTrait) -> Result<TokenStream, TokenStre
 
     let mut type_ = type_data::from_local(&original_ident.to_string(), original_ident.span())?;
     type_.trait_object = true;
-    let crate_type = type_data::from_local(&exported_ident.to_string(), original_ident.span())?;
-
-    with_manifest(|mut manifest| {
-        let mut exported_type = TypeData::new();
-        exported_type.root = TypeRoot::CRATE;
-        exported_type.path = type_.identifier().to_string();
-        exported_type.field_crate = lockjaw_common::environment::current_crate();
-        exported_type.trait_object = true;
-
-        manifest.expanded_visibilities.insert(
-            type_.canonical_string_path(),
-            ExpandedVisibility {
-                crate_local_name: crate_type,
-                exported_name: exported_type,
-            },
-        );
-    });
 
     Ok(quote! {
         #original_vis use #exported_ident as #original_ident;

@@ -277,9 +277,9 @@ fn internal_epilogue(
     config: EpilogueConfig,
 ) -> Result<proc_macro2::TokenStream, proc_macro2::TokenStream> {
     manifest::with_manifest(|mut manifest| {
-        let expanded_visibilities = component_visibles::expand_visibilities(&manifest)?;
         manifest.root = config.root;
         let merged_manifest = merge_manifest(&manifest, &config)?;
+        let expanded_visibilities = component_visibles::expand_visibilities(&merged_manifest)?;
 
         if !config.for_test {
             let out_dir = environment::lockjaw_output_dir()?;
@@ -344,7 +344,10 @@ fn internal_epilogue(
                 environment::lockjaw_output_dir()?,
                 current_crate()
             );
-            log!("writing debug output to {}", path);
+            log!(
+                "writing debug output to file:///{}",
+                path.replace("\\", "/")
+            );
             std::fs::create_dir_all(Path::new(&environment::lockjaw_output_dir()?))
                 .expect("cannot create output dir");
             std::fs::write(Path::new(&path), &content)

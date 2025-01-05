@@ -85,6 +85,8 @@ pub fn build_manifest() -> DepManifests {
         .arg(std::env::var("CARGO_MANIFEST_PATH").expect("missing manifest dir"))
         //.arg("--filter-platform")
         //.arg(std::env::var("TARGET").expect("missing TARGET"))
+        .arg("--format-version")
+        .arg("1")
         .arg("--frozen")
         .output()
         .unwrap();
@@ -145,12 +147,12 @@ pub fn build_manifest() -> DepManifests {
             },
         );
     }
-    log!("target packages:{:#?}", target_packages);
+    //log!("target packages:{:#?}", target_packages);
 
     let prod_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, true, false);
-    log!("prod packages:{:#?}", prod_packages);
+    //log!("prod packages:{:#?}", prod_packages);
     let test_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, true, true);
-    log!("test packages:{:#?}", test_packages);
+    //log!("test packages:{:#?}", test_packages);
 
     DepManifests {
         crate_name: package_name,
@@ -268,6 +270,7 @@ fn parse_file(
         .with_context(|| "unable to read source")?;
 
     if let Ok(syn_file) = syn::parse_file(&src) {
+        #[cfg(disabled)]
         if let Ok(out_dir) = std::env::var("OUT_DIR") {
             let debug_out_name = format!(
                 "{}/{}_{}_{}.json",
@@ -279,7 +282,6 @@ fn parse_file(
             log!("debug ast: file:///{}", &debug_out_name);
             std::fs::write(&debug_out_name, format!("{:#?}", syn_file)).unwrap();
         }
-
         parse_mods(src_path, name, &syn_file.items, parents, &lockjaw_package)
     } else {
         bail!("{} is not valid rust", src_path.to_str().unwrap());
@@ -326,6 +328,40 @@ fn parse_mods(
                                 &attributes::injectables::handle_injectable_attribute(
                                     attribute.parse_args().unwrap_or(TokenStream::new()),
                                     item_impl.to_token_stream(),
+                                    &mod_,
+                                )?,
+                            );
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Item::Trait(item_trait) => {
+                for attribute in item_trait.attrs.iter() {
+                    let type_data = type_data::from_path(attribute.path(), &mod_)?;
+                    match type_data.canonical_string_path().as_str() {
+                        "::lockjaw::component_visible" => {
+                            result.merge_from(
+                                &attributes::component_visibles::handle_component_visible_attribute(
+                                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                                    item_trait.to_token_stream(),
+                                    &mod_,
+                                )?,
+                            );
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Item::Struct(item_struct) => {
+                for attribute in item_struct.attrs.iter() {
+                    let type_data = type_data::from_path(attribute.path(), &mod_)?;
+                    match type_data.canonical_string_path().as_str() {
+                        "::lockjaw::component_visible" => {
+                            result.merge_from(
+                                &attributes::component_visibles::handle_component_visible_attribute(
+                                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                                    item_struct.to_token_stream(),
                                     &mod_,
                                 )?,
                             );
