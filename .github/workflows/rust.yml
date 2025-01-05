@@ -20,6 +20,6 @@ jobs:
         with:
           toolchain: stable
       - name: Build
-        run: cargo build --workspace
+        run: cargo build --workspace --all-targets
       - name: Run tests
         run: cargo test --workspace
