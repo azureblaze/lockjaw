@@ -132,6 +132,7 @@ pub struct EntryPoint {
     pub type_data: TypeData,
     pub component: TypeData,
     pub provisions: Vec<Dependency>,
+    pub address: TypeData,
 }
 
 impl EntryPoint {

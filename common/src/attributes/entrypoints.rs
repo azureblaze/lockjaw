@@ -62,6 +62,8 @@ pub fn handle_entry_point_attribute(
     };
     let mut entry_point = EntryPoint::new();
     entry_point.type_data = type_data::from_local(&item_trait.ident.to_string(), mod_)?;
+    entry_point.address =
+        type_data::from_local(&format!("{}_ADDR", &item_trait.ident.to_string()), mod_)?;
 
     entry_point.provisions.extend(provisions);
     entry_point.component = component.clone();
@@ -79,11 +81,24 @@ pub fn handle_entry_point_attribute(
     exported_type.path = type_.identifier_string();
     exported_type.field_crate = current_crate();
 
+    let mut exported_addr_type = TypeData::new();
+    exported_addr_type.root = TypeRoot::CRATE;
+    exported_addr_type.path = entry_point.address.identifier_string();
+    exported_addr_type.field_crate = current_crate();
+
     manifest.expanded_visibilities.insert(
         type_.canonical_string_path_without_args(),
         ExpandedVisibility {
             crate_local_name: crate_type,
             exported_name: exported_type,
+        },
+    );
+
+    manifest.expanded_visibilities.insert(
+        entry_point.address.canonical_string_path(),
+        ExpandedVisibility {
+            crate_local_name: entry_point.address.clone(),
+            exported_name: exported_addr_type,
         },
     );
 

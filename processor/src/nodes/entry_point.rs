@@ -56,7 +56,6 @@ impl Node for EntryPointNode {
 
     fn generate_implementation(&self, graph: &Graph) -> Result<ComponentSections, TokenStream> {
         let mut result = ComponentSections::new();
-
         let mut provisions = quote! {};
         for provision in &self.entry_point.provisions {
             let dependency_name = format_ident!("{}", provision.name);
@@ -74,6 +73,8 @@ impl Node for EntryPointNode {
         let entry_point_syn_type =
             component_visibles::visible_type(graph.manifest, &self.entry_point.type_data)
                 .syn_type();
+        let entry_point_address_syn_type =
+            component_visibles::visible_type(graph.manifest, &self.entry_point.address).syn_type();
 
         let getter_name =
             entrypoints::getter_name(&self.entry_point.type_data, &self.entry_point.component);
@@ -94,7 +95,6 @@ impl Node for EntryPointNode {
             }
 
             #[doc(hidden)]
-            #[no_mangle]
             #[allow(non_snake_case)]
             fn #getter_name<'a>(component: &'a dyn #component_name) -> &'a dyn #entry_point_syn_type {
                 unsafe {
@@ -102,6 +102,12 @@ impl Node for EntryPointNode {
                         as *const #component_impl_name
                         as *const dyn #entry_point_syn_type)
                 }
+            }
+        });
+
+        result.add_ctor_statements(quote! {
+            unsafe{
+                #entry_point_address_syn_type = #getter_name as *const();
             }
         });
 

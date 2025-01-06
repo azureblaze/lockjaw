@@ -109,6 +109,7 @@ fn generate_component(
 
     let fields = &component_sections.fields;
     let ctor_params = &component_sections.ctor_params;
+    let ctor_statements = &component_sections.ctor_statements;
     let methods = &component_sections.methods;
     let trait_methods = &component_sections.trait_methods;
     let items = &component_sections.items;
@@ -156,6 +157,7 @@ fn generate_component(
         impl <'a> #builder_syn_type<'a> for #component_builder_impl_name<'a> {
 
             fn build(&self, #builder_param) -> lockjaw::Cl<'a, dyn #component_name<'a>> {
+                #ctor_statements
                 lockjaw::Cl::Val(::std::boxed::Box::new(#component_impl_name{parent: self.parent, #ctor_params}))
             }
         }

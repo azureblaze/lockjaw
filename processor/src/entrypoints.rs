@@ -19,7 +19,7 @@ use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::ProcessorTypeData;
 use crate::type_validator::TypeValidator;
-use crate::{components, parsing, type_data};
+use crate::{components, parsing};
 use base64::engine::Engine;
 use lazy_static::lazy_static;
 use lockjaw_common::type_data::TypeData;
@@ -66,8 +66,6 @@ pub fn handle_entry_point_attribute(
     } else {
         return spanned_compile_error(attr.span(), "path expected for install_in");
     };
-    let entry_point_type_data =
-        crate::type_data::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
     let original_ident = item_trait.ident.clone();
     let original_vis = item_trait.vis.clone();
     let exported_ident = format_ident!("lockjaw_export_type_{}", original_ident);
@@ -78,10 +76,7 @@ pub fn handle_entry_point_attribute(
     let item_ident = item_trait.ident.clone();
     let prologue_check = prologue_check(item_trait.span());
     let validate_type = type_validator.validate(item_trait.ident.to_string());
-    let getter_name = getter_name(
-        &entry_point_type_data,
-        &type_data::from_path_with_span(component_path, component_path.span())?,
-    );
+    let address_ident = format_ident!("{}_ADDR", original_ident);
     let result = quote! {
         #[doc(hidden)]
         #[allow(non_camel_case_types)]
@@ -92,12 +87,16 @@ pub fn handle_entry_point_attribute(
         #validate_type
         #prologue_check
 
+        #[doc(hidden)]
+        #[allow(non_upper_case_globals)]
+        pub static mut #address_ident : *const () = ::std::ptr::null();
+
         impl dyn #item_ident {
             fn get<'a>(component: &'a dyn #component_path) -> &'a dyn #item_ident {
-                extern "Rust"{
-                    fn #getter_name(component: &dyn #component_path) -> &'static dyn #item_ident;
+                unsafe {
+                    let getter: extern "Rust" fn(&'a dyn #component_path) -> &'static dyn #item_ident = std::mem::transmute(#address_ident);
+                    getter(component)
                 }
-                unsafe { #getter_name(component) }
             }
         }
     };

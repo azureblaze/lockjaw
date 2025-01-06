@@ -58,6 +58,7 @@ pub struct Graph<'a> {
 pub struct ComponentSections {
     pub fields: TokenStream,
     pub ctor_params: TokenStream,
+    pub ctor_statements: TokenStream,
     pub methods: TokenStream,
     pub trait_methods: TokenStream,
     pub items: TokenStream,
@@ -83,6 +84,7 @@ impl ComponentSections {
         ComponentSections {
             fields: quote! {},
             ctor_params: quote! {},
+            ctor_statements: quote! {},
             methods: quote! {},
             trait_methods: quote! {},
             items: quote! {},
@@ -92,18 +94,21 @@ impl ComponentSections {
     pub fn merge(&mut self, other: ComponentSections) {
         let fields = &self.fields;
         let ctor_params = &self.ctor_params;
+        let ctor_statements = &self.ctor_statements;
         let methods = &self.methods;
         let trait_methods = &self.trait_methods;
         let items = &self.items;
 
         let other_fields = &other.fields;
         let other_ctor_params = &other.ctor_params;
+        let other_ctor_statements = &other.ctor_statements;
         let other_methods = &other.methods;
         let other_trait_methods = &other.trait_methods;
         let other_items = &other.items;
 
         self.fields = quote! {#fields #other_fields};
         self.ctor_params = quote! {#ctor_params #other_ctor_params};
+        self.ctor_statements = quote! {#ctor_statements #other_ctor_statements};
         self.methods = quote! {#methods #other_methods};
         self.trait_methods = quote! {#trait_methods #other_trait_methods};
         self.items = quote! {#items #other_items};
@@ -117,6 +122,11 @@ impl ComponentSections {
     pub fn add_ctor_params(&mut self, new_ctor_params: TokenStream) {
         let ctor_params = &self.ctor_params;
         self.ctor_params = quote! {#ctor_params #new_ctor_params}
+    }
+
+    pub fn add_ctor_statements(&mut self, new_ctor_statements: TokenStream) {
+        let ctor_statements = &self.ctor_statements;
+        self.ctor_statements = quote! {#ctor_statements #new_ctor_statements}
     }
 
     pub fn add_methods(&mut self, new_methods: TokenStream) {
@@ -165,6 +175,7 @@ pub fn generate_component(
 
     let fields = &component_sections.fields;
     let ctor_params = &component_sections.ctor_params;
+    let ctor_statements = &component_sections.ctor_statements;
     let methods = &component_sections.methods;
     let trait_methods = &component_sections.trait_methods;
     let items = &component_sections.items;
@@ -197,7 +208,8 @@ pub fn generate_component(
             #[no_mangle]
             #[allow(non_snake_case)]
             fn #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>{
-               Box::new(#component_impl_name{#ctor_params})
+                #ctor_statements
+                Box::new(#component_impl_name{#ctor_params})
             }
         }
     } else {
@@ -206,7 +218,8 @@ pub fn generate_component(
             #[no_mangle]
             #[allow(non_snake_case)]
             fn #builder_name () -> Box<dyn #component_name>{
-               Box::new(#component_impl_name{#ctor_params})
+                #ctor_statements
+                Box::new(#component_impl_name{#ctor_params})
             }
         }
     };
