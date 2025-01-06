@@ -60,23 +60,6 @@ pub fn get_parenthesized_field_values(
     }
 }
 
-pub fn get_path(attr: &TokenStream) -> Result<syn::Path, TokenStream> {
-    if attr.is_empty() {
-        return spanned_compile_error(attr.span(), "path expected");
-    }
-    syn::parse2(attr.clone()).map_spanned_compile_error(attr.span(), "path expected")
-}
-
-pub fn get_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
-    if attr.is_empty() {
-        return spanned_compile_error(attr.span(), "path expected");
-    }
-    crate::type_data::from_path_with_span(
-        &syn::parse2(attr.clone()).map_spanned_compile_error(attr.span(), "path expected")?,
-        attr.span(),
-    )
-}
-
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum FieldValue {
@@ -100,31 +83,6 @@ impl FieldValue {
             FieldValue::Array(ref span, _) => span.clone(),
             FieldValue::FieldValues(ref span, _) => span.clone(),
         }
-    }
-
-    pub fn get_paths(&self) -> Result<Vec<(syn::Path, Span)>, TokenStream> {
-        match self {
-            FieldValue::Path(ref span, ref path) => Ok(vec![(path.clone(), span.clone())]),
-            FieldValue::Array(_, ref array) => array
-                .iter()
-                .map(|f| {
-                    if let FieldValue::Path(ref span, ref path) = f {
-                        Ok((path.clone(), span.clone()))
-                    } else {
-                        spanned_compile_error(self.span(), "path expected")
-                    }
-                })
-                .collect(),
-            _ => spanned_compile_error(self.span(), "path expected"),
-        }
-    }
-
-    pub fn get_types(&self) -> Result<Vec<TypeData>, TokenStream> {
-        let mut result = Vec::new();
-        for (path, span) in self.get_paths()? {
-            result.push(crate::type_data::from_path_with_span(&path, span.clone())?)
-        }
-        Ok(result)
     }
 }
 

@@ -15,15 +15,6 @@ limitations under the License.
 */
 
 #[test]
-fn scope_not_declared() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/component/scope_not_declared.rs",
-        vec!["cannot find trait `bar` in the crate root"],
-    )
-}
-
-#[test]
 fn component_non_trait() {
     let t = trybuild::TestCases::new();
     t.compile_failed_with(

@@ -52,7 +52,6 @@ mod parsing;
 mod prologue;
 mod qualifier;
 mod type_data;
-mod type_validator;
 
 #[proc_macro_attribute]
 pub fn injectable(attr: TokenStream, input: TokenStream) -> TokenStream {

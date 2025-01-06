@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::ops::Deref;
 
@@ -23,13 +22,11 @@ use crate::parsing;
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::ProcessorTypeData;
-use crate::type_validator::TypeValidator;
 use crate::{graph, type_data};
 use base64::engine::Engine;
 use lazy_static::lazy_static;
 use lockjaw_common::environment::current_crate;
-use lockjaw_common::manifest::{Component, ComponentType, Dependency, Manifest, TypeRoot};
-use lockjaw_common::type_data::TypeData;
+use lockjaw_common::manifest::{Component, ComponentType, Manifest, TypeRoot};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote_spanned;
 use quote::{format_ident, quote, ToTokens};
@@ -63,9 +60,7 @@ pub fn handle_component_attribute(
     let mut item_trait: syn::ItemTrait =
         syn::parse2(input).map_spanned_compile_error(span, "trait expected")?;
 
-    let mut type_validator = TypeValidator::new();
-
-    let provisions = get_provisions(&mut item_trait, &mut type_validator)?;
+    parse_provisions(&mut item_trait)?;
 
     let attributes = parsing::get_attribute_field_values(attr.clone())?;
     for key in attributes.keys() {
@@ -82,7 +77,6 @@ pub fn handle_component_attribute(
     let builder_modules = if let Some(value) = attributes.get("builder_modules") {
         if let FieldValue::Path(span, ref path) = value {
             let type_ = type_data::from_path_with_span(path, span.clone())?;
-            type_validator.add_type(&type_, span.clone());
             Some(type_)
         } else {
             return spanned_compile_error(value.span(), "path expected for modules");
@@ -95,7 +89,6 @@ pub fn handle_component_attribute(
         match value {
             FieldValue::Path(span, ref path) => {
                 let type_ = type_data::from_path_with_span(&path, span.clone())?;
-                type_validator.add_type(&type_, span.clone());
                 Some(vec![type_])
             }
             FieldValue::Array(span, ref array) => {
@@ -103,7 +96,6 @@ pub fn handle_component_attribute(
                 for field in array {
                     if let FieldValue::Path(span, ref path) = field {
                         let type_ = type_data::from_path_with_span(&path, span.clone())?;
-                        type_validator.add_type(&type_, span.clone());
                         result.push(type_)
                     } else {
                         return spanned_compile_error(span.clone(), "path expected for modules");
@@ -124,7 +116,6 @@ pub fn handle_component_attribute(
         type_data::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
 
     component.component_type = component_type;
-    component.provisions.extend(provisions);
     if let Some(ref m) = builder_modules {
         component.builder_modules = Some(m.clone());
     }
@@ -204,12 +195,10 @@ pub fn handle_component_attribute(
     };
 
     let prologue_check = prologue_check(item_trait.span());
-    let validate_type = type_validator.validate(identifier);
     let result = quote! {
         #item_trait
         #component_builder
         #parent_module
-        #validate_type
         #prologue_check
     };
     Ok(result)
@@ -225,45 +214,30 @@ pub fn builder_name(component: &Component) -> Ident {
     )
 }
 
-pub fn get_provisions(
-    item_trait: &mut ItemTrait,
-    type_validator: &mut TypeValidator,
-) -> Result<Vec<Dependency>, TokenStream> {
-    let mut provisions = Vec::<Dependency>::new();
+pub fn parse_provisions(item_trait: &mut ItemTrait) -> Result<(), TokenStream> {
     for item in &mut item_trait.items {
         if let syn::TraitItem::Fn(ref mut method) = item {
-            let mut provision = Dependency::new();
-            let mut qualifier: Option<TypeData> = None;
             let mut new_attrs: Vec<Attribute> = Vec::new();
             for attr in &method.attrs {
                 match parsing::get_attribute(attr).as_str() {
-                    "qualified" => {
-                        qualifier = Some(parsing::get_type(
-                            &attr.meta.require_list().unwrap().tokens,
-                        )?);
-                        type_validator.add_type(qualifier.as_ref().unwrap(), attr.span());
-                    }
+                    "qualified" => {}
                     _ => new_attrs.push(attr.clone()),
                 }
             }
             method.attrs = new_attrs;
-            provision.name = method.sig.ident.to_string();
             if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
                 if is_trait_object_without_lifetime(ty.deref())? {
                     return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
                 }
-                provision.type_data = type_data::from_syn_type(ty.deref())?;
-                provision.type_data.qualifier = qualifier.map(Box::new);
             } else {
                 return spanned_compile_error(
                     method.sig.span(),
                     "return type expected for component provisions",
                 );
             }
-            provisions.push(provision);
         }
     }
-    Ok(provisions)
+    Ok(())
 }
 
 fn is_trait_object_without_lifetime(ty: &syn::Type) -> Result<bool, TokenStream> {
@@ -289,18 +263,13 @@ pub fn handle_builder_modules_attribute(
     let span = input.span();
     let item_struct: syn::ItemStruct =
         syn::parse2(input).map_spanned_compile_error(span, "struct expected")?;
-    let mut modules = <Vec<Dependency>>::new();
 
     for field in &item_struct.fields {
-        let mut dep = Dependency::new();
         let span = field.span();
-        let name = field
+        field
             .ident
             .as_ref()
             .map_spanned_compile_error(span, "#[builder_modules] cannot be tuples")?;
-        dep.name = name.to_string();
-        dep.type_data = type_data::from_syn_type(field.ty.borrow())?;
-        modules.push(dep);
     }
 
     let prologue_check = prologue_check(item_struct.ident.span());

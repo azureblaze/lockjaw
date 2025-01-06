@@ -18,7 +18,6 @@ use crate::error::{spanned_compile_error, CompileError};
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::ProcessorTypeData;
-use crate::type_validator::TypeValidator;
 use crate::{components, parsing, type_data};
 use base64::engine::Engine;
 use lazy_static::lazy_static;
@@ -45,9 +44,7 @@ pub fn handle_entry_point_attribute(
     let mut item_trait: syn::ItemTrait =
         syn::parse2(input).map_spanned_compile_error(span, "trait expected")?;
 
-    let mut type_validator = TypeValidator::new();
-
-    let provisions = components::get_provisions(&mut item_trait, &mut type_validator)?;
+    components::parse_provisions(&mut item_trait)?;
 
     let attributes = parsing::get_attribute_field_values(attr.clone())?;
 
@@ -61,10 +58,7 @@ pub fn handle_entry_point_attribute(
             attr.span(),
             "install_in metadata expected for #[entry_point]",
         )? {
-        let c = type_data::from_path_with_span(path, span.clone())?;
-        type_validator.add_dyn_type(&c, span.clone());
-        type_validator.add_dyn_path(path, span.clone());
-        c
+        type_data::from_path_with_span(path, span.clone())?
     } else {
         return spanned_compile_error(attr.span(), "path expected for install_in");
     };
@@ -72,7 +66,6 @@ pub fn handle_entry_point_attribute(
     entry_point.type_data =
         crate::type_data::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
 
-    entry_point.provisions.extend(provisions);
     entry_point.component = component.clone();
 
     let original_ident = item_trait.ident.clone();
@@ -82,11 +75,9 @@ pub fn handle_entry_point_attribute(
     item_trait.ident = exported_ident.clone();
     item_trait.vis = Visibility::Public(Token![pub](item_trait.span()));
 
-    let identifier = entry_point.type_data.identifier_string();
     let item_ident = item_trait.ident.clone();
     let component_type = component.syn_type();
     let prologue_check = prologue_check(item_trait.span());
-    let validate_type = type_validator.validate(identifier);
     let getter_name = getter_name(&entry_point);
     let result = quote! {
         #[doc(hidden)]
@@ -95,7 +86,6 @@ pub fn handle_entry_point_attribute(
 
         #original_vis use #exported_ident as #original_ident;
 
-        #validate_type
         #prologue_check
 
         impl dyn #item_ident {

@@ -20,9 +20,7 @@ use crate::error::{spanned_compile_error, CompileError};
 use crate::parsing;
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
-use crate::type_validator::TypeValidator;
 use lazy_static::lazy_static;
-use lockjaw_common::manifest::{Dependency, Injectable};
 use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
@@ -60,7 +58,6 @@ pub fn handle_injectable_attribute(
     let span = input.span();
     let mut item: syn::ItemImpl =
         syn::parse2(input).map_spanned_compile_error(span, "impl block expected")?;
-    let mut type_validator = TypeValidator::new();
 
     let attributes = parsing::get_attribute_field_values(attr.clone())?;
     for key in attributes.keys() {
@@ -91,80 +88,31 @@ pub fn handle_injectable_attribute(
             #factory
         });
     }
-    let mut dependencies = Vec::<Dependency>::new();
     for arg in ctor.sig.inputs.iter_mut() {
         if let FnArg::Receiver(ref receiver) = arg {
             return spanned_compile_error(receiver.span(), &format!("self not allowed"));
         }
         if let FnArg::Typed(ref mut type_) = arg {
-            if let Pat::Ident(ref ident) = *type_.pat {
-                let mut dependency = Dependency::new();
-                dependency.type_data = crate::type_data::from_syn_type(&type_.ty)?;
+            if let Pat::Ident(_) = *type_.pat {
                 let mut new_attrs = Vec::new();
                 for attr in &type_.attrs {
                     match parsing::get_attribute(attr).as_str() {
-                        "qualified" => {
-                            type_validator.add_path(
-                                &parsing::get_path(&attr.meta.require_list().unwrap().tokens)?,
-                                attr.span(),
-                            );
-                            dependency.type_data.qualifier = Some(Box::new(parsing::get_type(
-                                &attr.meta.require_list().unwrap().tokens,
-                            )?))
-                        }
+                        "qualified" => {}
                         _ => new_attrs.push(attr.clone()),
                     }
                 }
                 type_.attrs = Vec::new(); //new_attrs;
-                dependency.name = ident.ident.to_string();
-                dependencies.push(dependency);
             } else {
                 return spanned_compile_error(type_.span(), &"identifier expected".to_string());
             }
         }
     }
-    let type_name;
-    if let syn::Type::Path(ref path) = *item.self_ty {
-        let segments: Vec<String> = path
-            .path
-            .segments
-            .iter()
-            .map(|segment| segment.ident.to_string())
-            .collect();
-        type_name = segments.join("::");
-    } else {
-        return spanned_compile_error(item.self_ty.span(), &"path expected".to_string());
-    }
-
-    let mut injectable = Injectable::new();
-    injectable.type_data = crate::type_data::from_local(&type_name, item.self_ty.span())?;
     let scopes = parsing::get_types(attributes.get("scope"), item.self_ty.span())?;
-    for scope in &scopes {
-        type_validator.add_dyn_type(scope, attr.span())
-    }
-    if let Some(scope) = attributes.get("scope") {
-        for (path, span) in scope.get_paths()? {
-            type_validator.add_dyn_path(&path, span);
-        }
-    }
+    validate_container(attr.span(), &attributes, &scopes)?;
 
-    injectable.container = get_container(
-        attr.span(),
-        &attributes,
-        &scopes,
-        &mut type_validator,
-        &injectable.type_data,
-    )?;
-    injectable.type_data.scopes.extend(scopes);
-    injectable.ctor_name = ctor.sig.ident.to_string();
-    injectable.dependencies.extend(dependencies);
-    let identifier = injectable.type_data.identifier_string();
-
-    let type_check = type_validator.validate(identifier);
     let prologue_check = prologue_check(item.span());
     let result = quote! {
         #item
-        #type_check
         #prologue_check
     };
     //log!("{}", result.to_string());
@@ -224,29 +172,24 @@ fn get_ctor(
     panic!("should have ctor")
 }
 
-fn get_container(
+fn validate_container(
     span: Span,
     attributes: &HashMap<String, FieldValue>,
     scopes: &Vec<TypeData>,
-    type_validator: &mut TypeValidator,
-    element_type: &TypeData,
-) -> Result<Option<TypeData>, TokenStream> {
+) -> Result<(), TokenStream> {
     if attributes.contains_key("container") {
-        if let FieldValue::Path(span, path) = attributes.get("container").unwrap() {
+        if let FieldValue::Path(span, _) = attributes.get("container").unwrap() {
             if scopes.is_empty() {
                 return spanned_compile_error(
                     span.clone(),
                     "the 'container' metadata should only be used with an injectable that also has 'scope'",
                 );
             }
-            type_validator.add_path_and_arg(path, span.clone(), element_type);
-            let container = crate::type_data::from_path_with_span(path, span.clone())?;
-            return Ok(Some(container));
         } else {
             return spanned_compile_error(span, "path expected for 'container'");
         }
     }
-    Ok(None)
+    Ok(())
 }
 
 fn handle_factory(
