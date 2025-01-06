@@ -18,12 +18,14 @@ use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::ops::Deref;
 
-use crate::manifest::{BuilderModules, Component, ComponentType, Dependency, Manifest, TypeRoot};
+use crate::manifest::{
+    BuilderModules, Component, ComponentType, Dependency, Manifest, Module, TypeRoot,
+};
 use crate::manifest_parser::Mod;
 use crate::parsing;
 use crate::parsing::FieldValue;
 use crate::type_data;
-use crate::type_data::TypeData;
+use crate::type_data::{from_local, from_path, TypeData};
 use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
@@ -119,6 +121,24 @@ pub fn handle_component_attribute(
     }
     component.definition_only = definition_only;
     let mut result = Manifest::new();
+
+    if let Some(parent) = attributes.get("parent") {
+        if let FieldValue::Path(path) = parent {
+            let module_name = format!(
+                "lockjaw_parent_module_{}",
+                component.type_data.identifier_string()
+            );
+            let subcomponent_name = item_trait.ident.to_string();
+            result.modules.push(Module {
+                type_data: from_local(&module_name, mod_)?,
+                bindings: vec![],
+                subcomponents: HashSet::from([from_local(&subcomponent_name, mod_)?]),
+                install_in: HashSet::from([from_path(path, mod_)?]),
+            });
+        } else {
+            bail!("path expected for parent");
+        }
+    };
     result.components.push(component);
     Ok(result)
 }
