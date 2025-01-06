@@ -136,7 +136,7 @@ pub fn from_syn_type(syn_type: &syn::Type) -> Result<TypeData, TokenStream> {
     }
 }
 
-pub fn from_type_param_bound(
+fn from_type_param_bound(
     bounds: &Punctuated<TypeParamBound, syn::Token![+]>,
 ) -> Result<TypeData, TokenStream> {
     let traits = bounds

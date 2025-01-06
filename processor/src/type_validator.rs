@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::type_data::ProcessorTypeData;
-use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, quote_spanned};
 
@@ -36,28 +34,13 @@ impl TypeValidator {
         self.token_stream = quote! { #tokens #type_check}
     }
 
-    pub fn add_path_and_arg(&mut self, path: &syn::Path, span: Span, arg: &TypeData) {
-        let syn_arg = arg.syn_type();
-        let type_check = quote_spanned! {span => _ : Box<#path<#syn_arg>>, };
+    pub fn add_path_and_arg(&mut self, path: &syn::Path, span: Span, arg: &syn::Type) {
+        let type_check = quote_spanned! {span => _ : Box<#path<#arg>>, };
         let tokens = self.token_stream.clone();
         self.token_stream = quote! { #tokens #type_check}
     }
 
     pub fn add_dyn_path(&mut self, path: &syn::Path, span: Span) {
-        let type_check = quote_spanned! {span => _ : Box<dyn #path>, };
-        let tokens = self.token_stream.clone();
-        self.token_stream = quote! { #tokens #type_check}
-    }
-
-    pub fn add_type(&mut self, type_data: &TypeData, span: Span) {
-        let path = type_data.syn_type();
-        let type_check = quote_spanned! {span => _ : Box<#path>, };
-        let tokens = self.token_stream.clone();
-        self.token_stream = quote! { #tokens #type_check}
-    }
-
-    pub fn add_dyn_type(&mut self, type_data: &TypeData, span: Span) {
-        let path = type_data.syn_type();
         let type_check = quote_spanned! {span => _ : Box<dyn #path>, };
         let tokens = self.token_stream.clone();
         self.token_stream = quote! { #tokens #type_check}

@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
-use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
@@ -67,16 +66,6 @@ pub fn get_path(attr: &TokenStream) -> Result<syn::Path, TokenStream> {
     syn::parse2(attr.clone()).map_spanned_compile_error(attr.span(), "path expected")
 }
 
-pub fn get_type(attr: &TokenStream) -> Result<TypeData, TokenStream> {
-    if attr.is_empty() {
-        return spanned_compile_error(attr.span(), "path expected");
-    }
-    crate::type_data::from_path_with_span(
-        &syn::parse2(attr.clone()).map_spanned_compile_error(attr.span(), "path expected")?,
-        attr.span(),
-    )
-}
-
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum FieldValue {
@@ -117,14 +106,6 @@ impl FieldValue {
                 .collect(),
             _ => spanned_compile_error(self.span(), "path expected"),
         }
-    }
-
-    pub fn get_types(&self) -> Result<Vec<TypeData>, TokenStream> {
-        let mut result = Vec::new();
-        for (path, span) in self.get_paths()? {
-            result.push(crate::type_data::from_path_with_span(&path, span.clone())?)
-        }
-        Ok(result)
     }
 }
 
@@ -195,31 +176,6 @@ fn parse_field_value(expr: &syn::Expr, span: Span) -> Result<FieldValue, TokenSt
     }
 }
 
-/// Parses "foo::Bar, foo::Baz" to a list of types.
-pub fn get_types(types: Option<&FieldValue>, span: Span) -> Result<Vec<TypeData>, TokenStream> {
-    if types.is_none() {
-        return Ok(Vec::new());
-    }
-    match types.unwrap() {
-        FieldValue::Path(span, ref path) => Ok(vec![crate::type_data::from_path_with_span(
-            path,
-            span.clone(),
-        )?]),
-        FieldValue::Array(span, ref paths) => {
-            let mut result = Vec::new();
-            for field in paths {
-                if let FieldValue::Path(span, ref path) = field {
-                    result.push(crate::type_data::from_path_with_span(path, span.clone())?);
-                } else {
-                    return spanned_compile_error(span.clone(), "field in array is not a path");
-                }
-            }
-            Ok(result)
-        }
-        _ => spanned_compile_error(span, "path or [path, ...] expected"),
-    }
-}
-
 pub fn get_crate_deps(for_test: bool, direct_only: bool) -> HashSet<String> {
     let tree = String::from_utf8(
         Command::new("cargo")
@@ -260,4 +216,18 @@ pub fn get_crate_deps(for_test: bool, direct_only: bool) -> HashSet<String> {
     }
     deps.insert("lockjaw".to_owned());
     deps
+}
+
+pub fn type_string(ty: &syn::Type) -> Result<String, TokenStream> {
+    if let syn::Type::Path(ref path) = ty {
+        let segments: Vec<String> = path
+            .path
+            .segments
+            .iter()
+            .map(|segment| segment.ident.to_string())
+            .collect();
+        Ok(segments.join("_"))
+    } else {
+        spanned_compile_error(ty.span(), &"path expected".to_string())
+    }
 }

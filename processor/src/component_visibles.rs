@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 use crate::error::spanned_compile_error;
-use crate::type_data;
 use crate::type_data::ProcessorTypeData;
 use lockjaw_common::manifest::Manifest;
 use lockjaw_common::type_data::TypeData;
@@ -62,9 +61,6 @@ fn handle_item_trait(mut item_trait: ItemTrait) -> Result<TokenStream, TokenStre
 
     item_trait.ident = exported_ident.clone();
     item_trait.vis = Visibility::Public(syn::token::Pub(item_trait.span()));
-
-    let mut type_ = type_data::from_local(&original_ident.to_string(), original_ident.span())?;
-    type_.trait_object = true;
 
     Ok(quote! {
         #original_vis use #exported_ident as #original_ident;

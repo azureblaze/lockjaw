@@ -19,7 +19,7 @@ use std::ops::{Deref, DerefMut};
 
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::parse_quote;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
@@ -31,13 +31,7 @@ use crate::parsing;
 use crate::parsing::{get_parenthesized_field_values, FieldValue};
 use crate::prologue::prologue_check;
 use crate::type_validator::TypeValidator;
-use lockjaw_common::manifest::BindingType::{Binds, BindsOptionOf, Multibinds, Provides};
-use lockjaw_common::manifest::{
-    Binding, BindingType, Dependency, Module, MultibindingMapKey, MultibindingType,
-};
-use lockjaw_common::type_data::TypeData;
-use std::convert::TryFrom;
-use std::iter::FromIterator;
+use lockjaw_common::manifest::{BindingType, MultibindingType};
 
 lazy_static! {
     static ref MODULE_METADATA_KEYS: HashSet<String> = {
@@ -68,51 +62,34 @@ fn handle_module_attribute_internal(
         }
     }
 
-    let module_path;
     let mut item_impl: syn::ItemImpl =
         syn::parse2(input.clone()).map_spanned_compile_error(span, "impl expected")?;
-    if let syn::Type::Path(path) = item_impl.self_ty.deref() {
-        module_path = path.path.to_token_stream().to_string().replace(" ", "");
-    } else {
+    let syn::Type::Path(_) = item_impl.self_ty.deref() else {
         return spanned_compile_error(item_impl.span(), "path expected");
-    }
-    let mut bindings: Vec<Binding> = Vec::new();
+    };
     let mut type_validator = TypeValidator::new();
     for i in 0..item_impl.items.len() {
         #[allow(unused_mut)] // required
         let mut item = item_impl.items.get_mut(i).unwrap();
         if let syn::ImplItem::Fn(ref mut method) = item {
-            bindings.push(parse_binding(method, &mut type_validator)?);
+            parse_binding(method, &mut type_validator)?;
         }
     }
 
-    let mut module = Module::new();
-    module.type_data = crate::type_data::from_local(&module_path.to_owned(), item_impl.span())?;
-    module.bindings.extend(bindings);
     if let Some(subcomponents) = attributes.get("subcomponents") {
-        let types = subcomponents.get_types()?;
-        for type_ in &types {
-            type_validator.add_dyn_type(type_, attr.span());
-        }
         let paths = subcomponents.get_paths()?;
         for (path, span) in &paths {
             type_validator.add_dyn_path(path, span.clone());
         }
-        module.subcomponents = HashSet::from_iter(types);
     }
     if let Some(install_in) = attributes.get("install_in") {
-        let types = install_in.get_types()?;
-        for type_ in &types {
-            type_validator.add_dyn_type(type_, attr.span());
-        }
         let paths = install_in.get_paths()?;
         for (path, span) in &paths {
             type_validator.add_dyn_path(path, span.clone());
         }
-        module.install_in = HashSet::from_iter(types);
     }
 
-    let validate_type = type_validator.validate(module.type_data.identifier_string());
+    let validate_type = type_validator.validate(parsing::type_string(&item_impl.self_ty)?);
 
     let prologue_check = prologue_check(item_impl.span());
     let result = quote! {
@@ -126,12 +103,10 @@ fn handle_module_attribute_internal(
 fn parse_binding(
     method: &mut ImplItemFn,
     type_validator: &mut TypeValidator,
-) -> Result<Binding, TokenStream> {
-    let mut option_binding: Option<Binding> = None;
+) -> Result<(), TokenStream> {
+    let mut option_binding: Option<BindingType> = None;
     let mut multibinding = MultibindingType::None;
-    let mut map_key = MultibindingMapKey::None;
     let mut new_attrs: Vec<syn::Attribute> = Vec::new();
-    let mut qualifier: Option<Box<TypeData>> = None;
     for attr in &method.attrs {
         let attr_str = parsing::get_attribute(attr);
         match attr_str.as_str() {
@@ -139,18 +114,15 @@ fn parse_binding(
                 if option_binding.is_some() {
                     return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_provides(attr, &mut method.sig, type_validator)?);
+                handle_provides(attr, &mut method.sig, type_validator)?;
+                option_binding = Some(BindingType::Provides);
             }
             "binds" => {
                 if option_binding.is_some() {
                     return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_binds(
-                    attr,
-                    &mut method.sig,
-                    &mut method.block,
-                    type_validator,
-                )?);
+                handle_binds(attr, &mut method.sig, &mut method.block, type_validator)?;
+                option_binding = Some(BindingType::Binds);
                 let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                 new_attrs.push(allow_dead_code);
                 let allow_unused: Attribute = parse_quote! {#[allow(unused)]};
@@ -160,7 +132,8 @@ fn parse_binding(
                 if option_binding.is_some() {
                     return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_binds_option_of(&mut method.sig, &mut method.block)?);
+                handle_binds_option_of(&mut method.sig, &mut method.block)?;
+                option_binding = Some(BindingType::BindsOptionOf);
                 let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                 new_attrs.push(allow_dead_code);
             }
@@ -168,7 +141,8 @@ fn parse_binding(
                 if option_binding.is_some() {
                     return spanned_compile_error(attr.span(), "#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_multibinds(&mut method.sig, &mut method.block)?);
+                handle_multibinds(&mut method.sig, &mut method.block)?;
+                option_binding = Some(BindingType::Multibinds);
                 let allow_dead_code: Attribute = parse_quote! {#[allow(dead_code)]};
                 new_attrs.push(allow_dead_code);
             }
@@ -177,36 +151,36 @@ fn parse_binding(
             }
             "elements_into_vec" => {
                 multibinding = MultibindingType::ElementsIntoVec;
+                if let syn::ReturnType::Type(ref _token, ref mut ty) = method.sig.output {
+                    let return_type = crate::type_data::from_syn_type(ty.deref())?;
+                    if return_type.path != "std::vec::Vec" {
+                        return spanned_compile_error(
+                            method.span(),
+                            "#[elements_into_set] must return Vec<T>",
+                        );
+                    }
+                } else {
+                    return spanned_compile_error(method.sig.span(), "return type expected");
+                }
             }
-            "qualified" => {
-                qualifier = Some(Box::new(parsing::get_type(
-                    &attr.meta.require_list().unwrap().tokens,
-                )?));
-            }
+            "qualified" => {}
             "into_map" => {
                 multibinding = MultibindingType::IntoMap;
                 let fields = get_parenthesized_field_values(&attr.meta)?;
                 if let Some(field) = fields.get("string_key") {
-                    if let FieldValue::StringLiteral(_, ref string) = field {
-                        map_key = MultibindingMapKey::String(string.clone());
-                    } else {
+                    let FieldValue::StringLiteral(_, _) = field else {
                         return spanned_compile_error(
                             attr.span(),
                             "string literal expected for string_key",
                         );
-                    }
+                    };
                 } else if let Some(field) = fields.get("i32_key") {
-                    if let FieldValue::IntLiteral(_, ref int) = field {
-                        map_key = MultibindingMapKey::I32(
-                            i32::try_from(*int)
-                                .map_spanned_compile_error(attr.span(), "key overflows i32")?,
-                        );
-                    } else {
+                    let FieldValue::IntLiteral(_, _) = field else {
                         return spanned_compile_error(
                             attr.span(),
                             "i32 literal expected for i32_key",
                         );
-                    }
+                    };
                 } else if let Some(field) = fields.get("enum_key") {
                     if let FieldValue::Path(span, ref path) = field {
                         let value_type = crate::type_data::from_path_with_span(path, span.clone())?;
@@ -217,7 +191,6 @@ fn parse_binding(
                                 "enum value should have at least one segment",
                             )?,
                         );
-                        map_key = MultibindingMapKey::Enum(enum_type, value_type);
                     } else {
                         return spanned_compile_error(
                             attr.span(),
@@ -238,8 +211,8 @@ fn parse_binding(
             "#[module] methods can only be annotated by #[provides]/#[binds]/#[binds_option_of]",
         );
     }
-    let mut binding = option_binding.unwrap();
-    if binding.binding_type == BindingType::Binds {
+    let binding = option_binding.unwrap();
+    if binding == BindingType::Binds {
         if multibinding == MultibindingType::ElementsIntoVec {
             return spanned_compile_error(
                 method.span(),
@@ -247,62 +220,38 @@ fn parse_binding(
             );
         }
     }
-
-    if multibinding == MultibindingType::ElementsIntoVec {
-        if binding.type_data.path.ne("std::vec::Vec") {
-            return spanned_compile_error(method.span(), "#[elements_into_set] must return Vec<T>");
-        }
-    }
-    binding.multibinding_type = multibinding;
-    binding.map_key = map_key;
-    binding.type_data.qualifier = qualifier;
-    Ok(binding)
+    Ok(())
 }
 
 fn handle_provides(
     attr: &syn::Attribute,
     signature: &mut syn::Signature,
     type_validator: &mut TypeValidator,
-) -> Result<Binding, TokenStream> {
-    let mut provides = Binding::new(Provides);
-    provides.name = signature.ident.to_string();
-    if let syn::ReturnType::Type(ref _token, ref ty) = signature.output {
-        provides.type_data = crate::type_data::from_syn_type(ty.deref())?;
-    } else {
+) -> Result<(), TokenStream> {
+    let syn::ReturnType::Type(ref _token, _) = signature.output else {
         return spanned_compile_error(signature.span(), "return type expected");
-    }
+    };
     for args in &signature.inputs {
         match args {
             syn::FnArg::Receiver(ref receiver) => {
                 if receiver.reference.is_none() {
                     return spanned_compile_error(args.span(), "modules should not consume self");
                 }
-                provides.field_static = false;
             }
             syn::FnArg::Typed(ref type_) => {
-                let mut dependency = Dependency::new();
-                if let syn::Pat::Ident(ref ident) = type_.pat.deref() {
-                    dependency.name = ident.ident.to_string()
-                } else {
+                let syn::Pat::Ident(_) = type_.pat.deref() else {
                     return spanned_compile_error(args.span(), "identifier expected");
-                }
-                dependency.type_data = crate::type_data::from_syn_type(type_.ty.deref())?;
-                provides.dependencies.push(dependency);
+                };
             }
         }
     }
     let provides_attr = parsing::get_parenthesized_field_values(&attr.meta)?;
     if let Some(scope) = provides_attr.get("scope") {
-        let scopes = parsing::get_types(Some(scope), attr.span())?;
-        for scope in &scopes {
-            type_validator.add_dyn_type(scope, attr.span());
-        }
         for (path, span) in scope.get_paths()? {
             type_validator.add_dyn_path(&path, span);
         }
-        provides.type_data.scopes.extend(scopes);
     }
-    Ok(provides)
+    Ok(())
 }
 
 fn handle_binds(
@@ -310,15 +259,13 @@ fn handle_binds(
     signature: &mut syn::Signature,
     block: &mut syn::Block,
     type_validator: &mut TypeValidator,
-) -> Result<Binding, TokenStream> {
+) -> Result<(), TokenStream> {
     if !block.stmts.is_empty() {
         return spanned_compile_error(block.span(), "#[binds] methods must have empty body");
     }
     let body: syn::Stmt = syn::parse2(quote! { unimplemented!(); }).unwrap();
     block.stmts.push(body);
 
-    let mut binds = Binding::new(Binds);
-    binds.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
         let return_type = crate::type_data::from_syn_type(ty.deref())?;
         match return_type.path.as_str() {
@@ -341,7 +288,6 @@ fn handle_binds(
                 }
             }
         }
-        binds.type_data = return_type.args[0].clone();
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -360,34 +306,24 @@ fn handle_binds(
             );
         }
         syn::FnArg::Typed(ref type_) => {
-            let mut dependency = Dependency::new();
-            if let syn::Pat::Ident(ref ident) = type_.pat.deref() {
-                dependency.name = ident.ident.to_string();
-            } else {
+            let syn::Pat::Ident(_) = type_.pat.deref() else {
                 return spanned_compile_error(args.span(), "identifier expected");
-            }
-            dependency.type_data = crate::type_data::from_syn_type(type_.ty.deref())?;
-            binds.dependencies.push(dependency);
+            };
         }
     }
     let provides_attr = parsing::get_parenthesized_field_values(&attr.meta)?;
     if let Some(scope) = provides_attr.get("scope") {
-        let scopes = parsing::get_types(Some(scope), attr.span())?;
-        for scope in &scopes {
-            type_validator.add_dyn_type(scope, attr.span());
-        }
         for (path, span) in scope.get_paths()? {
             type_validator.add_dyn_path(&path, span);
         }
-        binds.type_data.scopes.extend(scopes);
     }
-    Ok(binds)
+    Ok(())
 }
 
 fn handle_binds_option_of(
     signature: &mut syn::Signature,
     block: &mut syn::Block,
-) -> Result<Binding, TokenStream> {
+) -> Result<(), TokenStream> {
     if !block.stmts.is_empty() {
         return spanned_compile_error(
             block.span(),
@@ -397,9 +333,7 @@ fn handle_binds_option_of(
     let body: syn::Stmt = syn::parse2(quote! { unimplemented!(); }).unwrap();
     block.stmts.push(body);
 
-    let mut binds_option_of = Binding::new(BindsOptionOf);
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
-        let return_type = crate::type_data::from_syn_type(ty.deref())?;
         if let syn::Type::Path(ref mut type_path) = ty.deref_mut() {
             if let syn::PathArguments::AngleBracketed(ref mut angle_bracketed) =
                 type_path.path.segments.last_mut().unwrap().arguments
@@ -410,7 +344,6 @@ fn handle_binds_option_of(
                 }
             }
         }
-        binds_option_of.type_data = return_type;
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -420,21 +353,19 @@ fn handle_binds_option_of(
             "binds_option_of method must only take no parameter",
         );
     }
-    Ok(binds_option_of)
+    Ok(())
 }
 
 fn handle_multibinds(
     signature: &mut syn::Signature,
     block: &mut syn::Block,
-) -> Result<Binding, TokenStream> {
+) -> Result<(), TokenStream> {
     if !block.stmts.is_empty() {
         return spanned_compile_error(block.span(), "#[multibinds] methods must have empty body");
     }
     let body: syn::Stmt = syn::parse2(quote! { unimplemented!(); }).unwrap();
     block.stmts.push(body);
 
-    let mut binds = Binding::new(Multibinds);
-    binds.name = signature.ident.to_string();
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
         let return_type = crate::type_data::from_syn_type(ty.deref())?;
         match return_type.path.as_str() {
@@ -447,7 +378,6 @@ fn handle_multibinds(
                 )
             }
         }
-        binds.type_data = return_type.clone();
     } else {
         return spanned_compile_error(signature.span(), "return type expected");
     }
@@ -457,7 +387,7 @@ fn handle_multibinds(
             "#[multibinds] method must take no arguments",
         );
     }
-    Ok(binds)
+    Ok(())
 }
 
 fn has_lifetime(args: &Punctuated<GenericArgument, Token![,]>) -> bool {

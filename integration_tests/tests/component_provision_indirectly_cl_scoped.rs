@@ -97,4 +97,4 @@ pub fn regular_binding() {
     assert_eq!(component.string().deref(), "helloworld");
 }
 
-epilogue!(debug_output);
+epilogue!();

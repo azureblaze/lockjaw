@@ -46,4 +46,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     component.foo();
 }
-epilogue!(debug_output);
+epilogue!();
