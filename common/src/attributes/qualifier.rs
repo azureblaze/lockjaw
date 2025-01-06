@@ -14,23 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use crate::error::CompileError;
-use crate::prologue::prologue_check;
+use crate::manifest::Manifest;
+use crate::manifest_parser::Mod;
+use anyhow::{Context, Result};
 use proc_macro2::TokenStream;
-use quote::quote;
-use syn::spanned::Spanned;
 
 pub fn handle_qualifier_attribute(
     _attr: TokenStream,
     input: TokenStream,
-) -> Result<TokenStream, TokenStream> {
-    let span = input.span();
-    let item: syn::ItemStruct =
-        syn::parse2(input).map_spanned_compile_error(span, "struct block expected")?;
+    mod_: &Mod,
+) -> Result<Manifest> {
+    let item: syn::ItemStruct = syn::parse2(input).with_context(|| "struct block expected")?;
 
-    let prologue_check = prologue_check(item.span());
-    Ok(quote! {
-        #item
-        #prologue_check
-    })
+    let mut manifest = Manifest::new();
+    manifest
+        .qualifiers
+        .push(crate::type_data::from_local(&item.ident.to_string(), mod_)?);
+    Ok(manifest)
 }

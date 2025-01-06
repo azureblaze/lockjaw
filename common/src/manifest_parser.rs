@@ -426,6 +426,13 @@ fn parse_mods(
                         &mod_,
                     )?);
                 }
+                "::lockjaw::qualifier" => {
+                    result.merge_from(&attributes::qualifier::handle_qualifier_attribute(
+                        attribute.parse_args().unwrap_or(TokenStream::new()),
+                        item.to_token_stream(),
+                        &mod_,
+                    )?);
+                }
                 _ => {}
             }
         }
