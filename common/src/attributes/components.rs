@@ -124,10 +124,7 @@ pub fn handle_component_attribute(
 
     if let Some(parent) = attributes.get("parent") {
         if let FieldValue::Path(path) = parent {
-            let module_name = format!(
-                "lockjaw_parent_module_{}",
-                component.type_data.identifier_string()
-            );
+            let module_name = format!("lockjaw_parent_module_{}", item_trait.ident.to_string());
             let subcomponent_name = item_trait.ident.to_string();
             result.modules.push(Module {
                 type_data: from_local(&module_name, mod_)?,

@@ -77,12 +77,7 @@ pub fn builder_modules(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn component(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| {
-        components::handle_component_attribute(
-            attr.into(),
-            input.into(),
-            ComponentType::Component,
-            false,
-        )
+        components::handle_component_attribute(attr.into(), input.into(), ComponentType::Component)
     })
 }
 
@@ -93,7 +88,6 @@ pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
             attr.into(),
             input.into(),
             ComponentType::Subcomponent,
-            false,
         )
     })
 }
@@ -101,12 +95,7 @@ pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn define_component(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| {
-        components::handle_component_attribute(
-            attr.into(),
-            input.into(),
-            ComponentType::Component,
-            true,
-        )
+        components::handle_component_attribute(attr.into(), input.into(), ComponentType::Component)
     })
 }
 
@@ -117,7 +106,6 @@ pub fn define_subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream
             attr.into(),
             input.into(),
             ComponentType::Subcomponent,
-            true,
         )
     })
 }

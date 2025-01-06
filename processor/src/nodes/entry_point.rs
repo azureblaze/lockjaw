@@ -75,7 +75,8 @@ impl Node for EntryPointNode {
             component_visibles::visible_type(graph.manifest, &self.entry_point.type_data)
                 .syn_type();
 
-        let getter_name = entrypoints::getter_name(&self.entry_point);
+        let getter_name =
+            entrypoints::getter_name(&self.entry_point.type_data, &self.entry_point.component);
 
         let component_impl_name = graph.component.impl_ident();
 

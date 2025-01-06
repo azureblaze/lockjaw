@@ -182,21 +182,9 @@ fn parse_binding(
                         );
                     };
                 } else if let Some(field) = fields.get("enum_key") {
-                    if let FieldValue::Path(span, ref path) = field {
-                        let value_type = crate::type_data::from_path_with_span(path, span.clone())?;
-                        let mut enum_type = value_type.clone();
-                        enum_type.path.truncate(
-                            enum_type.path.rfind("::").map_spanned_compile_error(
-                                span.clone(),
-                                "enum value should have at least one segment",
-                            )?,
-                        );
-                    } else {
-                        return spanned_compile_error(
-                            attr.span(),
-                            "i32 literal expected for i32_key",
-                        );
-                    }
+                    let FieldValue::Path(_, _) = field else {
+                        return spanned_compile_error(attr.span(), "path expected for enum_key");
+                    };
                 }
             }
             _ => {

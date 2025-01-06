@@ -27,7 +27,8 @@ use crate::{graph, type_data};
 use base64::engine::Engine;
 use lazy_static::lazy_static;
 use lockjaw_common::environment::current_crate;
-use lockjaw_common::manifest::{Component, ComponentType, Manifest, TypeRoot};
+use lockjaw_common::manifest::{ComponentType, Manifest, TypeRoot};
+use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote_spanned;
 use quote::{format_ident, quote, ToTokens};
@@ -55,7 +56,6 @@ pub fn handle_component_attribute(
     attr: TokenStream,
     input: TokenStream,
     component_type: ComponentType,
-    definition_only: bool,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
     let mut item_trait: syn::ItemTrait =
@@ -79,9 +79,8 @@ pub fn handle_component_attribute(
 
     let builder_modules = if let Some(value) = attributes.get("builder_modules") {
         if let FieldValue::Path(span, ref path) = value {
-            let type_ = type_data::from_path_with_span(path, span.clone())?;
             type_validator.add_path(path, span.clone());
-            Some(type_)
+            Some(path)
         } else {
             return spanned_compile_error(value.span(), "path expected for modules");
         }
@@ -89,54 +88,32 @@ pub fn handle_component_attribute(
         None
     };
 
-    let modules = if let Some(value) = attributes.get("modules") {
+    if let Some(value) = attributes.get("modules") {
         match value {
             FieldValue::Path(span, ref path) => {
-                let type_ = type_data::from_path_with_span(&path, span.clone())?;
                 type_validator.add_path(path, span.clone());
-                Some(vec![type_])
             }
             FieldValue::Array(span, ref array) => {
-                let mut result = Vec::new();
                 for field in array {
                     if let FieldValue::Path(span, ref path) = field {
-                        let type_ = type_data::from_path_with_span(&path, span.clone())?;
                         type_validator.add_path(path, span.clone());
-                        result.push(type_)
                     } else {
                         return spanned_compile_error(span.clone(), "path expected for modules");
                     }
                 }
-                Some(result)
             }
             _ => {
                 return spanned_compile_error(value.span(), "path expected for modules");
             }
         }
-    } else {
-        None
-    };
-
-    let mut component = Component::new();
-    component.type_data =
-        type_data::from_local(&item_trait.ident.to_string(), item_trait.ident.span())?;
-
-    component.component_type = component_type;
-    if let Some(ref m) = builder_modules {
-        component.builder_modules = Some(m.clone());
     }
-    if let Some(ref m) = modules {
-        component.modules = m.clone();
-    }
-    component.definition_only = definition_only;
-    let identifier = component.type_data.identifier_string();
+
     let component_vis = item_trait.vis.clone();
 
-    let component_builder = if component.component_type == ComponentType::Subcomponent {
+    let component_builder = if component_type == ComponentType::Subcomponent {
         let subcomponent_name = item_trait.ident.clone();
         let builder_name = format_ident!("{}Builder", subcomponent_name);
-        let args = if builder_modules.is_some() {
-            let args_type = builder_modules.as_ref().unwrap().syn_type();
+        let args = if let Some(args_type) = builder_modules {
             quote! {builder_modules: #args_type}
         } else {
             quote! {}
@@ -147,10 +124,12 @@ pub fn handle_component_attribute(
             }
         }
     } else {
-        let builder_name = builder_name(&component);
-        let component_name = component.type_data.syn_type();
-        if component.builder_modules.is_some() {
-            let module_manifest_name = component.builder_modules.as_ref().unwrap().syn_type();
+        let builder_name = builder_name(&type_data::from_local(
+            &item_trait.ident.to_string(),
+            item_trait.ident.span(),
+        )?);
+        let component_name = item_trait.ident.clone();
+        if let Some(module_manifest_name) = builder_modules {
             quote! {
                 impl dyn #component_name {
                     #[allow(unused)]
@@ -184,7 +163,8 @@ pub fn handle_component_attribute(
 
     let parent_module = if let Some(parent) = attributes.get("parent") {
         if let FieldValue::Path(_, path) = parent {
-            let module_name = format_ident!("lockjaw_parent_module_{}", identifier);
+            let module_name =
+                format_ident!("lockjaw_parent_module_{}", item_trait.ident.to_string());
             let subcomponent_name = item_trait.ident.clone();
             quote! {
                 #[doc(hidden)]
@@ -201,7 +181,7 @@ pub fn handle_component_attribute(
     };
 
     let prologue_check = prologue_check(item_trait.span());
-    let validate_type = type_validator.validate(identifier);
+    let validate_type = type_validator.validate(item_trait.ident.to_string());
     let result = quote! {
         #item_trait
         #component_builder
@@ -212,11 +192,11 @@ pub fn handle_component_attribute(
     Ok(result)
 }
 
-pub fn builder_name(component: &Component) -> Ident {
+pub fn builder_name(component: &TypeData) -> Ident {
     format_ident!(
         "lockjaw_component_builder_{}",
         base64::prelude::BASE64_STANDARD_NO_PAD
-            .encode(format!("{}", component.type_data.identifier().to_string(),))
+            .encode(format!("{}", component.identifier().to_string(),))
             .replace("+", "_P")
             .replace("/", "_S")
     )

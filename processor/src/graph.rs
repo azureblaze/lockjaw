@@ -188,7 +188,7 @@ pub fn generate_component(
         #items
     };
 
-    let builder_name = components::builder_name(component);
+    let builder_name = components::builder_name(&component.type_data);
 
     let builder = if graph.builder_modules.type_data.is_some() {
         let module_manifest_name = graph.builder_modules.type_data.unwrap().syn_type();
