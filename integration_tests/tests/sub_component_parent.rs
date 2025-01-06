@@ -45,4 +45,4 @@ pub fn main() {
     assert_eq!(sub.i32(), 11);
 }
 
-lockjaw::epilogue!();
+lockjaw::epilogue!(debug_output);

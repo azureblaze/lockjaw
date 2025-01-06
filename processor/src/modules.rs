@@ -27,7 +27,6 @@ use syn::{Attribute, GenericArgument};
 use syn::{ImplItemFn, Token};
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::with_manifest;
 use crate::parsing;
 use crate::parsing::{get_parenthesized_field_values, FieldValue};
 use crate::prologue::prologue_check;
@@ -114,14 +113,6 @@ fn handle_module_attribute_internal(
     }
 
     let validate_type = type_validator.validate(module.type_data.identifier_string());
-    with_manifest(|mut manifest| {
-        for existing_module in &manifest.modules {
-            if existing_module.type_data.eq(&module.type_data) {
-                return spanned_compile_error(span, "module was already declared");
-            }
-        }
-        Ok(manifest.modules.push(module))
-    })?;
 
     let prologue_check = prologue_check(item_impl.span());
     let result = quote! {

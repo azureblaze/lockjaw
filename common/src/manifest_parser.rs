@@ -419,6 +419,13 @@ fn parse_mods(
                         &mod_,
                     )?);
                 }
+                "::lockjaw::module" => {
+                    result.merge_from(&attributes::modules::handle_module_attribute(
+                        attribute.parse_args().unwrap_or(TokenStream::new()),
+                        item.to_token_stream(),
+                        &mod_,
+                    )?);
+                }
                 _ => {}
             }
         }
