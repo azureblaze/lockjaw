@@ -123,10 +123,10 @@ pub fn handle_component_attribute(
     Ok(result)
 }
 
-pub fn get_provisions(item_trait: &mut ItemTrait, mod_: &Mod) -> Result<Vec<Dependency>> {
+pub fn get_provisions(item_trait: &ItemTrait, mod_: &Mod) -> Result<Vec<Dependency>> {
     let mut provisions = Vec::<Dependency>::new();
-    for item in &mut item_trait.items {
-        if let syn::TraitItem::Fn(ref mut method) = item {
+    for item in &item_trait.items {
+        if let syn::TraitItem::Fn(ref method) = item {
             let mut provision = Dependency::new();
             let mut qualifier: Option<TypeData> = None;
             let mut new_attrs: Vec<Attribute> = Vec::new();
@@ -141,7 +141,6 @@ pub fn get_provisions(item_trait: &mut ItemTrait, mod_: &Mod) -> Result<Vec<Depe
                     _ => new_attrs.push(attr.clone()),
                 }
             }
-            method.attrs = new_attrs;
             provision.name = method.sig.ident.to_string();
             if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
                 if is_trait_object_without_lifetime(ty.deref(), mod_)? {

@@ -412,6 +412,13 @@ fn parse_mods(
                         &mod_,
                     )?);
                 }
+                "::lockjaw::entry_point" => {
+                    result.merge_from(&attributes::entrypoints::handle_entry_point_attribute(
+                        attribute.parse_args().unwrap_or(TokenStream::new()),
+                        item.to_token_stream(),
+                        &mod_,
+                    )?);
+                }
                 _ => {}
             }
         }

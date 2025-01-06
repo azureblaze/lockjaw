@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::manifest::with_manifest;
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::ProcessorTypeData;
@@ -23,9 +22,7 @@ use crate::type_validator::TypeValidator;
 use crate::{components, parsing, type_data};
 use base64::engine::Engine;
 use lazy_static::lazy_static;
-use lockjaw_common::environment::current_crate;
-use lockjaw_common::manifest::{EntryPoint, ExpandedVisibility, TypeRoot};
-use lockjaw_common::type_data::TypeData;
+use lockjaw_common::manifest::EntryPoint;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use std::collections::HashSet;
@@ -84,27 +81,6 @@ pub fn handle_entry_point_attribute(
 
     item_trait.ident = exported_ident.clone();
     item_trait.vis = Visibility::Public(Token![pub](item_trait.span()));
-
-    let type_ = crate::type_data::from_local(&original_ident.to_string(), original_ident.span())?;
-    let crate_type =
-        crate::type_data::from_local(&exported_ident.to_string(), original_ident.span())?;
-
-    with_manifest(|mut manifest| {
-        let mut exported_type = TypeData::new();
-        exported_type.root = TypeRoot::CRATE;
-        exported_type.path = type_.identifier().to_string();
-        exported_type.field_crate = current_crate();
-
-        manifest.expanded_visibilities.insert(
-            type_.canonical_string_path_without_args(),
-            ExpandedVisibility {
-                crate_local_name: crate_type,
-                exported_name: exported_type,
-            },
-        );
-    });
-
-    with_manifest(|mut manifest| manifest.entry_points.push(entry_point.clone()));
 
     let identifier = entry_point.type_data.identifier_string();
     let item_ident = item_trait.ident.clone();
