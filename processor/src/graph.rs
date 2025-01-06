@@ -200,26 +200,43 @@ pub fn generate_component(
     };
 
     let builder_name = components::builder_name(&component.type_data);
+    let component_address_syn_type =
+        component_visibles::visible_type(graph.manifest, &component.address).syn_type();
+    let component_initialzer =
+        format_ident!("lockjaw_init_{}", component.type_data.identifier_string());
 
     let builder = if graph.builder_modules.type_data.is_some() {
         let module_manifest_name = graph.builder_modules.type_data.unwrap().syn_type();
         quote! {
             #[doc(hidden)]
-            #[no_mangle]
             #[allow(non_snake_case)]
             fn #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>{
                 #ctor_statements
                 Box::new(#component_impl_name{#ctor_params})
             }
+
+            #[doc(hidden)]
+            #[allow(non_snake_case)]
+            fn #component_initialzer(){
+                unsafe{
+                    #component_address_syn_type = #builder_name as *const();
+                }
+            }
         }
     } else {
         quote! {
             #[doc(hidden)]
-            #[no_mangle]
             #[allow(non_snake_case)]
             fn #builder_name () -> Box<dyn #component_name>{
                 #ctor_statements
                 Box::new(#component_impl_name{#ctor_params})
+            }
+
+            #[allow(non_snake_case)]
+            fn #component_initialzer(){
+                unsafe{
+                    #component_address_syn_type = #builder_name as *const();
+                }
             }
         }
     };

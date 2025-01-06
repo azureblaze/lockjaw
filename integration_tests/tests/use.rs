@@ -74,6 +74,7 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
+    lockjaw_init();
     let _component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 }
 epilogue!();

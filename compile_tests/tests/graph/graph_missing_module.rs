@@ -25,6 +25,8 @@ lockjaw::prologue!(
 #[component(modules: crate::Mm)]
 trait S {}
 
-fn main() {}
+fn main() {
+    lockjaw_init();
+}
 
 lockjaw::epilogue!(test);

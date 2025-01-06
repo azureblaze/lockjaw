@@ -113,12 +113,14 @@ impl Default for ComponentType {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct Component {
+    pub name: String,
     pub type_data: TypeData,
     pub component_type: ComponentType,
     pub provisions: Vec<Dependency>,
     pub builder_modules: Option<TypeData>,
     pub modules: Vec<TypeData>,
     pub definition_only: bool,
+    pub address: TypeData,
 }
 
 impl Component {

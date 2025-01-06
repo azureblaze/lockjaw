@@ -50,12 +50,14 @@ pub trait MyComponent {
 
 #[test]
 pub fn provided_value_returned() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.option_string(), Some("string".to_owned()));
 }
 
 #[test]
 pub fn not_provided_empty() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.option_i32(), None);
 }

@@ -38,6 +38,7 @@ pub trait MyComponent {}
 
 #[test]
 pub fn main() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 
     assert_eq!(<dyn MyEntryPoint>::get(component.as_ref()).i(), 42)

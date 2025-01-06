@@ -39,10 +39,11 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let sub: Cl<dyn MySubcomponent> = component.sub().build();
 
     assert_eq!(sub.i32(), 11);
 }
 
-lockjaw::epilogue!(debug_output);
+lockjaw::epilogue!();

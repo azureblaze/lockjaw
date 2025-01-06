@@ -28,4 +28,6 @@ lockjaw::epilogue!(test);
 #[lockjaw::module]
 struct Module {}
 
-fn main() {}
+fn main() {
+    lockjaw_init();
+}

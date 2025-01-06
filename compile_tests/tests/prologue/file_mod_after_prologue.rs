@@ -21,4 +21,6 @@ lockjaw::prologue!(
 
 mod foo;
 
-fn main() {}
+fn main() {
+    lockjaw_init();
+}

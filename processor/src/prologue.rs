@@ -45,37 +45,6 @@ impl SourceData {
         Default::default()
     }
 
-    pub fn resolve_declare_path(
-        &self,
-        identifier: &str,
-        span: Span,
-    ) -> Result<String, TokenStream> {
-        let mut path = String::new();
-        if !self.base_path.is_empty() {
-            path.push_str(&self.base_path);
-            path.push_str("::");
-        }
-        if let Some(mod_) = self.get_mod(span) {
-            let parents = &mod_.parents;
-            if !parents.is_empty() {
-                path.push_str(&parents.join("::"));
-                path.push_str("::");
-            }
-            if mod_.name != "(src)" {
-                path.push_str(&mod_.name);
-                path.push_str("::");
-            }
-        } else {
-            return spanned_compile_error(
-                span,
-                &format!("Unable to resolve path to current location. Is lockjaw::prologue!() called before using any other lockjaw attributes?"),
-            );
-        }
-
-        path.push_str(identifier);
-        Ok(path)
-    }
-
     pub fn resolve_path(&self, identifier: &str, span: Span) -> Option<TypeData> {
         if let Some(mod_) = self.get_mod(span) {
             if let Some(use_path) = mod_.uses.get(identifier) {
@@ -186,11 +155,6 @@ pub fn get_parent_mods(span: Span) -> Vec<String> {
         }
         Vec::new()
     })
-}
-
-/// Resolve the full path when an item is declared. e.g. struct Foo {} => crate::bar::Foo
-pub fn resolve_declare_path(identifier: &str, span: Span) -> Result<String, TokenStream> {
-    SOURCE_DATA.with(|source_data| source_data.borrow().resolve_declare_path(identifier, span))
 }
 
 /// Resolve the full path when an foreign item is referenced in a path. e.g. foo::Bar => ::qux::foo::Bar.

@@ -294,7 +294,7 @@ fn internal_epilogue(
         }
         manifest.clear();
 
-        let (components, messages) =
+        let (components, initiazers, messages) =
             components::generate_components(&merged_manifest, config.root)?;
 
         let path_test;
@@ -314,11 +314,20 @@ fn internal_epilogue(
                 }
             };
         }
-
+        let init_vis = if config.root {
+            quote! {}
+        } else {
+            quote! {pub}
+        };
         let result = quote! {
             #expanded_visibilities
             #components
             #path_test
+
+            #[deny(dead_code)]
+            #init_vis fn lockjaw_init(){
+                #initiazers
+            }
         };
 
         if config.debug_output {

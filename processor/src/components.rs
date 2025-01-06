@@ -124,37 +124,44 @@ pub fn handle_component_attribute(
             }
         }
     } else {
-        let builder_name = builder_name(&type_data::from_local(
-            &item_trait.ident.to_string(),
-            item_trait.ident.span(),
-        )?);
         let component_name = item_trait.ident.clone();
+        let address_ident = format_ident!("LOCKJAW_COMPONENT_BUILDER_ADDR_{}", item_trait.ident);
+
         if let Some(module_manifest_name) = builder_modules {
             quote! {
+                #[doc(hidden)]
+                #[allow(non_upper_case_globals)]
+                pub static mut #address_ident : *const () = ::std::ptr::null();
+
                 impl dyn #component_name {
+
                     #[allow(unused)]
                     pub fn build (param : #module_manifest_name) -> Box<dyn #component_name>{
-                        extern "Rust" {
-                            fn  #builder_name (param : #module_manifest_name) -> Box<dyn #component_name>;
+                        unsafe {
+                            let builder: extern "Rust" fn(param : #module_manifest_name) -> Box<dyn #component_name> = std::mem::transmute(#address_ident);
+                            builder(param)
                         }
-                       unsafe { #builder_name(param) }
                     }
                 }
             }
         } else {
             quote! {
+                #[doc(hidden)]
+                #[allow(non_upper_case_globals)]
+                pub static mut #address_ident : *const () = ::std::ptr::null();
+
                 impl dyn #component_name {
                     pub fn build () -> Box<dyn #component_name>{
-                        extern "Rust" {
-                            fn  #builder_name() -> Box<dyn #component_name>;
+                        unsafe{
+                            let builder: extern "Rust" fn() -> Box<dyn #component_name> = std::mem::transmute(#address_ident);
+                            builder()
                         }
-                       unsafe { #builder_name() }
                     }
                     pub fn new () -> Box<dyn #component_name>{
-                        extern "Rust" {
-                            fn  #builder_name() -> Box<dyn #component_name>;
+                        unsafe{
+                            let builder: extern "Rust" fn() -> Box<dyn #component_name> = std::mem::transmute(#address_ident);
+                            builder()
                         }
-                       unsafe { #builder_name() }
                     }
                 }
             }
@@ -277,8 +284,9 @@ pub fn handle_builder_modules_attribute(
 pub fn generate_components(
     manifest: &Manifest,
     root: bool,
-) -> Result<(TokenStream, Vec<String>), TokenStream> {
+) -> Result<(TokenStream, TokenStream, Vec<String>), TokenStream> {
     let mut result = quote! {};
+    let mut initializer = quote! {};
     let mut messages = Vec::<String>::new();
     for component in &manifest.components {
         if component.definition_only {
@@ -296,8 +304,14 @@ pub fn generate_components(
             #result
             #tokens
         };
+        let component_initialzer =
+            format_ident!("lockjaw_init_{}", component.type_data.identifier_string());
+        initializer = quote! {
+            #initializer
+            #component_initialzer();
+        };
         messages.push(message);
     }
     //log!("{}", result.to_string());
-    Ok((result, messages))
+    Ok((result, initializer, messages))
 }

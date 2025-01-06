@@ -135,6 +135,7 @@ pub trait MyComponent {
 
 #[test]
 pub fn into_vec() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let v = component.vec_string();
     assert!(v.contains(&"string1".to_owned()));
@@ -148,6 +149,7 @@ pub fn into_vec() {
 
 #[test]
 pub fn into_vec_qualified() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let v = component.q_vec_string();
     assert!(v.contains(&"q_string1".to_owned()));
@@ -159,6 +161,7 @@ pub fn into_vec_qualified() {
 
 #[test]
 pub fn bind_into_vec() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let v = component
         .vec_foo()
@@ -171,6 +174,7 @@ pub fn bind_into_vec() {
 
 #[test]
 pub fn regular_provision_not_affected() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.string(), "string");
 }

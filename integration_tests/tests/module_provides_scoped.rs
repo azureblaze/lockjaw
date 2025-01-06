@@ -49,6 +49,7 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
+    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.string(), "string");
     assert_eq!(component.foo().s, "string");

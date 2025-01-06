@@ -18,8 +18,10 @@ use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::ops::Deref;
 
+use crate::environment::current_crate;
 use crate::manifest::{
-    BuilderModules, Component, ComponentType, Dependency, Manifest, Module, TypeRoot,
+    BuilderModules, Component, ComponentType, Dependency, ExpandedVisibility, Manifest, Module,
+    TypeRoot,
 };
 use crate::manifest_parser::Mod;
 use crate::parsing;
@@ -110,6 +112,7 @@ pub fn handle_component_attribute(
     };
 
     let mut component = Component::new();
+    component.name = item_trait.ident.to_string();
     component.type_data = type_data::from_local(&item_trait.ident.to_string(), mod_)?;
     component.component_type = component_type;
     component.provisions.extend(provisions);
@@ -120,7 +123,27 @@ pub fn handle_component_attribute(
         component.modules = m.clone();
     }
     component.definition_only = definition_only;
+    component.address = from_local(
+        &format!(
+            "LOCKJAW_COMPONENT_BUILDER_ADDR_{}",
+            &item_trait.ident.to_string()
+        ),
+        mod_,
+    )?;
     let mut result = Manifest::new();
+    if component.component_type == ComponentType::Component {
+        let mut exported_addr_type = TypeData::new();
+        exported_addr_type.root = TypeRoot::CRATE;
+        exported_addr_type.path = component.address.identifier_string();
+        exported_addr_type.field_crate = current_crate();
+        result.expanded_visibilities.insert(
+            component.address.canonical_string_path(),
+            ExpandedVisibility {
+                crate_local_name: component.address.clone(),
+                exported_name: exported_addr_type,
+            },
+        );
+    }
 
     if let Some(parent) = attributes.get("parent") {
         if let FieldValue::Path(path) = parent {

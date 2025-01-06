@@ -22,6 +22,7 @@ lockjaw::prologue!("tests/component_other_file.rs");
 
 #[test]
 pub fn main() {
+    lockjaw_init();
     let component: Box<dyn other_file::OtherComponent> = <dyn other_file::OtherComponent>::new();
     component.other_file();
 }

@@ -76,7 +76,7 @@ pub fn handle_entry_point_attribute(
     let item_ident = item_trait.ident.clone();
     let prologue_check = prologue_check(item_trait.span());
     let validate_type = type_validator.validate(item_trait.ident.to_string());
-    let address_ident = format_ident!("{}_ADDR", original_ident);
+    let address_ident = format_ident!("LOCKJAW_ENTRY_POINT_GETTER_ADDR_{}", original_ident);
     let result = quote! {
         #[doc(hidden)]
         #[allow(non_camel_case_types)]

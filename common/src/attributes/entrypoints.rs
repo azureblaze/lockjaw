@@ -62,8 +62,13 @@ pub fn handle_entry_point_attribute(
     };
     let mut entry_point = EntryPoint::new();
     entry_point.type_data = type_data::from_local(&item_trait.ident.to_string(), mod_)?;
-    entry_point.address =
-        type_data::from_local(&format!("{}_ADDR", &item_trait.ident.to_string()), mod_)?;
+    entry_point.address = type_data::from_local(
+        &format!(
+            "LOCKJAW_ENTRY_POINT_GETTER_ADDR_{}",
+            &item_trait.ident.to_string()
+        ),
+        mod_,
+    )?;
 
     entry_point.provisions.extend(provisions);
     entry_point.component = component.clone();

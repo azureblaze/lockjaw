@@ -15,9 +15,8 @@ limitations under the License.
 */
 
 use crate::error::{spanned_compile_error, CompileError};
-use crate::prologue::{resolve_declare_path, resolve_path};
+use crate::prologue::resolve_path;
 use lazy_static::lazy_static;
-use lockjaw_common::environment::current_crate;
 use lockjaw_common::manifest::TypeRoot;
 use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
@@ -97,14 +96,6 @@ impl ProcessorTypeData for TypeData {
     fn identifier(&self) -> syn::Ident {
         quote::format_ident!("{}", self.identifier_string())
     }
-}
-
-pub fn from_local(identifier: &str, span: Span) -> Result<TypeData, TokenStream> {
-    let mut result = TypeData::new();
-    result.field_crate = current_crate();
-    result.root = TypeRoot::CRATE;
-    result.path = resolve_declare_path(identifier, span)?;
-    Ok(result)
 }
 
 pub fn from_syn_type(syn_type: &syn::Type) -> Result<TypeData, TokenStream> {
