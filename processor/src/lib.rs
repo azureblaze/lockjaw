@@ -28,12 +28,11 @@ use quote::{format_ident, quote, quote_spanned};
 
 use error::handle_error;
 
-use crate::error::{compile_error, CompileError};
+use crate::error::CompileError;
 use lockjaw_common::environment::current_crate;
 use lockjaw_common::manifest::{ComponentType, DepManifests, Manifest};
 use lockjaw_common::manifest_parser::LockjawPackage;
 use proc_macro2::Span;
-use std::ops::Deref;
 use syn::spanned::Spanned;
 
 #[macro_use]
@@ -276,149 +275,94 @@ fn create_epilogue_config(input: TokenStream) -> EpilogueConfig {
 fn internal_epilogue(
     config: EpilogueConfig,
 ) -> Result<proc_macro2::TokenStream, proc_macro2::TokenStream> {
-    manifest::with_manifest(|mut manifest| {
-        manifest.root = config.root;
-        let merged_manifest = merge_manifest(&manifest, &config)?;
-        let expanded_visibilities = component_visibles::expand_visibilities(&merged_manifest)?;
+    let merged_manifest = merge_manifest(&config)?;
+    let expanded_visibilities = component_visibles::expand_visibilities(&merged_manifest)?;
 
-        if !config.for_test {
-            let out_dir = environment::lockjaw_output_dir()?;
-            let manifest_path = format!("{}manifest.pb", out_dir);
-            std::fs::create_dir_all(Path::new(&environment::proc_artifact_dir()))
-                .expect("cannot create common artifact dir");
-            std::fs::create_dir_all(Path::new(&out_dir)).expect("cannot create output dir");
+    let (components, initiazers, messages) =
+        components::generate_components(&merged_manifest, config.root)?;
 
-            std::fs::write(
-                &manifest_path,
-                serde_json::to_string_pretty(manifest.deref()).expect("cannot serialize manifest"),
-            )
-            .expect("cannot write manifest");
-
-            std::fs::write(
-                Path::new(&format!(
-                    "{}/{}.manifest_path",
-                    environment::proc_artifact_dir(),
-                    current_crate()
-                )),
-                &manifest_path,
-            )
-            .expect("cannot write manifest path");
-        }
-        manifest.clear();
-
-        let (components, initiazers, messages) =
-            components::generate_components(&merged_manifest, config.root)?;
-
-        let path_test;
-        if config.for_test {
-            path_test = quote! {}
-        } else {
-            path_test = quote! {
-                #[test]
-                fn epilogue_invoked_at_crate_root(){
-                    let crate_name = module_path!().split("::").next().unwrap();
-                    let mod_path = crate_name.to_owned();
-                    assert_eq!(
-                        module_path!(),
-                        mod_path,
-                        "lockjaw::epilogue!() called in a file other than lib.rs or main.rs"
-                    );
-                }
-            };
-        }
-        let components_initializer_name =
-            format_ident!("lockjaw_init_components_{}", current_crate());
-
-        let root_component_initializer = if config.root {
-            quote! {
-                #[doc(hidden)]
-                #[no_mangle]
-                #[allow(non_snake_case)]
-                pub(crate) fn lockjaw_init_root_components(){
-                    #initiazers
-                }
+    let path_test;
+    if config.for_test {
+        path_test = quote! {}
+    } else {
+        path_test = quote! {
+            #[test]
+            fn epilogue_invoked_at_crate_root(){
+                let crate_name = module_path!().split("::").next().unwrap();
+                let mod_path = crate_name.to_owned();
+                assert_eq!(
+                    module_path!(),
+                    mod_path,
+                    "lockjaw::epilogue!() called in a file other than lib.rs or main.rs"
+                );
             }
-        } else {
-            quote! {}
         };
+    }
+    let components_initializer_name = format_ident!("lockjaw_init_components_{}", current_crate());
 
-        let result = quote! {
-            #expanded_visibilities
-            #components
-            #path_test
-
-            #root_component_initializer
-
+    let root_component_initializer = if config.root {
+        quote! {
             #[doc(hidden)]
             #[no_mangle]
             #[allow(non_snake_case)]
-            pub(crate) fn #components_initializer_name(){
+            pub(crate) fn lockjaw_init_root_components(){
                 #initiazers
             }
-        };
-
-        if config.debug_output {
-            let mut content = format!("/* manifest:\n{:#?}\n*/\n", merged_manifest);
-            for message in messages {
-                content.push_str(&format!("/*\n{}\n*/\n", message));
-            }
-            content.push_str(&result.to_string());
-            let path = format!(
-                "{}debug_{}.rs",
-                environment::lockjaw_output_dir()?,
-                current_crate()
-            );
-            log!(
-                "writing debug output to file:///{}",
-                path.replace("\\", "/")
-            );
-            std::fs::create_dir_all(Path::new(&environment::lockjaw_output_dir()?))
-                .expect("cannot create output dir");
-            std::fs::write(Path::new(&path), &content)
-                .expect(&format!("cannot write debug output to {}", path));
-
-            Command::new("rustfmt")
-                .arg(&path)
-                .output()
-                .map_compile_error("unable to format output")?;
-
-            Ok(quote! {
-                std::include!(#path);
-            })
-        } else {
-            Ok(result)
         }
-    })
+    } else {
+        quote! {}
+    };
+
+    let result = quote! {
+        #expanded_visibilities
+        #components
+        #path_test
+
+        #root_component_initializer
+
+        #[doc(hidden)]
+        #[no_mangle]
+        #[allow(non_snake_case)]
+        pub(crate) fn #components_initializer_name(){
+            #initiazers
+        }
+    };
+
+    if config.debug_output {
+        let mut content = format!("/* manifest:\n{:#?}\n*/\n", merged_manifest);
+        for message in messages {
+            content.push_str(&format!("/*\n{}\n*/\n", message));
+        }
+        content.push_str(&result.to_string());
+        let path = format!(
+            "{}debug_{}.rs",
+            environment::lockjaw_output_dir()?,
+            current_crate()
+        );
+        log!(
+            "writing debug output to file:///{}",
+            path.replace("\\", "/")
+        );
+        std::fs::create_dir_all(Path::new(&environment::lockjaw_output_dir()?))
+            .expect("cannot create output dir");
+        std::fs::write(Path::new(&path), &content)
+            .expect(&format!("cannot write debug output to {}", path));
+
+        Command::new("rustfmt")
+            .arg(&path)
+            .output()
+            .map_compile_error("unable to format output")?;
+
+        Ok(quote! {
+            std::include!(#path);
+        })
+    } else {
+        Ok(result)
+    }
 }
 
-fn merge_manifest(
-    manifest: &Manifest,
-    config: &EpilogueConfig,
-) -> Result<Manifest, proc_macro2::TokenStream> {
-    let deps = parsing::get_crate_deps(config.for_test, false);
-    //log!("deps: {:?}", deps);
-
-    let mut result = manifest.clone();
-
-    for dep in &deps {
-        let manifest_path_file_string =
-            format!("{}/{}.manifest_path", environment::proc_artifact_dir(), dep);
-        let manifest_path_file = Path::new(&manifest_path_file_string);
-        if !manifest_path_file.exists() {
-            continue;
-        }
-        let manifest_path =
-            std::fs::read_to_string(manifest_path_file).expect("unable to read manifest path");
-
-        let reader = BufReader::new(File::open(manifest_path).expect("cannot find manifest file"));
-        let dep_manifest: Manifest = serde_json::from_reader(reader).expect("cannot read manifest");
-        if dep_manifest.root {
-            return compile_error(&format!("crate is depending on crate '{}' which already called lockjaw::epilogue!(root).\n\
-            epilogue!(root) generates #[define_component] implementations and may only be called once in a binary, typically at the root binary crate", dep));
-        }
-        result.merge_from(&dep_manifest);
-    }
-    // build script
+fn merge_manifest(config: &EpilogueConfig) -> Result<Manifest, proc_macro2::TokenStream> {
+    let mut result: Manifest = Manifest::new();
     if let Ok(manifest) = std::env::var("LOCKJAW_DEP_MANIFEST") {
         let reader = BufReader::new(File::open(manifest).expect("cannot find manifest file"));
         let dep_manifest: DepManifests =

@@ -14,25 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::cell::{RefCell, RefMut};
-
-use lockjaw_common::manifest::{Component, Manifest};
+use lockjaw_common::manifest::Component;
 use proc_macro2::Ident;
 use quote::format_ident;
-
-thread_local! {
-    static MANIFEST :RefCell<Manifest> = RefCell::new(Manifest::new());
-}
-
-pub fn with_manifest<F, T>(f: F) -> T
-where
-    F: FnOnce(RefMut<Manifest>) -> T,
-{
-    MANIFEST.with(|m| {
-        let manifest = m.borrow_mut();
-        f(manifest)
-    })
-}
 
 pub trait ProcessorComponent {
     fn impl_ident(&self) -> Ident;

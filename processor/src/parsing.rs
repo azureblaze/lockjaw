@@ -16,9 +16,7 @@ limitations under the License.
 
 use crate::error::{spanned_compile_error, CompileError};
 use proc_macro2::{Span, TokenStream};
-use regex::Regex;
-use std::collections::{HashMap, HashSet};
-use std::process::Command;
+use std::collections::HashMap;
 use syn::parse::Parser;
 #[allow(unused_imports)] // somehow rust think this is unused.
 use syn::spanned::Spanned;
@@ -174,48 +172,6 @@ fn parse_field_value(expr: &syn::Expr, span: Span) -> Result<FieldValue, TokenSt
         )),
         _ => spanned_compile_error(span, &format!("invalid field value {:?}", expr)),
     }
-}
-
-pub fn get_crate_deps(for_test: bool, direct_only: bool) -> HashSet<String> {
-    let tree = String::from_utf8(
-        Command::new("cargo")
-            .current_dir(std::env::var("CARGO_MANIFEST_DIR").expect("missing manifest dir"))
-            .arg("tree")
-            .arg("--prefix")
-            .arg("depth")
-            .arg("-e")
-            .arg(if for_test { "dev" } else { "normal" })
-            .output()
-            .unwrap()
-            .stdout,
-    )
-    .unwrap()
-    .split("\n")
-    .map(|s| s.to_string())
-    .collect::<Vec<String>>();
-
-    //log!("{:#?}", tree);
-
-    let mut deps = HashSet::<String>::new();
-    let pattern = Regex::new(r"(?P<depth>\d+)(?P<crate>[A-Za-z_][A-Za-z0-9_\-]*).*").unwrap();
-    for item in tree {
-        if item.is_empty() {
-            continue;
-        }
-        let captures = pattern.captures(&item).unwrap();
-        if direct_only {
-            if captures["depth"].ne("1") {
-                continue;
-            }
-        } else {
-            if captures["depth"].eq("0") {
-                continue;
-            }
-        }
-        deps.insert(captures["crate"].replace("-", "_").to_string());
-    }
-    deps.insert("lockjaw".to_owned());
-    deps
 }
 
 pub fn type_string(ty: &syn::Type) -> Result<String, TokenStream> {

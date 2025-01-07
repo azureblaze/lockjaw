@@ -22,13 +22,6 @@ pub fn cargo_manifest_dir() -> String {
         .replace("\\", "/")
 }
 
-/// Returns the common artifacts directory where all crates can read/write.
-///
-/// Each crate will write its [lockjaw_output_dir] here so dependent crate can find them.
-pub fn proc_artifact_dir() -> String {
-    return format!("{}/lockjaw_artifacts/", env!("PROC_ARTIFACT_DIR"));
-}
-
 /// Returns the output directory for the current crate.
 pub fn lockjaw_output_dir() -> Result<String, TokenStream> {
     let out_dir = std::env::var("OUT_DIR")
