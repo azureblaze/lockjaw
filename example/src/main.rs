@@ -104,7 +104,6 @@ trait MyEntryPoint {
 trait MyComponent {}
 
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::build(BuilderModules {
         my_module: MyModule {
             phrase: "hello world".to_owned(),
@@ -128,7 +127,6 @@ trait TestComponent {
 
 #[test]
 fn test_greeter() {
-    lockjaw_init();
     let component = <dyn TestComponent>::build(BuilderModules {
         my_module: MyModule {
             phrase: "helloworld".to_owned(),
@@ -142,4 +140,4 @@ fn test_greeter() {
     );
 }
 
-lockjaw::epilogue!(root);
+lockjaw::epilogue!(root, debug_output);

@@ -20,7 +20,6 @@ lockjaw::prologue!("tests/extern_component.rs");
 
 #[test]
 fn main() {
-    test_dep::lockjaw_init();
     let dep_component: Box<dyn test_dep::DepComponent> = <dyn test_dep::DepComponent>::new();
     dep_component.dep();
 }

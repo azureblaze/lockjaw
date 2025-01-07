@@ -24,6 +24,4 @@ lockjaw::epilogue!(test);
 
 mod foo;
 
-fn main() {
-    lockjaw_init();
-}
+fn main() {}

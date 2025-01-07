@@ -65,7 +65,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 
     assert_eq!(component.foo().get().i, 1);
@@ -73,7 +72,6 @@ pub fn main() {
 
 #[test]
 pub fn before_get_not_created() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let _foo = component.foo();
 
@@ -82,7 +80,6 @@ pub fn before_get_not_created() {
 
 #[test]
 pub fn multiple_get_same_instance() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let lazy = component.foo();
     assert_eq!(lazy.get().i, 1);

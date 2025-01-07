@@ -52,7 +52,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn parent_binding() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let sub: Cl<dyn MySubcomponent> = component.sub().build();
 
@@ -61,7 +60,6 @@ pub fn parent_binding() {
 
 #[test]
 pub fn sub_binding() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let sub: Cl<dyn MySubcomponent> = component.sub().build();
 

@@ -25,6 +25,4 @@ lockjaw::prologue!(
 
 lockjaw::epilogue!(test);
 
-fn main() {
-    lockjaw_init();
-}
+fn main() {}

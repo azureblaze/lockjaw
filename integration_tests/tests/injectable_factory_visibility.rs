@@ -68,7 +68,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::build();
 
     assert_eq!(component.private_factory().create(42).i, 42);

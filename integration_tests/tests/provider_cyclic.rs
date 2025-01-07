@@ -57,7 +57,6 @@ trait S {
 
 #[test]
 fn main() {
-    lockjaw_init();
     let component: Box<dyn S> = <dyn S>::build();
     component.foo().create_bar().foo.create_bar();
 }

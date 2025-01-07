@@ -60,7 +60,6 @@ pub trait MyComponent {
 }
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let bar1 = component.bar();
     let bar2 = component.bar();

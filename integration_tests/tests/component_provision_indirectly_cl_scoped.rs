@@ -84,7 +84,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component = <dyn MyComponent>::new();
 
     assert_eq!(component.greeter().greet(), "helloworld 1");

@@ -60,7 +60,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::build(BuilderModules {
         my_module: MyModule {
             s: "helloworld".to_owned(),

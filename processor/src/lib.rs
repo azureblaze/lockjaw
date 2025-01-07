@@ -24,7 +24,7 @@ use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
 
-use quote::{quote, quote_spanned};
+use quote::{format_ident, quote, quote_spanned};
 
 use error::handle_error;
 
@@ -77,7 +77,12 @@ pub fn builder_modules(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn component(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| {
-        components::handle_component_attribute(attr.into(), input.into(), ComponentType::Component)
+        components::handle_component_attribute(
+            attr.into(),
+            input.into(),
+            ComponentType::Component,
+            false,
+        )
     })
 }
 
@@ -88,6 +93,7 @@ pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
             attr.into(),
             input.into(),
             ComponentType::Subcomponent,
+            false,
         )
     })
 }
@@ -95,7 +101,12 @@ pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn define_component(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| {
-        components::handle_component_attribute(attr.into(), input.into(), ComponentType::Component)
+        components::handle_component_attribute(
+            attr.into(),
+            input.into(),
+            ComponentType::Component,
+            true,
+        )
     })
 }
 
@@ -106,6 +117,7 @@ pub fn define_subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream
             attr.into(),
             input.into(),
             ComponentType::Subcomponent,
+            true,
         )
     })
 }
@@ -314,18 +326,33 @@ fn internal_epilogue(
                 }
             };
         }
-        let init_vis = if config.root {
-            quote! {}
+        let components_initializer_name =
+            format_ident!("lockjaw_init_components_{}", current_crate());
+
+        let root_component_initializer = if config.root {
+            quote! {
+                #[doc(hidden)]
+                #[no_mangle]
+                #[allow(non_snake_case)]
+                pub(crate) fn lockjaw_init_root_components(){
+                    #initiazers
+                }
+            }
         } else {
-            quote! {pub}
+            quote! {}
         };
+
         let result = quote! {
             #expanded_visibilities
             #components
             #path_test
 
-            #[deny(dead_code)]
-            #init_vis fn lockjaw_init(){
+            #root_component_initializer
+
+            #[doc(hidden)]
+            #[no_mangle]
+            #[allow(non_snake_case)]
+            pub(crate) fn #components_initializer_name(){
                 #initiazers
             }
         };

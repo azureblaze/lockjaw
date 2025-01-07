@@ -58,7 +58,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn into_vec_includes_parent() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let sub: Cl<dyn MySubcomponent> = component.sub().build();
 
@@ -68,7 +67,6 @@ pub fn into_vec_includes_parent() {
 
 #[test]
 pub fn into_vec_no_binding_in_parent() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let sub: Cl<dyn MySubcomponent> = component.sub().build();
 

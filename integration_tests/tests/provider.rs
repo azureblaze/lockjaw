@@ -70,7 +70,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 
     assert_eq!(component.foo().get().i, 1);
@@ -78,7 +77,6 @@ pub fn main() {
 
 #[test]
 pub fn nested_provider() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 
     assert_eq!(component.foo2().get().get().i, 1);
@@ -86,7 +84,6 @@ pub fn nested_provider() {
 
 #[test]
 pub fn before_get_not_created() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let _foo = component.foo();
 
@@ -95,7 +92,6 @@ pub fn before_get_not_created() {
 
 #[test]
 pub fn multiple_get_multiple_instance() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 
     assert_eq!(component.foo().get().i, 1);

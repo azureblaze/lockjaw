@@ -53,8 +53,6 @@ trait S {
     fn foo() -> Provider<crate::Foo>;
 }
 
-fn main() {
-    lockjaw_init();
-}
+fn main() {}
 
 lockjaw::epilogue!(test);

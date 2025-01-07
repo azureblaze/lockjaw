@@ -117,7 +117,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn into_map_string_key() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let m = component.map_string();
     assert_eq!(m.get("1").unwrap(), "string1");
@@ -126,7 +125,6 @@ pub fn into_map_string_key() {
 
 #[test]
 pub fn into_map_qualified() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let m = component.q_map_string();
     assert_eq!(m.get("1").unwrap(), "q_string1");
@@ -135,7 +133,6 @@ pub fn into_map_qualified() {
 
 #[test]
 pub fn into_map_i32_key() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let m = component.map_i32_string();
     assert_eq!(m.get(&1).unwrap(), "string1");
@@ -144,7 +141,6 @@ pub fn into_map_i32_key() {
 
 #[test]
 pub fn into_map_enum_key() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let m = component.map_enum_string();
     assert_eq!(m.get(&E::Foo).unwrap(), "string1");
@@ -153,7 +149,6 @@ pub fn into_map_enum_key() {
 
 #[test]
 pub fn regular_provision_not_affected() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.string(), "string");
 }

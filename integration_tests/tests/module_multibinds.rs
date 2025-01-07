@@ -60,7 +60,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn multibinds_vec() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let v = component.vec_string();
     assert!(v.is_empty());
@@ -68,7 +67,6 @@ pub fn multibinds_vec() {
 
 #[test]
 pub fn multibinds_qualified_vec() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let v = component.q_vec_string();
     assert!(v.is_empty());
@@ -76,7 +74,6 @@ pub fn multibinds_qualified_vec() {
 
 #[test]
 pub fn multibinds_map() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let v = component.map_string_string();
     assert!(v.is_empty());
@@ -84,7 +81,6 @@ pub fn multibinds_map() {
 
 #[test]
 pub fn multibinds_qualified_map() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     let v = component.q_map_string_string();
     assert!(v.is_empty());

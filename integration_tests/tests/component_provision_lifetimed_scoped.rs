@@ -50,7 +50,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component = <dyn MyComponent>::new();
     component.foo();
     component.bar();

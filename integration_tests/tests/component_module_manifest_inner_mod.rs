@@ -46,7 +46,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::build(m::MyModuleManifest {
         my_module: MyModule {},
     });

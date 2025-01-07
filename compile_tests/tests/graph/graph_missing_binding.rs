@@ -29,7 +29,5 @@ trait S {
     fn foo() -> crate::Foo;
 }
 
-fn main() {
-    lockjaw_init();
-}
+fn main() {}
 lockjaw::epilogue!(test);

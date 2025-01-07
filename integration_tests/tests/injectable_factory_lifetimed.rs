@@ -51,7 +51,6 @@ pub trait MyComponent {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn MyComponent> = <dyn MyComponent>::build();
 
     let foo = component.foo_factory().create(42);

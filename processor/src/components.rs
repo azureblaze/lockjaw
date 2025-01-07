@@ -56,6 +56,7 @@ pub fn handle_component_attribute(
     attr: TokenStream,
     input: TokenStream,
     component_type: ComponentType,
+    definition_only: bool,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
     let mut item_trait: syn::ItemTrait =
@@ -126,6 +127,12 @@ pub fn handle_component_attribute(
     } else {
         let component_name = item_trait.ident.clone();
         let address_ident = format_ident!("LOCKJAW_COMPONENT_BUILDER_ADDR_{}", item_trait.ident);
+        let components_initializer_name = if definition_only {
+            // the root crate name is unknown but there can only be one.
+            format_ident!("lockjaw_init_root_components")
+        } else {
+            format_ident!("lockjaw_init_components_{}", current_crate())
+        };
 
         if let Some(module_manifest_name) = builder_modules {
             quote! {
@@ -137,7 +144,11 @@ pub fn handle_component_attribute(
 
                     #[allow(unused)]
                     pub fn build (param : #module_manifest_name) -> Box<dyn #component_name>{
+                        extern "Rust" {
+                                fn  #components_initializer_name();
+                        }
                         unsafe {
+                            #components_initializer_name();
                             let builder: extern "Rust" fn(param : #module_manifest_name) -> Box<dyn #component_name> = std::mem::transmute(#address_ident);
                             builder(param)
                         }
@@ -152,13 +163,21 @@ pub fn handle_component_attribute(
 
                 impl dyn #component_name {
                     pub fn build () -> Box<dyn #component_name>{
+                        extern "Rust" {
+                                fn  #components_initializer_name();
+                        }
                         unsafe{
+                            #components_initializer_name();
                             let builder: extern "Rust" fn() -> Box<dyn #component_name> = std::mem::transmute(#address_ident);
                             builder()
                         }
                     }
                     pub fn new () -> Box<dyn #component_name>{
+                        extern "Rust" {
+                            fn  #components_initializer_name();
+                        }
                         unsafe{
+                            #components_initializer_name();
                             let builder: extern "Rust" fn() -> Box<dyn #component_name> = std::mem::transmute(#address_ident);
                             builder()
                         }

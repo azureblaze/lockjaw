@@ -39,7 +39,6 @@ mod m {
 
 #[test]
 pub fn main() {
-    lockjaw_init();
     let component: Box<dyn m::MyComponent> = <dyn m::MyComponent>::new();
     component.foo();
 }
