@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, module, Cl};
 
-lockjaw::prologue!("tests/module_bind_trait.rs");
-
 pub struct Foo {}
 
 pub trait MyTrait {

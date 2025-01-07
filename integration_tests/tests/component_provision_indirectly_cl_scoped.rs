@@ -17,8 +17,6 @@ limitations under the License.
 use lockjaw::{component, epilogue, injectable, module, Cl};
 use std::ops::Deref;
 
-lockjaw::prologue!("tests/component_provision_indirectly_cl_scoped.rs");
-
 struct GreetCounter {
     counter: ::std::cell::RefCell<i32>,
 }

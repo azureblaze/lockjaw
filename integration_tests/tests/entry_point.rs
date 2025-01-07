@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{define_component, entry_point, module, prologue};
-
-prologue!("tests/entry_point.rs");
+use lockjaw::{define_component, entry_point, module};
 struct MyModule {}
 
 #[module(install_in: MyComponent)]

@@ -20,8 +20,6 @@ use lockjaw::{component, epilogue, injectable};
 use std::cell::RefCell;
 use std::marker::PhantomData;
 
-lockjaw::prologue!("tests/injectable_scoped_container_lifetimed.rs");
-
 pub struct Foo<'a> {
     pub i: u32,
     p: PhantomData<&'a i32>,

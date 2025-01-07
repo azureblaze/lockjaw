@@ -19,8 +19,6 @@ limitations under the License.
 use lockjaw::{component, epilogue, injectable, Lazy};
 use std::cell::RefCell;
 
-lockjaw::prologue!("tests/lazy.rs");
-
 pub struct Counter {
     counter: i32,
 }

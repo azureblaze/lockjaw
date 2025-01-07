@@ -21,8 +21,6 @@ use lockjaw::{component, epilogue, module, qualifier};
 use std::collections::HashMap;
 pub use String as NamedString;
 
-lockjaw::prologue!("tests/module_provides_into_map.rs");
-
 pub struct MyModule {}
 
 #[qualifier]

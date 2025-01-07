@@ -19,8 +19,6 @@ limitations under the License.
 use lockjaw::{component, epilogue, injectable, module, Cl};
 use std::cell::RefCell;
 
-lockjaw::prologue!("tests/module_bind_scoped_trait_container.rs");
-
 pub trait MyTrait {
     fn hello(&self) -> String;
 }

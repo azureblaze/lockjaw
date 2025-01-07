@@ -13,9 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{component, module, prologue, subcomponent, Cl};
-
-prologue!("tests/sub_component_into_vec.rs");
+use lockjaw::{component, module, subcomponent, Cl};
 
 struct BazModule {}
 

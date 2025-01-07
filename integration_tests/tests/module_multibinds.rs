@@ -20,8 +20,6 @@ use lockjaw::{component, epilogue, module, qualifier};
 
 use std::collections::HashMap;
 
-lockjaw::prologue!("tests/module_multibinds.rs");
-
 #[qualifier]
 struct Q;
 

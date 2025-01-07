@@ -16,8 +16,6 @@ limitations under the License.
 #[allow(dead_code)]
 pub struct InjectableFromOtherFile {}
 
-lockjaw::prologue!("tests/other_file/mod.rs", "other_file");
-
 #[lockjaw::component_visible]
 struct OtherFilePrivate {}
 

@@ -20,7 +20,6 @@ use crate::error::{spanned_compile_error, CompileError};
 use crate::graph;
 use crate::parsing;
 use crate::parsing::FieldValue;
-use crate::prologue::prologue_check;
 use crate::type_data::ProcessorTypeData;
 use crate::type_validator::TypeValidator;
 use base64::engine::Engine;
@@ -205,14 +204,12 @@ pub fn handle_component_attribute(
         quote! {}
     };
 
-    let prologue_check = prologue_check(item_trait.span());
     let validate_type = type_validator.validate(item_trait.ident.to_string());
     let result = quote! {
         #item_trait
         #component_builder
         #parent_module
         #validate_type
-        #prologue_check
     };
     Ok(result)
 }
@@ -272,10 +269,8 @@ pub fn handle_builder_modules_attribute(
             .map_spanned_compile_error(span, "#[builder_modules] cannot be tuples")?;
     }
 
-    let prologue_check = prologue_check(item_struct.ident.span());
     Ok(quote_spanned! {span=>
         #item_struct
-        #prologue_check
     })
 }
 

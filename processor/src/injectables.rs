@@ -19,7 +19,7 @@ use std::collections::{HashMap, HashSet};
 use crate::error::{spanned_compile_error, CompileError};
 use crate::parsing;
 use crate::parsing::FieldValue;
-use crate::prologue::prologue_check;
+
 use crate::type_validator::TypeValidator;
 use lazy_static::lazy_static;
 use proc_macro2::{Span, TokenStream};
@@ -130,11 +130,9 @@ pub fn handle_injectable_attribute(
 
     let type_check = type_validator.validate(parsing::type_string(&item.self_ty)?);
 
-    let prologue_check = prologue_check(item.span());
     let result = quote! {
         #item
         #type_check
-        #prologue_check
     };
     //log!("{}", result.to_string());
     Ok(result)

@@ -20,8 +20,6 @@ use lockjaw::{define_component, define_subcomponent, epilogue, module, Cl};
 
 pub use String as NamedString;
 
-lockjaw::prologue!("tests/module_install_in_sub_component.rs");
-
 pub struct MySubmodule {}
 
 #[module(install_in: MySubcomponent)]

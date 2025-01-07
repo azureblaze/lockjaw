@@ -17,7 +17,6 @@ limitations under the License.
 use lockjaw::{component_visible, epilogue, injectable, module, Cl, Singleton};
 use printer::Printer;
 
-lockjaw::prologue!("src/lib.rs");
 #[component_visible]
 struct PrinterImpl {}
 

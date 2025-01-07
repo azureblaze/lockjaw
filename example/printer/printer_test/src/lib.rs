@@ -18,8 +18,6 @@ use lockjaw::{epilogue, injectable, module, Cl, Singleton};
 use printer::Printer;
 use std::cell::{Ref, RefCell};
 
-lockjaw::prologue!("src/lib.rs");
-
 pub struct TestPrinter {
     pub messages: ::std::cell::RefCell<Vec<String>>,
 }

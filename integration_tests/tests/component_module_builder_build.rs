@@ -16,8 +16,6 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-lockjaw::prologue!("tests/component_module_builder_build.rs");
-
 use lockjaw::{builder_modules, component, epilogue, module};
 
 pub struct Foo {}

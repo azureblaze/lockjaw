@@ -20,8 +20,6 @@ use lockjaw::{define_component, epilogue, module, Singleton};
 
 pub use String as NamedString;
 
-lockjaw::prologue!("tests/module_install_in_singleton.rs");
-
 pub struct MyModule {}
 
 #[module(install_in: Singleton)]

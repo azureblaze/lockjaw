@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{builder_modules, component, epilogue, injectable, module};
 
-lockjaw::prologue!("tests/injectable_factory.rs");
-
 struct MyModule {
     s: String,
 }

@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, module, Cl};
 
-lockjaw::prologue!("tests/module_inject_param_autobox.rs");
-
 pub struct Foo<'a> {
     bar: Cl<'a, Bar>,
 }

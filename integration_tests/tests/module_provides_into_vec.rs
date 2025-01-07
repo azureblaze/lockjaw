@@ -20,8 +20,6 @@ use lockjaw::{component, epilogue, injectable, module, qualifier, Cl};
 
 pub use String as NamedString;
 
-lockjaw::prologue!("tests/module_provides_into_vec.rs");
-
 pub struct MyModule {}
 
 pub trait Foo {

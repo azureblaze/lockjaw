@@ -20,8 +20,6 @@ use lockjaw::{component, epilogue};
 
 mod other_file;
 
-lockjaw::prologue!("tests/component_provision_other_file.rs");
-
 #[component]
 pub trait MyComponent {
     fn other_file(&self) -> crate::other_file::InjectableFromOtherFile;

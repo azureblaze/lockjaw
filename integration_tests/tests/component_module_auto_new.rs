@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, module};
 
-lockjaw::prologue!("tests/component_module_auto_new.rs");
-
 pub struct Foo {}
 
 pub struct MyModule {}

@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, module, Cl};
 
-lockjaw::prologue!("tests/module_bind_indirectly_maybe_scoped_trait.rs");
-
 pub struct Foo {}
 
 #[injectable(scope: crate::MyComponent)]

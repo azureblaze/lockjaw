@@ -16,8 +16,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, module, Cl};
 
-lockjaw::prologue!("tests/component_provision_indirectly_scoped.rs");
-
 struct GreetCounter {
     counter: ::std::cell::RefCell<i32>,
 }

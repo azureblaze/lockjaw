@@ -13,9 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-use lockjaw::{define_component, define_subcomponent, module, prologue, Cl};
-
-prologue!("tests/sub_component_parent.rs");
+use lockjaw::{define_component, define_subcomponent, module, Cl};
 
 struct Submodule {}
 

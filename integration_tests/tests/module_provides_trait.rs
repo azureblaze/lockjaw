@@ -2,8 +2,6 @@
 
 use lockjaw::{component, epilogue, module};
 
-lockjaw::prologue!("tests/module_provides_trait.rs");
-
 pub struct Foo {}
 
 pub trait MyTrait {

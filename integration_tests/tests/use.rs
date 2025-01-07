@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{epilogue, prologue};
+use lockjaw::epilogue;
 
 mod other_file;
-
-prologue!("tests/use.rs");
 
 mod foo {
     use lockjaw::injectable as use_as_injectable;

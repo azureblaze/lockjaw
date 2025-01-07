@@ -19,8 +19,6 @@ limitations under the License.
 use lockjaw::{component, epilogue, injectable, module, Cl};
 use std::ops::Deref;
 
-lockjaw::prologue!("tests/module_bind_scoped_trait.rs");
-
 pub struct Foo {}
 
 pub trait MyTrait {

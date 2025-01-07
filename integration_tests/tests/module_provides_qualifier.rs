@@ -20,8 +20,6 @@ use lockjaw::{component, epilogue, module, qualifier};
 
 pub use String as NamedString;
 
-lockjaw::prologue!("tests/module_provides_qualifier.rs");
-
 //ANCHOR: decl
 #[qualifier]
 pub struct Q1;

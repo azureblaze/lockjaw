@@ -20,8 +20,6 @@ use lockjaw::{define_component, epilogue};
 
 pub use String as NamedString;
 
-lockjaw::prologue!("tests/module_install_in_dep_singleton.rs");
-
 #[define_component]
 pub trait MyComponent {
     fn dep_provided(&self) -> test_dep::DepProvided;

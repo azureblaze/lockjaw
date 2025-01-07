@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{epilogue, injectable};
 
-lockjaw::prologue!("tests/component_inner_mod.rs");
-
 pub struct Foo {}
 
 #[injectable]

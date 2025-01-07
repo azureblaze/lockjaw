@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, module};
 
-lockjaw::prologue!("tests/injectable_factory_lifetimed.rs");
-
 struct MyModule {}
 
 #[module]

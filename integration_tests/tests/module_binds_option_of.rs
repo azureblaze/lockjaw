@@ -22,8 +22,6 @@ pub use String as NamedString;
 
 pub struct MyModule {}
 
-lockjaw::prologue!("tests/module_binds_option_of.rs");
-
 #[module]
 impl MyModule {
     #[provides]

@@ -15,8 +15,6 @@ limitations under the License.
 */
 use lockjaw::{epilogue, injectable};
 
-lockjaw::prologue!("tests/injectable_inject_extern.rs");
-
 #[allow(dead_code)]
 pub struct Bar {
     dep: ::test_dep::DepInjectable,

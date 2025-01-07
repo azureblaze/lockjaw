@@ -29,7 +29,7 @@ use syn::{ImplItemFn, Token};
 use crate::error::{spanned_compile_error, CompileError};
 use crate::parsing;
 use crate::parsing::{get_parenthesized_field_values, FieldValue};
-use crate::prologue::prologue_check;
+
 use crate::type_validator::TypeValidator;
 use lockjaw_common::manifest::{BindingType, MultibindingType};
 
@@ -91,11 +91,9 @@ fn handle_module_attribute_internal(
 
     let validate_type = type_validator.validate(parsing::type_string(&item_impl.self_ty)?);
 
-    let prologue_check = prologue_check(item_impl.span());
     let result = quote! {
         #item_impl
         #validate_type
-        #prologue_check
     };
     Ok(result)
 }

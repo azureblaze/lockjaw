@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue};
 
-lockjaw::prologue!("tests/module_inner_path.rs");
-
 pub struct Foo {}
 
 mod m {

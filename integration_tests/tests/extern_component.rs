@@ -16,8 +16,6 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-lockjaw::prologue!("tests/extern_component.rs");
-
 #[test]
 fn main() {
     let dep_component: Box<dyn test_dep::DepComponent> = <dyn test_dep::DepComponent>::new();

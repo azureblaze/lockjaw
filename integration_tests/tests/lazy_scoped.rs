@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable, Lazy};
 
-lockjaw::prologue!("tests/lazy_scoped.rs");
-
 pub struct Counter {
     counter: ::std::cell::RefCell<i32>,
 }

@@ -18,8 +18,6 @@ limitations under the License.
 
 mod other_file;
 
-lockjaw::prologue!("tests/component_other_file.rs");
-
 #[test]
 pub fn main() {
     let component: Box<dyn other_file::OtherComponent> = <dyn other_file::OtherComponent>::new();

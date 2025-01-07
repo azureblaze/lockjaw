@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, injectable, Provider};
 
-lockjaw::prologue!("tests/provider_cyclic.rs");
-
 // ANCHOR: cyclic
 struct Foo<'component> {
     bar_provider: Provider<'component, Box<Bar<'component>>>,

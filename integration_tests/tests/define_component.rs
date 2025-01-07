@@ -14,10 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{entry_point, module, prologue};
+use lockjaw::{entry_point, module};
 use test_dep::DepDefinedComponent;
-
-prologue!("tests/define_component.rs");
 
 struct MyModule {}
 

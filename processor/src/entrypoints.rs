@@ -16,7 +16,7 @@ limitations under the License.
 
 use crate::error::{spanned_compile_error, CompileError};
 use crate::parsing::FieldValue;
-use crate::prologue::prologue_check;
+
 use crate::type_data::ProcessorTypeData;
 use crate::type_validator::TypeValidator;
 use crate::{components, parsing};
@@ -74,7 +74,6 @@ pub fn handle_entry_point_attribute(
     item_trait.vis = Visibility::Public(Token![pub](item_trait.span()));
 
     let item_ident = item_trait.ident.clone();
-    let prologue_check = prologue_check(item_trait.span());
     let validate_type = type_validator.validate(item_trait.ident.to_string());
     let address_ident = format_ident!("LOCKJAW_ENTRY_POINT_GETTER_ADDR_{}", original_ident);
     let result = quote! {
@@ -85,7 +84,6 @@ pub fn handle_entry_point_attribute(
         #original_vis use #exported_ident as #original_ident;
 
         #validate_type
-        #prologue_check
 
         #[doc(hidden)]
         #[allow(non_upper_case_globals)]

@@ -20,8 +20,6 @@ use lockjaw::{component, epilogue, module};
 
 pub use String as NamedString;
 
-lockjaw::prologue!("tests/module_provides_named.rs");
-
 pub struct MyModule {}
 
 #[module]

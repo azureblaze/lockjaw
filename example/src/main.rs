@@ -14,15 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 use lockjaw::{
-    builder_modules, component_visible, define_component, entry_point, module, prologue, Cl,
-    Singleton,
+    builder_modules, component_visible, define_component, entry_point, module, Cl, Singleton,
 };
 use printer::Printer;
 #[cfg(test)]
 use printer_test::TestPrinter;
 use std::rc::Rc;
-
-prologue!("src/main.rs");
 
 #[component_visible]
 struct Greeter<'a> {

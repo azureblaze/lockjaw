@@ -18,8 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, component_visible, epilogue, injectable};
 
-lockjaw::prologue!("tests/injectable_factory_visibility.rs");
-
 #[component_visible]
 struct Private {
     pub i: i32,
