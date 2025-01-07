@@ -19,7 +19,6 @@ use crate::error::{compile_error, spanned_compile_error, CompileError};
 use crate::parsing;
 use lockjaw_common::environment::current_crate;
 use lockjaw_common::manifest::TypeRoot;
-use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use regex::Regex;
@@ -43,39 +42,6 @@ pub struct SourceData {
 impl SourceData {
     fn new() -> Self {
         Default::default()
-    }
-
-    pub fn resolve_path(&self, identifier: &str, span: Span) -> Option<TypeData> {
-        if let Some(mod_) = self.get_mod(span) {
-            if let Some(use_path) = mod_.uses.get(identifier) {
-                let mut result = TypeData::new();
-                result.field_crate = use_path.crate_.clone();
-                result.path = use_path.path.clone();
-                result.root = use_path.root.clone();
-                Some(result)
-            } else {
-                // assume the path is local.
-                let mut result = TypeData::new();
-                result.field_crate = current_crate();
-                result.root = TypeRoot::CRATE;
-                if !self.base_path.is_empty() {
-                    result.path.push_str(&self.base_path);
-                    result.path.push_str("::");
-                }
-                result.path.push_str(&mod_.parents.join("::"));
-                if mod_.name != "(src)" {
-                    if !mod_.parents.is_empty() {
-                        result.path.push_str("::");
-                    }
-                    result.path.push_str(&mod_.name);
-                    result.path.push_str("::");
-                }
-                result.path.push_str(identifier);
-                Some(result)
-            }
-        } else {
-            None
-        }
     }
 
     fn get_mod(&self, span: Span) -> Option<&Mod> {
@@ -155,11 +121,6 @@ pub fn get_parent_mods(span: Span) -> Vec<String> {
         }
         Vec::new()
     })
-}
-
-/// Resolve the full path when an foreign item is referenced in a path. e.g. foo::Bar => ::qux::foo::Bar.
-pub fn resolve_path(identifier: &str, span: Span) -> Option<TypeData> {
-    SOURCE_DATA.with(|source_data| source_data.borrow().resolve_path(identifier, span))
 }
 
 thread_local! {

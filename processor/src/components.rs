@@ -15,19 +15,18 @@ limitations under the License.
 */
 
 use std::collections::HashSet;
-use std::ops::Deref;
 
 use crate::error::{spanned_compile_error, CompileError};
+use crate::graph;
 use crate::parsing;
 use crate::parsing::FieldValue;
 use crate::prologue::prologue_check;
 use crate::type_data::ProcessorTypeData;
 use crate::type_validator::TypeValidator;
-use crate::{graph, type_data};
 use base64::engine::Engine;
 use lazy_static::lazy_static;
 use lockjaw_common::environment::current_crate;
-use lockjaw_common::manifest::{ComponentType, Manifest, TypeRoot};
+use lockjaw_common::manifest::{ComponentType, Manifest};
 use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote_spanned;
@@ -246,35 +245,15 @@ pub fn parse_provisions(
                 }
             }
             method.attrs = new_attrs;
-            if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
-                if is_trait_object_without_lifetime(ty.deref())? {
-                    return spanned_compile_error(method.sig.span(), "trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
-                }
-            } else {
+            let syn::ReturnType::Type(_, _) = method.sig.output else {
                 return spanned_compile_error(
                     method.sig.span(),
                     "return type expected for component provisions",
                 );
-            }
+            };
         }
     }
     Ok(())
-}
-
-fn is_trait_object_without_lifetime(ty: &syn::Type) -> Result<bool, TokenStream> {
-    let type_ = type_data::from_syn_type(ty)?;
-    if type_.root == TypeRoot::GLOBAL && type_.path == "lockjaw::Cl" {
-        return Ok(false);
-    }
-    let tokens: Vec<String> = ty
-        .to_token_stream()
-        .into_iter()
-        .map(|t| t.to_string())
-        .collect();
-    if !tokens.contains(&"dyn".to_owned()) {
-        return Ok(false);
-    }
-    Ok(!tokens.contains(&"'".to_owned()))
 }
 
 pub fn handle_builder_modules_attribute(

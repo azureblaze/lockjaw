@@ -151,17 +151,9 @@ fn parse_binding(
             }
             "elements_into_vec" => {
                 multibinding = MultibindingType::ElementsIntoVec;
-                if let syn::ReturnType::Type(ref _token, ref mut ty) = method.sig.output {
-                    let return_type = crate::type_data::from_syn_type(ty.deref())?;
-                    if return_type.path != "std::vec::Vec" {
-                        return spanned_compile_error(
-                            method.span(),
-                            "#[elements_into_set] must return Vec<T>",
-                        );
-                    }
-                } else {
+                let syn::ReturnType::Type(_, _) = method.sig.output else {
                     return spanned_compile_error(method.sig.span(), "return type expected");
-                }
+                };
             }
             "qualified" => {}
             "into_map" => {
@@ -255,17 +247,6 @@ fn handle_binds(
     block.stmts.push(body);
 
     if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
-        let return_type = crate::type_data::from_syn_type(ty.deref())?;
-        match return_type.path.as_str() {
-            "lockjaw::Cl" => {}
-            "Cl" => {}
-            _ => {
-                return spanned_compile_error(
-                    signature.span(),
-                    "#[binds] methods must return Cl<T>",
-                )
-            }
-        }
         if let syn::Type::Path(ref mut type_path) = ty.deref_mut() {
             if let syn::PathArguments::AngleBracketed(ref mut angle_bracketed) =
                 type_path.path.segments.last_mut().unwrap().arguments
@@ -354,21 +335,9 @@ fn handle_multibinds(
     let body: syn::Stmt = syn::parse2(quote! { unimplemented!(); }).unwrap();
     block.stmts.push(body);
 
-    if let syn::ReturnType::Type(ref _token, ref mut ty) = signature.output {
-        let return_type = crate::type_data::from_syn_type(ty.deref())?;
-        match return_type.path.as_str() {
-            "std::vec::Vec" => {}
-            "std::collections::HashMap" => {}
-            _ => {
-                return spanned_compile_error(
-                    signature.span(),
-                    "#[multibinds] methods must return Vec<T> or HashMap<K,V>",
-                )
-            }
-        }
-    } else {
+    let syn::ReturnType::Type(_, _) = signature.output else {
         return spanned_compile_error(signature.span(), "return type expected");
-    }
+    };
     if !signature.inputs.is_empty() {
         return spanned_compile_error(
             signature.span(),

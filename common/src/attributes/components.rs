@@ -24,10 +24,10 @@ use crate::manifest::{
     TypeRoot,
 };
 use crate::manifest_parser::Mod;
-use crate::parsing;
 use crate::parsing::FieldValue;
 use crate::type_data;
 use crate::type_data::{from_local, from_path, TypeData};
+use crate::{build_script_fatal, parsing};
 use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
@@ -184,7 +184,8 @@ pub fn get_provisions(item_trait: &ItemTrait, mod_: &Mod) -> Result<Vec<Dependen
             provision.name = method.sig.ident.to_string();
             if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
                 if is_trait_object_without_lifetime(ty.deref(), mod_)? {
-                    bail!("trait object return type may depend on scoped objects, and must have lifetime bounded by the component ");
+                    let path = type_data::from_local(&item_trait.ident.to_string(), mod_)?;
+                    build_script_fatal!("in {}::{}:\ntrait object return type may depend on scoped objects, and must have lifetime bounded by the component", path.canonical_string_path(), method.sig.ident);
                 }
                 provision.type_data = type_data::from_syn_type(ty.deref(), mod_)?;
                 provision.type_data.qualifier = qualifier.map(Box::new);

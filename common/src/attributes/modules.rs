@@ -17,6 +17,7 @@ limitations under the License.
 use std::collections::HashSet;
 use std::ops::Deref;
 
+use crate::build_script_fatal;
 use crate::manifest::BindingType::{Binds, BindsOptionOf, Multibinds, Provides};
 use crate::manifest::{
     Binding, BindingType, Dependency, Manifest, Module, MultibindingMapKey, MultibindingType,
@@ -72,17 +73,18 @@ fn handle_module_attribute_internal(
     } else {
         bail!("path expected");
     }
+    let module_type = crate::type_data::from_local(&module_path.to_owned(), mod_)?;
     let mut bindings: Vec<Binding> = Vec::new();
     for i in 0..item_impl.items.len() {
         #[allow(unused_mut)] // required
         let mut item = item_impl.items.get_mut(i).unwrap();
         if let syn::ImplItem::Fn(ref mut method) = item {
-            bindings.push(parse_binding(method, mod_)?);
+            bindings.push(parse_binding(&module_type, method, mod_)?);
         }
     }
 
     let mut module = Module::new();
-    module.type_data = crate::type_data::from_local(&module_path.to_owned(), mod_)?;
+    module.type_data = module_type;
     module.bindings.extend(bindings);
     if let Some(subcomponents) = attributes.get("subcomponents") {
         let types = subcomponents.get_types(mod_)?;
@@ -99,7 +101,7 @@ fn handle_module_attribute_internal(
     Ok(manifest)
 }
 
-fn parse_binding(method: &ImplItemFn, mod_: &Mod) -> Result<Binding> {
+fn parse_binding(module_type: &TypeData, method: &ImplItemFn, mod_: &Mod) -> Result<Binding> {
     let mut option_binding: Option<Binding> = None;
     let mut multibinding = MultibindingType::None;
     let mut map_key = MultibindingMapKey::None;
@@ -117,7 +119,13 @@ fn parse_binding(method: &ImplItemFn, mod_: &Mod) -> Result<Binding> {
                 if option_binding.is_some() {
                     bail!("#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_binds(attr, &method.sig, &method.block, mod_)?);
+                option_binding = Some(handle_binds(
+                    module_type,
+                    attr,
+                    &method.sig,
+                    &method.block,
+                    mod_,
+                )?);
             }
             "binds_option_of" => {
                 if option_binding.is_some() {
@@ -129,13 +137,28 @@ fn parse_binding(method: &ImplItemFn, mod_: &Mod) -> Result<Binding> {
                 if option_binding.is_some() {
                     bail!("#[module] methods can only be annotated by one of #[provides]/#[binds]/#[binds_option_of]/#[multibinds]");
                 }
-                option_binding = Some(handle_multibinds(&method.sig, &method.block, mod_)?);
+                option_binding = Some(handle_multibinds(
+                    module_type,
+                    &method.sig,
+                    &method.block,
+                    mod_,
+                )?);
             }
             "into_vec" => {
                 multibinding = MultibindingType::IntoVec;
             }
             "elements_into_vec" => {
                 multibinding = MultibindingType::ElementsIntoVec;
+                if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
+                    let return_type = crate::type_data::from_syn_type(ty.deref(), mod_)?;
+                    if return_type.path != "std::vec::Vec" {
+                        build_script_fatal!(
+                            "in {}::{}():\n#[elements_into_set] must return Vec<T>",
+                            module_type.canonical_string_path(),
+                            method.sig.ident
+                        );
+                    }
+                }
             }
             "qualified" => {
                 qualifier = Some(Box::new(parsing::get_type(
@@ -242,6 +265,7 @@ fn handle_provides(
 }
 
 fn handle_binds(
+    method_type: &TypeData,
     attr: &syn::Attribute,
     signature: &syn::Signature,
     block: &syn::Block,
@@ -259,7 +283,11 @@ fn handle_binds(
             "lockjaw::Cl" => {}
             "Cl" => {}
             _ => {
-                bail!("#[binds] methods must return Cl<T>",)
+                build_script_fatal!(
+                    "in {}::{}(), #[binds] methods must return Cl<T>",
+                    method_type.canonical_string_path(),
+                    signature.ident
+                )
             }
         }
         binds.type_data = return_type.args[0].clone();
@@ -315,12 +343,27 @@ fn handle_binds_option_of(
 }
 
 fn handle_multibinds(
+    module_type: &TypeData,
     signature: &syn::Signature,
     block: &syn::Block,
     mod_: &Mod,
 ) -> Result<Binding> {
     if !block.stmts.is_empty() {
         bail!("#[multibinds] methods must have empty body");
+    }
+    if let syn::ReturnType::Type(ref _token, ref ty) = signature.output {
+        let return_type = crate::type_data::from_syn_type(ty.deref(), mod_)?;
+        match return_type.path.as_str() {
+            "std::vec::Vec" => {}
+            "std::collections::HashMap" => {}
+            _ => {
+                build_script_fatal!(
+                    "in {}::{}():\n#[multibinds] methods must return Vec<T> or HashMap<K,V>",
+                    module_type.canonical_string_path(),
+                    signature.ident
+                );
+            }
+        }
     }
     let mut binds = Binding::new(Multibinds);
     binds.name = signature.ident.to_string();

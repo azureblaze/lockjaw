@@ -1,5 +1,6 @@
 use crate::attributes;
 use crate::attributes::cfg::CfgEval;
+use crate::build_log::FatalBuildScriptError;
 use crate::log;
 use crate::manifest::{ComponentType, DepManifests, Manifest, RootManifest, TypeRoot};
 use crate::parsing::find_attribute;
@@ -262,6 +263,9 @@ pub fn parse_manifest(lockjaw_package: &LockjawPackage, cfg_test: bool) -> Manif
         cfg_test,
     );
     result.unwrap_or_else(|err| {
+        if let Some(fatal) = err.downcast_ref::<FatalBuildScriptError>() {
+            panic!("{}", fatal);
+        }
         log!("{}", err);
         Manifest::new()
     })
