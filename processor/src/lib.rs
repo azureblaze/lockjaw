@@ -24,7 +24,7 @@ use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
 
-use quote::{quote, quote_spanned};
+use quote::quote;
 
 use error::handle_error;
 
@@ -32,9 +32,6 @@ use crate::error::CompileError;
 use lockjaw_common::environment::current_crate;
 use lockjaw_common::manifest::{ComponentType, DepManifests, Manifest};
 use lockjaw_common::manifest_parser::LockjawPackage;
-use proc_macro2::Span;
-use syn::spanned::Spanned;
-
 #[macro_use]
 mod log;
 mod component_visibles;
@@ -48,7 +45,6 @@ mod manifest;
 mod modules;
 mod nodes;
 mod parsing;
-mod prologue;
 mod qualifier;
 mod type_data;
 mod type_validator;
@@ -174,33 +170,6 @@ pub fn component_visible(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| {
         component_visibles::handle_component_visible_attribute(attr.into(), input.into())
     })
-}
-
-#[proc_macro]
-pub fn prologue(input: TokenStream) -> TokenStream {
-    let input2: proc_macro2::TokenStream = input.into();
-    let span = input2.span().resolved_at(Span::call_site());
-    let result = quote_spanned! {span=>
-        #[cfg(not(any(test,doctest)))]
-        lockjaw::private_prologue!(#input2);
-        #[cfg(any(test,doctest))]
-        lockjaw::private_test_prologue!(#input2);
-    };
-    result.into()
-}
-
-#[proc_macro]
-pub fn private_prologue(input: TokenStream) -> TokenStream {
-    handle_error(|| {
-        // rustdoc --test does not run with #[cfg(test)] and will reach here.
-        let for_test = current_crate().eq("lockjaw");
-        prologue::handle_prologue(input.into(), for_test)
-    })
-}
-
-#[proc_macro]
-pub fn private_test_prologue(input: TokenStream) -> TokenStream {
-    handle_error(|| prologue::handle_prologue(input.into(), true))
 }
 
 #[proc_macro]
@@ -403,22 +372,7 @@ fn merge_manifest(config: &EpilogueConfig) -> Result<Manifest, proc_macro2::Toke
             }
         }
     } else {
-        if config.for_test {
-            let test_manifest = lockjaw_common::manifest_parser::parse_manifest(
-                &LockjawPackage {
-                    id: "".to_string(),
-                    name: std::env::var("CARGO_PKG_NAME").unwrap().replace("-", "_"),
-                    src_path: prologue::get_test_source(),
-                    direct_prod_crate_deps: vec![],
-                    direct_test_crate_deps: vec![],
-                },
-                true,
-            );
-            result.merge_from(&test_manifest);
-            return Ok(result);
-        } else {
-            panic!("manifest missing, is the build script called?");
-        }
+        panic!("manifest missing, is the build script called?");
     }
     Ok(result)
 }

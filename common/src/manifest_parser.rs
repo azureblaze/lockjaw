@@ -96,7 +96,7 @@ pub fn build_manifest() -> DepManifests {
 
     let cargo_metadata_json = String::from_utf8(cargo_output.stdout).unwrap();
 
-    log!("{}", String::from_utf8(cargo_output.stderr).unwrap());
+    //log!("{}", String::from_utf8(cargo_output.stderr).unwrap());
 
     let cargo_metadata: CargoMetadata = serde_json::from_str(&cargo_metadata_json).unwrap();
 
@@ -113,7 +113,7 @@ pub fn build_manifest() -> DepManifests {
         .collect();
 
     let package_name = std::env::var("CARGO_PKG_NAME").unwrap();
-    log!("package_name: {}", package_name);
+    //log!("package_name: {}", package_name);
     let package_id = cargo_metadata
         .packages
         .iter()
@@ -121,7 +121,7 @@ pub fn build_manifest() -> DepManifests {
         .unwrap()
         .id
         .clone();
-    log!("package_id: {}", package_id);
+    //log!("package_id: {}", package_id);
 
     let toml = toml_map.get(&package_id).unwrap();
     let mut target_packages: HashMap<String, LockjawPackage> = HashMap::new();
@@ -278,7 +278,7 @@ fn parse_file(
     lockjaw_package: &LockjawPackage,
     cfg_test: bool,
 ) -> Result<Manifest> {
-    log!("parsing {}: {:?}", lockjaw_package.name, src_path);
+    //log!("parsing {}: {:?}", lockjaw_package.name, src_path);
     let mut src = String::new();
     File::open(src_path)
         .with_context(|| "source  doesn't exist")?

@@ -43,14 +43,6 @@ pub use lockjaw_processor::builder_modules;
 #[doc = include_str ! ("component_visible.md")]
 pub use lockjaw_processor::component_visible;
 
-#[doc(hidden)]
-pub use lockjaw_processor::private_prologue;
-#[doc(hidden)]
-pub use lockjaw_processor::private_test_prologue;
-
-#[doc = include_str ! ("prologue.md")]
-pub use lockjaw_processor::prologue;
-
 #[doc = include_str ! ("epilogue.md")]
 pub use lockjaw_processor::epilogue;
 

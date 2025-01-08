@@ -16,12 +16,6 @@ limitations under the License.
 use crate::error::CompileError;
 use proc_macro2::TokenStream;
 
-pub fn cargo_manifest_dir() -> String {
-    std::env::var("CARGO_MANIFEST_DIR")
-        .expect("missing manifest dir env var")
-        .replace("\\", "/")
-}
-
 /// Returns the output directory for the current crate.
 pub fn lockjaw_output_dir() -> Result<String, TokenStream> {
     let out_dir = std::env::var("OUT_DIR")
