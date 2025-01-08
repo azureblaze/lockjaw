@@ -24,7 +24,6 @@ use crate::type_data::ProcessorTypeData;
 use crate::type_validator::TypeValidator;
 use base64::engine::Engine;
 use lazy_static::lazy_static;
-use lockjaw_common::environment::current_crate;
 use lockjaw_common::manifest::{ComponentType, Manifest};
 use lockjaw_common::type_data::TypeData;
 use proc_macro2::{Ident, TokenStream};
@@ -54,7 +53,6 @@ pub fn handle_component_attribute(
     attr: TokenStream,
     input: TokenStream,
     component_type: ComponentType,
-    definition_only: bool,
 ) -> Result<TokenStream, TokenStream> {
     let span = input.span();
     let mut item_trait: syn::ItemTrait =
@@ -125,12 +123,7 @@ pub fn handle_component_attribute(
     } else {
         let component_name = item_trait.ident.clone();
         let address_ident = format_ident!("LOCKJAW_COMPONENT_BUILDER_ADDR_{}", item_trait.ident);
-        let components_initializer_name = if definition_only {
-            // the root crate name is unknown but there can only be one.
-            format_ident!("lockjaw_init_root_components")
-        } else {
-            format_ident!("lockjaw_init_components_{}", current_crate())
-        };
+        let components_initializer_name = format_ident!("lockjaw_init_root_components");
 
         if let Some(module_manifest_name) = builder_modules {
             quote! {
@@ -286,8 +279,6 @@ pub fn generate_components(
             if !root {
                 continue;
             }
-        } else if component.type_data.field_crate.ne(&current_crate()) {
-            continue;
         }
         if component.component_type != ComponentType::Component {
             continue;

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component_visible, epilogue, injectable, module, Cl, Singleton};
+use lockjaw::{component_visible, injectable, module, Cl, Singleton};
 use printer::Printer;
 
 #[component_visible]
@@ -42,5 +42,3 @@ impl Module {
     #[binds]
     pub fn bind_printer(_impl: crate::PrinterImpl) -> Cl<dyn ::printer::Printer> {}
 }
-
-epilogue!();

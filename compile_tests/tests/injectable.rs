@@ -13,131 +13,112 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+use compile_tests::set_src_path;
 
 #[test]
-fn injectable_non_struct() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_non_struct.rs",
-        vec!["impl block expected"],
-    )
-}
-
-#[test]
-fn injectable_tuple() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_tuple.rs",
-        vec!["impl block expected"],
-    )
-}
-
-#[test]
-fn injectable_no_inject() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_no_inject.rs",
-        vec!["must have one method marked with #[inject]/#[factory]"],
-    )
-}
-
-#[test]
-fn injectable_multiple_inject() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_multiple_inject.rs",
-        vec!["only one method can be marked with #[inject]/#[factory]"],
-    )
-}
-
-#[test]
-fn injectable_multiple_factory() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_multiple_factory.rs",
-        vec!["only one method can be marked with #[inject]/#[factory]"],
-    )
-}
-
-#[test]
-fn injectable_inject_and_factory() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_inject_and_factory.rs",
-        vec!["only one method can be marked with #[inject]/#[factory]"],
-    )
-}
-
-#[test]
-fn injectable_unknown_metadata() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_unknown_metadata.rs",
-        vec!["unknown key: foo"],
-    )
-}
-
-#[test]
-fn injectable_factory_unknown_metadata() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_factory_unknown_metadata.rs",
-        vec!["unknown key: foo"],
-    )
-}
-
-#[test]
-fn injectable_factory_implementing_not_path() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_factory_implementing_not_path.rs",
-        vec!["path expected for 'implementing'"],
-    )
-}
-
-#[test]
-fn injectable_factory_implementing_not_trait() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_factory_implementing_not_trait.rs",
-        vec!["expected trait, found struct `B`"],
-    )
-}
-
-#[test]
-fn injectable_factory_implementing_method_name_mismatch() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_factory_implementing_method_name_mismatch.rs",
-        vec!["method `new` is not a member of trait `B`"],
-    )
-}
-
-#[test]
-fn injectable_factory_implementing_method_return_type_mismatch() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_factory_implementing_method_return_type_mismatch.rs",
-        vec!["method `new` has an incompatible type for trait"],
-    )
-}
-
-#[test]
-fn injectable_container_not_path() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_container_not_path.rs",
-        vec!["path expected for 'container'"],
-    )
-}
-
-#[test]
-fn injectable_container_not_scoped() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/injectable/injectable_container_not_scoped.rs",
-        vec![
-            "the 'container' metadata should only be used with an injectable that also has 'scope'",
-        ],
-    )
+fn injectable() {
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_non_struct.rs"),
+            vec!["impl block expected"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_tuple.rs"),
+            vec!["impl block expected"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_no_inject.rs"),
+            vec!["must have one method marked with #[inject]/#[factory]"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_multiple_inject.rs"),
+            vec!["only one method can be marked with #[inject]/#[factory]"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_multiple_factory.rs"),
+            vec!["only one method can be marked with #[inject]/#[factory]"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_inject_and_factory.rs"),
+            vec!["only one method can be marked with #[inject]/#[factory]"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_unknown_metadata.rs"),
+            vec!["unknown key: foo"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_factory_unknown_metadata.rs"),
+            vec!["unknown key: foo"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_factory_implementing_not_path.rs"),
+            vec!["path expected for 'implementing'"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_factory_implementing_not_trait.rs"),
+            vec!["expected trait, found struct `B`"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path(
+                "tests/injectable/injectable_factory_implementing_method_name_mismatch.rs",
+            ),
+            vec!["method `new` is not a member of trait `B`"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path(
+                "tests/injectable/injectable_factory_implementing_method_return_type_mismatch.rs",
+            ),
+            vec!["method `new` has an incompatible type for trait"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_container_not_path.rs"),
+            vec!["path expected for 'container'"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/injectable/injectable_container_not_scoped.rs"),
+            vec![
+                "the 'container' metadata should only be used with an injectable that also has 'scope'",
+            ],
+        )
+    }
 }

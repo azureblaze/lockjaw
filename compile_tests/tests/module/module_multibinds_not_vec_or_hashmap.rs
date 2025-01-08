@@ -29,4 +29,7 @@ impl S {
     #[multibinds]
     pub fn provide_string() -> String {}
 }
+
+fn main() {}
+
 lockjaw::epilogue!(test);

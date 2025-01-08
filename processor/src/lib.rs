@@ -24,7 +24,7 @@ use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
 
-use quote::{format_ident, quote, quote_spanned};
+use quote::{quote, quote_spanned};
 
 use error::handle_error;
 
@@ -76,12 +76,7 @@ pub fn builder_modules(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn component(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| {
-        components::handle_component_attribute(
-            attr.into(),
-            input.into(),
-            ComponentType::Component,
-            false,
-        )
+        components::handle_component_attribute(attr.into(), input.into(), ComponentType::Component)
     })
 }
 
@@ -92,7 +87,6 @@ pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
             attr.into(),
             input.into(),
             ComponentType::Subcomponent,
-            false,
         )
     })
 }
@@ -100,12 +94,7 @@ pub fn subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn define_component(attr: TokenStream, input: TokenStream) -> TokenStream {
     handle_error(|| {
-        components::handle_component_attribute(
-            attr.into(),
-            input.into(),
-            ComponentType::Component,
-            true,
-        )
+        components::handle_component_attribute(attr.into(), input.into(), ComponentType::Component)
     })
 }
 
@@ -116,7 +105,6 @@ pub fn define_subcomponent(attr: TokenStream, input: TokenStream) -> TokenStream
             attr.into(),
             input.into(),
             ComponentType::Subcomponent,
-            true,
         )
     })
 }
@@ -266,8 +254,8 @@ fn create_epilogue_config(input: TokenStream) -> EpilogueConfig {
     let set: HashSet<String> = input.into_iter().map(|t| t.to_string()).collect();
     EpilogueConfig {
         debug_output: set.contains("debug_output"),
-        for_test: set.contains("test"),
-        root: set.contains("root"),
+        for_test: false,
+        root: std::env::var("CARGO_BIN_NAME").is_ok(),
         ..EpilogueConfig::default()
     }
 }
@@ -298,7 +286,6 @@ fn internal_epilogue(
             }
         };
     }
-    let components_initializer_name = format_ident!("lockjaw_init_components_{}", current_crate());
 
     let root_component_initializer = if config.root {
         quote! {
@@ -319,13 +306,6 @@ fn internal_epilogue(
         #path_test
 
         #root_component_initializer
-
-        #[doc(hidden)]
-        #[no_mangle]
-        #[allow(non_snake_case)]
-        pub(crate) fn #components_initializer_name(){
-            #initiazers
-        }
     };
 
     if config.debug_output {
@@ -363,6 +343,21 @@ fn internal_epilogue(
 
 fn merge_manifest(config: &EpilogueConfig) -> Result<Manifest, proc_macro2::TokenStream> {
     let mut result: Manifest = Manifest::new();
+    if let Ok(manifest) = std::env::var("LOCKJAW_TRYBUILD_PATH") {
+        let test_manifest = lockjaw_common::manifest_parser::parse_manifest(
+            &LockjawPackage {
+                id: "".to_string(),
+                name: std::env::var("CARGO_PKG_NAME").unwrap().replace("-", "_"),
+                src_path: manifest,
+                direct_prod_crate_deps: vec![],
+                direct_test_crate_deps: vec![],
+            },
+            true,
+        );
+        result.merge_from(&test_manifest);
+        return Ok(result);
+    }
+
     if let Ok(manifest) = std::env::var("LOCKJAW_DEP_MANIFEST") {
         let reader = BufReader::new(File::open(manifest).expect("cannot find manifest file"));
         let dep_manifest: DepManifests =
@@ -402,7 +397,7 @@ fn merge_manifest(config: &EpilogueConfig) -> Result<Manifest, proc_macro2::Toke
                     &dep_manifest
                         .root_manifests
                         .get(&std::env::var("CARGO_CRATE_NAME").unwrap())
-                        .expect("CARGO_BIN_NAME not in manifest")
+                        .expect("CARGO_CRATE_NAME not in manifest")
                         .prod_manifest,
                 )
             }

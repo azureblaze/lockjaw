@@ -23,8 +23,6 @@ members = [
     "integration_tests/tests/test_dep",
     "integration_tests",
     "compile_tests",
-    "compile_tests/duplicated_root_epilogue/dep",
-    "compile_tests/duplicated_root_epilogue",
     "userguide/projects/setup",
     "userguide/projects/inject",
     "userguide/projects/request",

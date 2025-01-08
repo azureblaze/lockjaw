@@ -73,5 +73,3 @@ trait DepEntryPoint {
 use lockjaw::Cl;
 #[allow(unused_imports)]
 use DepEntryPoint as DEP;
-
-lockjaw::epilogue!();

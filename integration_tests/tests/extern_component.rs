@@ -22,4 +22,4 @@ fn main() {
     dep_component.dep();
 }
 
-lockjaw::epilogue!();
+lockjaw::epilogue!(root);

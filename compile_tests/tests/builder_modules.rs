@@ -14,20 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#[test]
-fn builder_modules_not_struct() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/builder_modules/builder_modules_not_struct.rs",
-        vec!["struct expected"],
-    )
-}
+use compile_tests::set_src_path;
 
 #[test]
-fn builder_modules_tuple_builder() {
-    let t = trybuild::TestCases::new();
-    t.compile_failed_with(
-        "tests/builder_modules/builder_modules_tuple_builder.rs",
-        vec!["#[builder_modules] cannot be tuples"],
-    )
+fn builder_modules() {
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/builder_modules/builder_modules_not_struct.rs"),
+            vec!["struct expected"],
+        )
+    }
+    {
+        let t = trybuild::TestCases::new();
+        t.compile_failed_with(
+            set_src_path("tests/builder_modules/builder_modules_tuple_builder.rs"),
+            vec!["#[builder_modules] cannot be tuples"],
+        )
+    }
 }
