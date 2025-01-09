@@ -19,11 +19,6 @@ use lockjaw::{
     builder_modules, component, injectable, module, qualifier, subcomponent, Cl, Provider,
 };
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/graph/graph_cyclic_dependency_after_provider.rs",
-    "",
-    "test"
-);
 struct Foo {
     bar: Box<crate::Bar>,
 }
@@ -55,4 +50,4 @@ trait S {
 
 fn main() {}
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

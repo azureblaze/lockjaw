@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/provides_no_return_type.rs",
-    "",
-    "test"
-);
 pub struct S {}
 
 #[module]
@@ -29,4 +24,4 @@ impl S {
     #[provides]
     pub fn provide_string() {}
 }
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

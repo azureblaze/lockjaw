@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/provides_move_self.rs",
-    "",
-    "test"
-);
 pub struct S {}
 
 #[module]
@@ -32,4 +27,4 @@ impl S {
     }
 }
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

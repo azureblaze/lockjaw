@@ -17,12 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/injectable/injectable_container_not_path.rs",
-    "",
-    "test"
-);
-
 pub struct Foo {}
 
 #[injectable(scope: MyComponent, container: "foo")]
@@ -35,4 +29,4 @@ impl Foo {
 
 #[component]
 trait MyComponent {}
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

@@ -17,12 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/into_map_string_key_collision.rs",
-    "",
-    "test"
-);
-
 pub struct MyModule {}
 
 #[module]
@@ -48,4 +42,4 @@ pub trait MyComponent {
 pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
 }
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

@@ -18,12 +18,6 @@ limitations under the License.
 
 use lockjaw::{component, epilogue, injectable};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/component/scope_not_declared.rs",
-    "",
-    "test"
-);
-
 pub struct Foo {}
 
 #[injectable(scope: bar)]
@@ -42,4 +36,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     assert_eq!(component.foo().s, "q_string");
 }
-epilogue!(test);
+epilogue!();

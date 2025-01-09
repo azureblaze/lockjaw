@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/injectable/injectable_factory_implementing_not_path.rs",
-    "",
-    "test"
-);
 struct S;
 
 struct B;
@@ -33,4 +28,4 @@ impl S {
         Self {}
     }
 }
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

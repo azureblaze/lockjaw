@@ -18,7 +18,7 @@ use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::ops::Deref;
 
-use crate::environment::current_crate;
+use crate::environment::current_package;
 use crate::manifest::{
     BuilderModules, Component, ComponentType, Dependency, ExpandedVisibility, Manifest, Module,
     TypeRoot,
@@ -135,7 +135,7 @@ pub fn handle_component_attribute(
         let mut exported_addr_type = TypeData::new();
         exported_addr_type.root = TypeRoot::CRATE;
         exported_addr_type.path = component.address.identifier_string();
-        exported_addr_type.field_crate = current_crate();
+        exported_addr_type.field_crate = current_package();
         result.expanded_visibilities.insert(
             component.address.canonical_string_path(),
             ExpandedVisibility {

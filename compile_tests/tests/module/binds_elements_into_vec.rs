@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/binds_elements_into_vec.rs",
-    "",
-    "test"
-);
 pub struct S {}
 
 pub trait ST {}
@@ -35,4 +30,4 @@ impl S {
     pub fn bind_s(&self) -> Vec<Cl<dyn crate::ST>> {}
 }
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

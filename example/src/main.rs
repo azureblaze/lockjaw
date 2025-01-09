@@ -137,4 +137,4 @@ fn test_greeter() {
     );
 }
 
-lockjaw::epilogue!(root, debug_output);
+lockjaw::epilogue!(debug_output);

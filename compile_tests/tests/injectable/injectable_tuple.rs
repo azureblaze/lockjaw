@@ -17,13 +17,7 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/injectable/injectable_tuple.rs",
-    "",
-    "test"
-);
-
 #[lockjaw::injectable]
 struct S(String);
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

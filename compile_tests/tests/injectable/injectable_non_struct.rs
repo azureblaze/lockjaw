@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/injectable/injectable_non_struct.rs",
-    "",
-    "test"
-);
 #[lockjaw::injectable]
 trait S {}
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

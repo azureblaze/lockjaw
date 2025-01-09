@@ -19,16 +19,10 @@ use lockjaw::{
     builder_modules, component, entry_point, injectable, module, qualifier, subcomponent, Cl,
 };
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/component/entry_point_not_installed_in_defined_component.rs",
-    "",
-    "test"
-);
-
 #[component]
 pub trait MyComponent {}
 
 #[entry_point(install_in: MyComponent)]
 pub trait MyEntryPoint {}
 
-lockjaw::epilogue!(root test);
+lockjaw::epilogue!();

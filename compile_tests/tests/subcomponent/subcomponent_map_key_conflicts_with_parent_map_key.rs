@@ -17,7 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!("../../../compile_tests/tests/subcomponent/subcomponent_map_key_conflicts_with_parent_map_key.rs", "","test");
 struct BazModule {}
 
 #[module]
@@ -50,4 +49,4 @@ pub trait MyComponent {
     fn sub(&'_ self) -> lockjaw::Cl<dyn MySubcomponentBuilder<'_>>;
 }
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

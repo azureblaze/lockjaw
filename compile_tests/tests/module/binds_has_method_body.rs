@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/binds_has_method_body.rs",
-    "",
-    "test"
-);
 pub struct S {}
 
 pub trait ST {}
@@ -36,4 +31,4 @@ impl S {
     }
 }
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

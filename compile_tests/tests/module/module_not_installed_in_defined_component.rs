@@ -19,12 +19,6 @@ use lockjaw::{
     builder_modules, component, entry_point, injectable, module, qualifier, subcomponent, Cl,
 };
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/module_not_installed_in_defined_component.rs",
-    "",
-    "test"
-);
-
 struct S;
 
 #[module(install_in: MyComponent)]
@@ -33,4 +27,4 @@ impl S {}
 #[component]
 pub trait MyComponent {}
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

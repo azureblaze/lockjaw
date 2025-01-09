@@ -295,7 +295,7 @@ fn add_component_visible(ident: &str, mod_: &Mod, manifest: &mut Manifest) -> Re
     let mut exported_type = TypeData::new();
     exported_type.root = TypeRoot::CRATE;
     exported_type.path = type_.identifier_string();
-    exported_type.field_crate = crate::environment::current_crate();
+    exported_type.field_crate = crate::environment::current_package();
 
     manifest.expanded_visibilities.insert(
         type_.canonical_string_path(),

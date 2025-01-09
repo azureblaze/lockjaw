@@ -17,7 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!("../../../compile_tests/tests/subcomponent/subcomponent_multibinding_conflicts_with_parent_collection_binding.rs", "","test");
 struct BazModule {}
 
 #[module]
@@ -49,4 +48,4 @@ pub trait MyComponent {
     fn sub(&'_ self) -> lockjaw::Cl<dyn MySubcomponentBuilder<'_>>;
 }
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

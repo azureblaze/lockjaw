@@ -17,13 +17,8 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/injectable/injectable_unknown_metadata.rs",
-    "",
-    "test"
-);
 struct S;
 
 #[lockjaw::injectable(foo: "bar")]
 impl S {}
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

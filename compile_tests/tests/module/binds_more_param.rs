@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/binds_more_param.rs",
-    "",
-    "test"
-);
 pub struct S {}
 
 pub trait ST {}
@@ -33,4 +28,4 @@ impl S {
     #[binds]
     pub fn bind_string(a: i32, b: i32) -> Cl<dyn crate::ST> {}
 }
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

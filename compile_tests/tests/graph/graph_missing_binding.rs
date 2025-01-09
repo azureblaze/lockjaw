@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/graph/graph_missing_binding.rs",
-    "",
-    "test"
-);
 struct Foo {}
 
 #[component]
@@ -30,4 +25,4 @@ trait S {
 }
 
 fn main() {}
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/binds_return_type_not_component_lifetime.rs",
-    "",
-    "test"
-);
 pub struct S {}
 
 pub trait ST {}
@@ -33,4 +28,4 @@ impl S {
     #[binds]
     pub fn bind_s() -> impl crate::ST {}
 }
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

@@ -97,7 +97,7 @@ impl TypeData {
         match self.root {
             TypeRoot::GLOBAL => format!("{}::{}", prefix, self.path_with_args(true)),
             TypeRoot::CRATE => {
-                if environment::current_crate().eq(&self.field_crate) {
+                if environment::current_package().eq(&self.field_crate) {
                     format!("{}crate::{}", prefix, self.path_with_args(true))
                 } else {
                     format!(

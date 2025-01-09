@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/subcomponent/subcomponent_parent_not_defined_component.rs",
-    "",
-    "test"
-);
 struct BazModule {}
 
 #[subcomponent(parent: MyComponent)]
@@ -32,4 +27,4 @@ pub trait MyComponent {
     fn sub(&'_ self) -> lockjaw::Cl<dyn MySubcomponentBuilder<'_>>;
 }
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

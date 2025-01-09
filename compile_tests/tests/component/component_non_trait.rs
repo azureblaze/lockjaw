@@ -17,13 +17,7 @@ extern crate lockjaw;
 
 use lockjaw::{component, epilogue};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/component/component_non_trait.rs",
-    "",
-    "test"
-);
-
 #[component]
 struct S {}
 
-epilogue!(test);
+epilogue!();

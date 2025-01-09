@@ -29,7 +29,7 @@ use quote::quote;
 use error::handle_error;
 
 use crate::error::CompileError;
-use lockjaw_common::environment::current_crate;
+use lockjaw_common::environment::{current_crate, current_package};
 use lockjaw_common::manifest::{ComponentType, DepManifests, Manifest};
 use lockjaw_common::manifest_parser::LockjawPackage;
 #[macro_use]
@@ -197,7 +197,7 @@ pub fn private_root_epilogue(input: TokenStream) -> TokenStream {
         let mut config = EpilogueConfig {
             ..create_epilogue_config(input)
         };
-        if current_crate().eq("lockjaw") {
+        if current_package().eq("lockjaw") {
             // rustdoc --test does not run with #[cfg(test)] and will reach here.
             config.for_test = true;
             config.root = true;
@@ -372,7 +372,9 @@ fn merge_manifest(config: &EpilogueConfig) -> Result<Manifest, proc_macro2::Toke
             }
         }
     } else {
-        panic!("manifest missing, is the build script called?");
+        return Err(
+            quote! { compile_error!("manifest missing, is the lockjaw::build_script called in build.rs?");},
+        );
     }
     Ok(result)
 }

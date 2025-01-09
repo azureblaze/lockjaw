@@ -18,7 +18,7 @@ use crate::manifest::Manifest;
 use crate::parsing::FieldValue;
 
 use crate::attributes::components;
-use crate::environment::current_crate;
+use crate::environment::current_package;
 use crate::manifest::{EntryPoint, ExpandedVisibility, TypeRoot};
 use crate::manifest_parser::Mod;
 use crate::type_data::TypeData;
@@ -84,12 +84,12 @@ pub fn handle_entry_point_attribute(
     let mut exported_type = TypeData::new();
     exported_type.root = TypeRoot::CRATE;
     exported_type.path = type_.identifier_string();
-    exported_type.field_crate = current_crate();
+    exported_type.field_crate = current_package();
 
     let mut exported_addr_type = TypeData::new();
     exported_addr_type.root = TypeRoot::CRATE;
     exported_addr_type.path = entry_point.address.identifier_string();
-    exported_addr_type.field_crate = current_crate();
+    exported_addr_type.field_crate = current_package();
 
     manifest.expanded_visibilities.insert(
         type_.canonical_string_path_without_args(),

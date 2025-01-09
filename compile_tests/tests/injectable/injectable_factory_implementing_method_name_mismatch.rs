@@ -17,10 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/injectable/injectable_factory_implementing_method_name_mismatch.rs",
-    "","test"
-);
 struct S;
 
 pub trait B {
@@ -34,4 +30,4 @@ impl S {
         Self {}
     }
 }
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

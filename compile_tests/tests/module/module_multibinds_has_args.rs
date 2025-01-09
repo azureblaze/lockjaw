@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/module/module_multibinds_has_args.rs",
-    "",
-    "test"
-);
 pub struct S {}
 
 #[module]
@@ -29,4 +24,4 @@ impl S {
     #[multibinds]
     pub fn vec(&self) -> Vec<String> {}
 }
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

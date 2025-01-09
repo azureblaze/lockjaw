@@ -17,13 +17,7 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/component/component_unknown_metadata.rs",
-    "",
-    "test"
-);
-
 #[lockjaw::component(foo: "bar")]
 pub trait MyComponent {}
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

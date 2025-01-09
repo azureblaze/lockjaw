@@ -17,11 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{component, injectable};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/component/component_provision_non_scoped_of_scoped.rs",
-    "",
-    "test"
-);
 pub struct Foo {}
 
 #[injectable(scope: crate::MyComponent)]
@@ -41,4 +36,4 @@ pub fn main() {
     let component: Box<dyn MyComponent> = <dyn MyComponent>::new();
     component.foo();
 }
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();

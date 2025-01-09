@@ -49,7 +49,7 @@ fn handle_item_struct(item_struct: ItemStruct, mod_: &Mod) -> Result<Manifest> {
     let mut exported_type = TypeData::new();
     exported_type.root = TypeRoot::CRATE;
     exported_type.path = type_.identifier_string();
-    exported_type.field_crate = crate::environment::current_crate();
+    exported_type.field_crate = crate::environment::current_package();
 
     manifest.expanded_visibilities.insert(
         type_.canonical_string_path(),
@@ -74,7 +74,7 @@ fn handle_item_trait(item_trait: ItemTrait, mod_: &Mod) -> Result<Manifest> {
     let mut exported_type = TypeData::new();
     exported_type.root = TypeRoot::CRATE;
     exported_type.path = type_.identifier_string();
-    exported_type.field_crate = crate::environment::current_crate();
+    exported_type.field_crate = crate::environment::current_package();
     exported_type.trait_object = true;
 
     manifest.expanded_visibilities.insert(

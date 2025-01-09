@@ -17,12 +17,6 @@ extern crate lockjaw;
 
 use lockjaw::{builder_modules, component, injectable, module, qualifier, subcomponent, Cl};
 
-lockjaw::prologue!(
-    "../../../compile_tests/tests/component/component_trait_object_provision_no_lifetime.rs",
-    "",
-    "test"
-);
-
 pub trait Foo {}
 
 #[component]
@@ -30,4 +24,4 @@ pub trait MyComponent {
     fn foo(&self) -> Box<dyn crate::Foo>;
 }
 
-lockjaw::epilogue!(test);
+lockjaw::epilogue!();
