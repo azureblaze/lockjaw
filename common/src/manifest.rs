@@ -264,10 +264,17 @@ pub struct ExpandedVisibility {
     pub crate_local_name: TypeData,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RootManifest {
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct CfgManifest {
     pub prod_manifest: Manifest,
     pub test_manifest: Manifest,
+}
+
+impl CfgManifest {
+    pub fn merge_from(&mut self, other: &CfgManifest) {
+        self.prod_manifest.merge_from(&other.prod_manifest);
+        self.test_manifest.merge_from(&other.test_manifest);
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -275,5 +282,5 @@ pub struct DepManifests {
     pub crate_name: String,
     pub prod_manifest: Vec<Manifest>,
     pub test_manifest: Vec<Manifest>,
-    pub root_manifests: HashMap<String, RootManifest>,
+    pub root_manifests: HashMap<String, CfgManifest>,
 }

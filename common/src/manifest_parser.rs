@@ -2,7 +2,7 @@ use crate::attributes;
 use crate::attributes::cfg::CfgEval;
 use crate::build_log::FatalBuildScriptError;
 use crate::log;
-use crate::manifest::{ComponentType, DepManifests, Manifest, RootManifest, TypeRoot};
+use crate::manifest::{CfgManifest, ComponentType, DepManifests, Manifest, TypeRoot};
 use crate::parsing::find_attribute;
 use crate::type_data;
 use crate::type_data::TypeData;
@@ -157,25 +157,50 @@ pub fn build_manifest() -> DepManifests {
     let test_packages = gather_lockjaw_packages(&package_id, &toml_map, &dep_map, true, true);
     //log!("test packages:{:#?}", test_packages);
 
+    let mut all_packages: HashSet<LockjawPackage> = HashSet::new();
+    for package in &prod_packages {
+        all_packages.insert(package.clone());
+    }
+    for package in &test_packages {
+        all_packages.insert(package.clone());
+    }
+    for (_, package) in &target_packages {
+        all_packages.insert(package.clone());
+    }
+
+    let cfg_manifest_map: HashMap<LockjawPackage, CfgManifest> = all_packages
+        .iter()
+        .map(|package| (package.clone(), parse_manifest(package)))
+        .collect();
+
     DepManifests {
         crate_name: package_name,
         prod_manifest: prod_packages
             .iter()
-            .map(|package| parse_manifest(package, false))
+            .map(|package| {
+                cfg_manifest_map
+                    .get(&package)
+                    .unwrap()
+                    .prod_manifest
+                    .clone()
+            })
             .collect(),
         test_manifest: test_packages
             .iter()
-            .map(|package| parse_manifest(package, true))
+            .map(|package| {
+                cfg_manifest_map
+                    .get(&package)
+                    .unwrap()
+                    .test_manifest
+                    .clone()
+            })
             .collect(),
         root_manifests: target_packages
             .iter()
             .map(|entry| {
                 (
                     entry.0.clone(),
-                    RootManifest {
-                        prod_manifest: parse_manifest(entry.1, false),
-                        test_manifest: parse_manifest(entry.1, true),
-                    },
+                    cfg_manifest_map.get(&entry.1).unwrap().clone(),
                 )
             })
             .collect(),
@@ -246,7 +271,7 @@ fn gather_lockjaw_packages(
     result
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct LockjawPackage {
     pub id: String,
     pub name: String,
@@ -254,20 +279,19 @@ pub struct LockjawPackage {
     pub direct_prod_crate_deps: Vec<String>,
     pub direct_test_crate_deps: Vec<String>,
 }
-pub fn parse_manifest(lockjaw_package: &LockjawPackage, cfg_test: bool) -> Manifest {
+pub fn parse_manifest(lockjaw_package: &LockjawPackage) -> CfgManifest {
     let result = parse_file(
         &Path::new(&lockjaw_package.src_path),
         "(src)",
         &Vec::new(),
         lockjaw_package,
-        cfg_test,
     );
     result.unwrap_or_else(|err| {
         if let Some(fatal) = err.downcast_ref::<FatalBuildScriptError>() {
             panic!("{}", fatal);
         }
         log!("{}", err);
-        Manifest::new()
+        CfgManifest::default()
     })
 }
 
@@ -276,8 +300,7 @@ fn parse_file(
     name: &str,
     parents: &Vec<String>,
     lockjaw_package: &LockjawPackage,
-    cfg_test: bool,
-) -> Result<Manifest> {
+) -> Result<CfgManifest> {
     //log!("parsing {}: {:?}", lockjaw_package.name, src_path);
     let mut src = String::new();
     File::open(src_path)
@@ -298,14 +321,7 @@ fn parse_file(
             log!("debug ast: file:///{}", &debug_out_name);
             std::fs::write(&debug_out_name, format!("{:#?}", syn_file)).unwrap();
         }
-        parse_mods(
-            src_path,
-            name,
-            &syn_file.items,
-            parents,
-            &lockjaw_package,
-            cfg_test,
-        )
+        parse_mods(src_path, name, &syn_file.items, parents, &lockjaw_package)
     } else {
         bail!("{} is not valid rust", src_path.to_str().unwrap());
     }
@@ -317,131 +333,169 @@ fn parse_mods(
     items: &Vec<Item>,
     parents: &Vec<String>,
     lockjaw_package: &LockjawPackage,
-    cfg_test: bool,
-) -> Result<Manifest> {
+) -> Result<CfgManifest> {
     let mut new_parents = parents.clone();
     if name.ne("(src)") {
         new_parents.push(name.to_owned());
     }
 
-    let uses = get_uses(items, lockjaw_package, &new_parents, cfg_test)?;
-    let mod_ = Mod {
+    let prod_uses = get_uses(items, lockjaw_package, &new_parents, false)?;
+    let test_uses = get_uses(items, lockjaw_package, &new_parents, true)?;
+    let prod_mod = Mod {
         crate_name: lockjaw_package.name.clone(),
         name: name.to_owned(),
         parents: parents.clone(),
-        uses,
+        uses: prod_uses,
     };
-    let mut result = Manifest::new();
+    let test_mod = Mod {
+        crate_name: lockjaw_package.name.clone(),
+        name: name.to_owned(),
+        parents: parents.clone(),
+        uses: test_uses,
+    };
+
+    let mut result = CfgManifest::default();
     for item in items.iter() {
         let attrs = item_attrs(item);
-        if let Some(cfg) = find_attribute(&attrs, "cfg") {
-            if let Meta::List(meta_list) = &cfg.meta {
-                if !attributes::cfg::handle_cfg(meta_list)?.eval(cfg_test) {
-                    continue;
-                }
-            }
+
+        let for_prod = for_cfg(&attrs, false)?;
+        let for_test = for_cfg(&attrs, true)?;
+
+        if !for_prod && !for_test {
+            continue;
         }
 
         if let Item::Mod(item_mod) = item {
-            let mod_manifests = &parse_mod_item(
-                src_path,
-                name,
-                item_mod,
-                &new_parents,
-                lockjaw_package,
-                cfg_test,
-            )?;
-            result.merge_from(&mod_manifests);
+            let mod_manifests =
+                &parse_mod_item(src_path, name, item_mod, &new_parents, lockjaw_package)?;
+            if for_prod {
+                result
+                    .prod_manifest
+                    .merge_from(&mod_manifests.prod_manifest);
+            }
+            if for_test {
+                result
+                    .test_manifest
+                    .merge_from(&mod_manifests.test_manifest);
+            }
         }
 
-        for attribute in attrs.iter() {
-            let type_data = type_data::from_path(attribute.path(), &mod_)?;
-            match type_data.canonical_string_path().as_str() {
-                "::lockjaw::injectable" => {
-                    result.merge_from(&attributes::injectables::handle_injectable_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        &mod_,
-                    )?);
-                }
-                "::lockjaw::component_visible" => {
-                    result.merge_from(
-                        &attributes::component_visibles::handle_component_visible_attribute(
-                            attribute.parse_args().unwrap_or(TokenStream::new()),
-                            item.to_token_stream(),
-                            &mod_,
-                        )?,
-                    );
-                }
-                "::lockjaw::component" => {
-                    result.merge_from(&attributes::components::handle_component_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        ComponentType::Component,
-                        false,
-                        &mod_,
-                    )?);
-                }
-                "::lockjaw::subcomponent" => {
-                    result.merge_from(&attributes::components::handle_component_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        ComponentType::Subcomponent,
-                        false,
-                        &mod_,
-                    )?);
-                }
-                "::lockjaw::define_component" => {
-                    result.merge_from(&attributes::components::handle_component_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        ComponentType::Component,
-                        true,
-                        &mod_,
-                    )?);
-                }
-                "::lockjaw::define_subcomponent" => {
-                    result.merge_from(&attributes::components::handle_component_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        ComponentType::Subcomponent,
-                        true,
-                        &mod_,
-                    )?);
-                }
-                "::lockjaw::builder_modules" => {
-                    result.merge_from(&attributes::components::handle_builder_modules_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        &mod_,
-                    )?);
-                }
-                "::lockjaw::entry_point" => {
-                    result.merge_from(&attributes::entrypoints::handle_entry_point_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        &mod_,
-                    )?);
-                }
-                "::lockjaw::module" => {
-                    result.merge_from(&attributes::modules::handle_module_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        &mod_,
-                    )?);
-                }
-                "::lockjaw::qualifier" => {
-                    result.merge_from(&attributes::qualifier::handle_qualifier_attribute(
-                        attribute.parse_args().unwrap_or(TokenStream::new()),
-                        item.to_token_stream(),
-                        &mod_,
-                    )?);
-                }
-                _ => {}
-            }
+        if for_prod {
+            result
+                .prod_manifest
+                .merge_from(&parse_item(item, &attrs, &prod_mod)?);
+        }
+        if for_test {
+            result
+                .test_manifest
+                .merge_from(&parse_item(item, &attrs, &test_mod)?);
         }
     }
     Ok(result)
+}
+
+fn parse_item(item: &Item, attrs: &Vec<Attribute>, mod_: &Mod) -> Result<Manifest> {
+    let mut item_result = Manifest::new();
+    for attribute in attrs.iter() {
+        let type_data = type_data::from_path(attribute.path(), &mod_)?;
+        match type_data.canonical_string_path().as_str() {
+            "::lockjaw::injectable" => {
+                item_result.merge_from(&attributes::injectables::handle_injectable_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    &mod_,
+                )?);
+            }
+            "::lockjaw::component_visible" => {
+                item_result.merge_from(
+                    &attributes::component_visibles::handle_component_visible_attribute(
+                        attribute.parse_args().unwrap_or(TokenStream::new()),
+                        item.to_token_stream(),
+                        &mod_,
+                    )?,
+                );
+            }
+            "::lockjaw::component" => {
+                item_result.merge_from(&attributes::components::handle_component_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    ComponentType::Component,
+                    false,
+                    &mod_,
+                )?);
+            }
+            "::lockjaw::subcomponent" => {
+                item_result.merge_from(&attributes::components::handle_component_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    ComponentType::Subcomponent,
+                    false,
+                    &mod_,
+                )?);
+            }
+            "::lockjaw::define_component" => {
+                item_result.merge_from(&attributes::components::handle_component_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    ComponentType::Component,
+                    true,
+                    &mod_,
+                )?);
+            }
+            "::lockjaw::define_subcomponent" => {
+                item_result.merge_from(&attributes::components::handle_component_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    ComponentType::Subcomponent,
+                    true,
+                    &mod_,
+                )?);
+            }
+            "::lockjaw::builder_modules" => {
+                item_result.merge_from(&attributes::components::handle_builder_modules_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    &mod_,
+                )?);
+            }
+            "::lockjaw::entry_point" => {
+                item_result.merge_from(&attributes::entrypoints::handle_entry_point_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    &mod_,
+                )?);
+            }
+            "::lockjaw::module" => {
+                item_result.merge_from(&attributes::modules::handle_module_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    &mod_,
+                )?);
+            }
+            "::lockjaw::qualifier" => {
+                item_result.merge_from(&attributes::qualifier::handle_qualifier_attribute(
+                    attribute.parse_args().unwrap_or(TokenStream::new()),
+                    item.to_token_stream(),
+                    &mod_,
+                )?);
+            }
+            _ => {}
+        }
+    }
+    Ok(item_result)
+}
+
+fn for_cfg(attrs: &Vec<Attribute>, cfg_test: bool) -> Result<bool> {
+    if let Some(cfg) = find_attribute(&attrs, "cfg") {
+        if let Meta::List(meta_list) = &cfg.meta {
+            if !attributes::cfg::handle_cfg(meta_list)?.eval(cfg_test) {
+                return Ok(false);
+            }
+        } else {
+            bail!("cfg attribute is not a list");
+        }
+    }
+    Ok(true)
 }
 
 fn item_attrs(item: &Item) -> Vec<Attribute> {
@@ -472,9 +526,8 @@ fn parse_mod_item(
     item_mod: &syn::ItemMod,
     parents: &Vec<String>,
     lockjaw_package: &LockjawPackage,
-    cfg_test: bool,
-) -> Result<Manifest> {
-    let mut result = Manifest::new();
+) -> Result<CfgManifest> {
+    let mut result = CfgManifest::default();
     let mod_name = item_mod.ident.to_string();
     if let Some((_, items)) = &item_mod.content {
         result.merge_from(&parse_mods(
@@ -483,7 +536,6 @@ fn parse_mod_item(
             items,
             &parents,
             lockjaw_package,
-            cfg_test,
         )?);
     } else {
         let mut dir = Path::new(&lockjaw_package.src_path)
@@ -512,7 +564,6 @@ fn parse_mod_item(
             &mod_name,
             &mod_parents,
             lockjaw_package,
-            cfg_test,
         )?);
     }
     Ok(result)

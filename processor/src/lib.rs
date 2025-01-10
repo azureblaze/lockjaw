@@ -313,16 +313,14 @@ fn internal_epilogue(
 fn merge_manifest(config: &EpilogueConfig) -> Result<Manifest, proc_macro2::TokenStream> {
     let mut result: Manifest = Manifest::new();
     if let Ok(manifest) = std::env::var("LOCKJAW_TRYBUILD_PATH") {
-        let test_manifest = lockjaw_common::manifest_parser::parse_manifest(
-            &LockjawPackage {
-                id: "".to_string(),
-                name: std::env::var("CARGO_PKG_NAME").unwrap().replace("-", "_"),
-                src_path: manifest,
-                direct_prod_crate_deps: vec![],
-                direct_test_crate_deps: vec![],
-            },
-            true,
-        );
+        let test_manifest = lockjaw_common::manifest_parser::parse_manifest(&LockjawPackage {
+            id: "".to_string(),
+            name: std::env::var("CARGO_PKG_NAME").unwrap().replace("-", "_"),
+            src_path: manifest,
+            direct_prod_crate_deps: vec![],
+            direct_test_crate_deps: vec![],
+        })
+        .test_manifest;
         result.merge_from(&test_manifest);
         return Ok(result);
     }
