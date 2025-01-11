@@ -61,9 +61,9 @@ fn component() {
     }
     {
         let t = trybuild::TestCases::new();
-        t.compile_failed_with(set_src_path(
-            "tests/component/component_trait_object_provision_no_lifetime.rs"),
-                              vec!["trait object return type may depend on scoped objects, and must have lifetime bounded by the component"],
+        t.compile_failed_with(
+            set_src_path("tests/component/component_trait_object_provision_no_lifetime.rs"),
+            vec!["trait object return type may depend on scoped objects, and must have lifetime bounded by the component by wrapping with lockjaw::Cl<>"],
         )
     }
     {

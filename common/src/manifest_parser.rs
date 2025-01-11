@@ -302,7 +302,7 @@ pub fn parse_manifest(lockjaw_package: &LockjawPackage) -> CfgManifest {
             for m in message.split('\n') {
                 println!("cargo::error={}", m);
             }
-            return CfgManifest::default();
+            panic!("{}", message);
         }
         log!("{}", err);
         CfgManifest::default()
