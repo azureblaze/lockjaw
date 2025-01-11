@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 mod attributes;
-pub mod build_log;
+mod build_log;
 pub mod environment;
 pub mod manifest;
 pub mod manifest_parser;

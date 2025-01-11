@@ -284,3 +284,12 @@ pub struct DepManifests {
     pub test_manifest: Vec<Manifest>,
     pub root_manifests: HashMap<String, CfgManifest>,
 }
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct LockjawPackage {
+    pub id: String,
+    pub name: String,
+    pub src_path: String,
+    pub direct_prod_crate_deps: Vec<String>,
+    pub direct_test_crate_deps: Vec<String>,
+}

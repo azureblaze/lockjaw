@@ -18,7 +18,9 @@ use crate::attributes;
 use crate::attributes::cfg::CfgEval;
 use crate::build_log::FatalBuildScriptError;
 use crate::log;
-use crate::manifest::{CfgManifest, ComponentType, DepManifests, Manifest, TypeRoot};
+use crate::manifest::{
+    CfgManifest, ComponentType, DepManifests, LockjawPackage, Manifest, TypeRoot,
+};
 use crate::parsing::find_attribute;
 use crate::type_data;
 use crate::type_data::TypeData;
@@ -287,14 +289,6 @@ fn gather_lockjaw_packages(
     result
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct LockjawPackage {
-    pub id: String,
-    pub name: String,
-    pub src_path: String,
-    pub direct_prod_crate_deps: Vec<String>,
-    pub direct_test_crate_deps: Vec<String>,
-}
 pub fn parse_manifest(lockjaw_package: &LockjawPackage) -> CfgManifest {
     let result = parse_file(
         &Path::new(&lockjaw_package.src_path),
@@ -304,7 +298,11 @@ pub fn parse_manifest(lockjaw_package: &LockjawPackage) -> CfgManifest {
     );
     result.unwrap_or_else(|err| {
         if let Some(fatal) = err.downcast_ref::<FatalBuildScriptError>() {
-            panic!("{}", fatal);
+            let message = fatal.to_string();
+            for m in message.split('\n') {
+                println!("cargo::error={}", m);
+            }
+            return CfgManifest::default();
         }
         log!("{}", err);
         CfgManifest::default()
@@ -337,7 +335,15 @@ fn parse_file(
             log!("debug ast: file:///{}", &debug_out_name);
             std::fs::write(&debug_out_name, format!("{:#?}", syn_file)).unwrap();
         }
-        parse_mods(src_path, name, &syn_file.items, parents, &lockjaw_package)
+        parse_mods(
+            src_path,
+            name,
+            &syn_file.items,
+            parents,
+            &lockjaw_package,
+            src_path.to_str().unwrap(),
+            &src,
+        )
     } else {
         bail!("{} is not valid rust", src_path.to_str().unwrap());
     }
@@ -349,6 +355,8 @@ fn parse_mods(
     items: &Vec<Item>,
     parents: &Vec<String>,
     lockjaw_package: &LockjawPackage,
+    source_file: &str,
+    source: &str,
 ) -> Result<CfgManifest> {
     let mut new_parents = parents.clone();
     if name.ne("(src)") {
@@ -362,12 +370,16 @@ fn parse_mods(
         name: name.to_owned(),
         parents: parents.clone(),
         uses: prod_uses,
+        source_file,
+        source,
     };
     let test_mod = Mod {
         crate_name: lockjaw_package.name.clone(),
         name: name.to_owned(),
         parents: parents.clone(),
         uses: test_uses,
+        source_file: source_file,
+        source: source,
     };
 
     let mut result = CfgManifest::default();
@@ -382,8 +394,15 @@ fn parse_mods(
         }
 
         if let Item::Mod(item_mod) = item {
-            let mod_manifests =
-                &parse_mod_item(src_path, name, item_mod, &new_parents, lockjaw_package)?;
+            let mod_manifests = &parse_mod_item(
+                src_path,
+                name,
+                item_mod,
+                &new_parents,
+                lockjaw_package,
+                source_file,
+                source,
+            )?;
             if for_prod {
                 result
                     .prod_manifest
@@ -542,6 +561,8 @@ fn parse_mod_item(
     item_mod: &syn::ItemMod,
     parents: &Vec<String>,
     lockjaw_package: &LockjawPackage,
+    source_file: &str,
+    source: &str,
 ) -> Result<CfgManifest> {
     let mut result = CfgManifest::default();
     let mod_name = item_mod.ident.to_string();
@@ -552,6 +573,8 @@ fn parse_mod_item(
             items,
             &parents,
             lockjaw_package,
+            source_file,
+            source,
         )?);
     } else {
         let mut dir = Path::new(&lockjaw_package.src_path)
@@ -636,14 +659,16 @@ fn get_uses(
     Ok(result)
 }
 #[derive(Debug)]
-pub struct Mod {
+pub struct Mod<'a> {
     pub crate_name: String,
     pub name: String,
     pub parents: Vec<String>,
     pub uses: HashMap<String, UsePath>,
+    pub source_file: &'a str,
+    pub source: &'a str,
 }
 
-impl Mod {
+impl<'a> Mod<'a> {
     pub fn resolve_declare_path(&self, identifier: &str) -> Result<String> {
         let mut path = String::new();
         if !self.parents.is_empty() {

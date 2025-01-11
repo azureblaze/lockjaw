@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-pub mod cfg;
-pub mod component_visibles;
-pub mod components;
-pub mod entrypoints;
-pub mod injectables;
-pub mod modules;
-pub mod qualifier;
+pub(crate) mod cfg;
+pub(crate) mod component_visibles;
+pub(crate) mod components;
+pub(crate) mod entrypoints;
+pub(crate) mod injectables;
+pub(crate) mod modules;
+pub(crate) mod qualifier;

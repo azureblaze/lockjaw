@@ -32,6 +32,7 @@ use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use syn::__private::ToTokens;
+use syn::spanned::Spanned;
 use syn::{Attribute, ItemTrait};
 
 lazy_static! {
@@ -184,8 +185,7 @@ pub fn get_provisions(item_trait: &ItemTrait, mod_: &Mod) -> Result<Vec<Dependen
             provision.name = method.sig.ident.to_string();
             if let syn::ReturnType::Type(ref _token, ref ty) = method.sig.output {
                 if is_trait_object_without_lifetime(ty.deref(), mod_)? {
-                    let path = type_data::from_local(&item_trait.ident.to_string(), mod_)?;
-                    build_script_fatal!("in {}::{}:\ntrait object return type may depend on scoped objects, and must have lifetime bounded by the component", path.canonical_string_path(), method.sig.ident);
+                    build_script_fatal!(ty.span(), mod_, "trait object return type may depend on scoped objects, and must have lifetime bounded by the component by wrapping with lockjaw::Cl<>.");
                 }
                 provision.type_data = type_data::from_syn_type(ty.deref(), mod_)?;
                 provision.type_data.qualifier = qualifier.map(Box::new);

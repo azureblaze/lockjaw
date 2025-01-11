@@ -30,8 +30,8 @@ use error::handle_error;
 
 use crate::error::CompileError;
 use lockjaw_common::environment::{current_crate, current_package};
+use lockjaw_common::manifest::LockjawPackage;
 use lockjaw_common::manifest::{ComponentType, DepManifests, Manifest};
-use lockjaw_common::manifest_parser::LockjawPackage;
 #[macro_use]
 mod log;
 mod component_visibles;
