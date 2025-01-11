@@ -43,6 +43,16 @@ pub(crate) struct SpanData {
 
 impl SpanData {
     pub fn from_span(span: Span, mod_: &Mod) -> Self {
+        let marker =
+            if span.start().line == span.end().line && span.end().column > span.start().column {
+                format!(
+                    "{}{}",
+                    " ".repeat(span.start().column),
+                    "^".repeat(span.end().column - span.start().column)
+                )
+            } else {
+                "".to_string()
+            };
         SpanData {
             location: format!(
                 "{}:{}:{}",
@@ -56,11 +66,7 @@ impl SpanData {
                 .nth(span.start().line - 1)
                 .unwrap_or("(invalid)")
                 .to_string(),
-            marker: format!(
-                "{}{}",
-                " ".repeat(span.start().column),
-                "^".repeat(span.end().column - span.start().column)
-            ),
+            marker,
         }
     }
 }
