@@ -53,6 +53,15 @@ impl SpanData {
             } else {
                 "".to_string()
             };
+        let line = if span.start().line > 0 {
+            mod_.source
+                .lines()
+                .nth(span.start().line - 1)
+                .unwrap_or("(invalid)")
+                .to_string()
+        } else {
+            "".to_string()
+        };
         SpanData {
             location: format!(
                 "{}:{}:{}",
@@ -60,12 +69,7 @@ impl SpanData {
                 span.start().line,
                 span.start().column
             ),
-            line: mod_
-                .source
-                .lines()
-                .nth(span.start().line - 1)
-                .unwrap_or("(invalid)")
-                .to_string(),
+            line,
             marker,
         }
     }
