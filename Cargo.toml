@@ -34,7 +34,7 @@ members = [
 
 [package]
 name = "lockjaw"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Ta-wei Yen"]
 edition = "2021"
 description = "Compile time dependency injection framework inspired by dagger"
