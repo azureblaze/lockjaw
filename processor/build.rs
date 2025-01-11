@@ -24,9 +24,4 @@ fn main() {
     } else {
         println!("cargo:rustc-cfg=stable");
     }
-
-    println!(
-        "cargo:rustc-env=PROC_ARTIFACT_DIR={}",
-        std::env::var("OUT_DIR").expect("cannot find out dir")
-    )
 }

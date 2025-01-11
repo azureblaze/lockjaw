@@ -5,7 +5,7 @@ Denotes the return value of the binding should be collected into a `HashMap<K,V>
 The value type of the map is determined by the return type. The key type is determined by additional
 metadata on the attribute in the form of `#[into_map(metadata_key: metadata_value)]`.
 
-Keys must be compile time constant.
+Keys must be compile time constants.
 
 If a `#[into_map]` binding is also [`#[qualified(Q)]`](qualified), the result is collected into
 `#[qualified(Q)] HashMap<K,V>`.
@@ -29,7 +29,6 @@ structs, etc.), and must implement `Eq` and `Hash`
 ```
 # use lockjaw::*;
 # use std::collections::HashMap;
-# lockjaw::prologue!("src/lib.rs");
 
 #[derive(Eq, PartialEq, Hash)]
 pub enum E {

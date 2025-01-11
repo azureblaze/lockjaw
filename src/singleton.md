@@ -5,7 +5,6 @@ a specific component
 
 ```
 # use lockjaw::*;
-# prologue!("src/lib.rs");
 pub struct MyModule {}
 
 struct Foo;

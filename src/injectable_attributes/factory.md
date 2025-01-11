@@ -13,7 +13,6 @@ multiple instances of the struct needs to be created at runtime.
 
 ```
 # use lockjaw::{epilogue, injectable, module, component};
-# lockjaw::prologue!("src/lib.rs");
 
 struct MyModule;
 

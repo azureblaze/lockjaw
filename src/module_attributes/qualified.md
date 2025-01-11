@@ -3,7 +3,6 @@ the same type.
 
 ```
 # use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
 
 #[qualifier]
 pub struct Foo;

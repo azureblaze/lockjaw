@@ -3,8 +3,6 @@ Annotates a trait that composes the dependency graph and provides items in the g
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
-#
-# lockjaw::prologue!("src/lib.rs");
 # 
 # struct Foo{}
 #
@@ -68,7 +66,6 @@ These modules must contain no field. Modules with fields must be provided with
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
-# lockjaw::prologue!("src/lib.rs");
 # struct StringModule {}
 # #[module]
 # impl StringModule {
@@ -109,7 +106,7 @@ If a module does not contain any field, it can be listed in [`modules`](#modules
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
-# lockjaw::prologue!("src/lib.rs");
+
 struct StringModule {
     string : String
 }

@@ -72,8 +72,8 @@ mod once;
 pub use once::Once;
 
 /// Function that must be called inside the
-/// [cargo build script](https://doc.rust-lang.org/cargo/reference/build-scripts.html) to setup the
-/// lockjaw environment.
+/// [cargo build script](https://doc.rust-lang.org/cargo/reference/build-scripts.html) to set up the
+/// lockjaw environment in a binary crate.
 ///
 /// lockjaw should be added to `[build-dependencies]` of the crate.
 ///

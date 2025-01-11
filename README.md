@@ -49,12 +49,11 @@ impl GreetCounter {
     // Marks a method as the inject constructor. Lockjaw will call this to create the object.
     #[inject]
     pub fn new() -> Self {
-        Self{counter : std::cell::RefCell::new(0) }
+        Self { counter: std::cell::RefCell::new(0) }
     }
-    
 }
 
-impl GreetCounter{
+impl GreetCounter {
     pub fn increment(&self) -> i32 {
         let mut m = self.counter.borrow_mut();
         *m = m.add(1);
@@ -67,15 +66,15 @@ pub trait Greeter {
 }
 
 struct GreeterImpl {
-    greet_counter : crate::GreetCounter,
-    phrase : String
+    greet_counter: crate::GreetCounter,
+    phrase: String
 }
 
 #[injectable]
 impl GreeterImpl {
     // Lockjaw will call this with other injectable objects provided.
     #[inject]
-    pub fn new(greet_counter : GreetCounter, phrase : String) -> Self {
+    pub fn new(greet_counter: GreetCounter, phrase: String) -> Self {
         Self {
             greet_counter,
             phrase
@@ -83,8 +82,8 @@ impl GreeterImpl {
     }
 }
 
-impl Greeter for GreeterImpl{
-    fn greet(&self) -> String{
+impl Greeter for GreeterImpl {
+    fn greet(&self) -> String {
         format!("{} {}", self.phrase, self.greet_counter.increment())
     }
 }
@@ -96,7 +95,7 @@ struct MyModule {}
 impl MyModule {
     // When ever someone needs a Greeter, use GreeterImpl as the actual implementation 
     #[binds]
-    pub fn bind_greeter(_impl : crate::GreeterImpl) -> Cl<dyn Greeter> {}
+    pub fn bind_greeter(_impl: crate::GreeterImpl) -> Cl<dyn Greeter> {}
 
     // Called when a String is requested
     #[provides]
@@ -122,15 +121,15 @@ pub fn main() {
     assert_eq!(greeter.greet(), "helloworld 1");
     // Internal states of the greeter is kept.
     assert_eq!(greeter.greet(), "helloworld 2");
-    
+
     // A new greeter has a new independent set of injected objects.
     assert_eq!(component.greeter().greet(), "helloworld 1");
 }
-// called after the last use of lockjaw to perform validation and code generation
+// called at the binary to perform validation and code generation
 epilogue!();
 ```
 
-A more complicated game example can be found at https://github.com/azureblaze/lockjaw/tree/main/example_game
+A more complicated game example can be found at <https://github.com/azureblaze/lockjaw/tree/main/example_game>
 
 # Comparison with Dagger
 
@@ -173,7 +172,8 @@ before, lockjaw should feel familiar.
   → [`#[facotry]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html)
   create objects with both injected fields and runtime fields.
 * [Hilt](https://dagger.dev/hilt/)
-  → [`#[define_component]`](https://docs.rs/lockjaw/latest/lockjaw/attr.define_component.html) / [`#[entry_point`](https://docs.rs/lockjaw/latest/lockjaw/attr.entry_point.html)
+  → [`#[define_component]`](https://docs.rs/lockjaw/latest/lockjaw/attr.define_component.html) / [
+  `#[entry_point`](https://docs.rs/lockjaw/latest/lockjaw/attr.entry_point.html)
   / [`install_in`](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#install_in)
   Automatic module collection from build dependency.
 

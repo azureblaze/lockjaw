@@ -1,11 +1,10 @@
 Annotates a impl block that defines the bindings.
 
 To incorporate a module to the dependency graph, it should be included as a field in the
-`modules` field the [component](component) annotation.
+`modules` field in the [`#[component]`](component) annotation.
 
 ```
 # use lockjaw::{epilogue, injectable,  component};
-# lockjaw::prologue!("src/lib.rs");
 use lockjaw::{module};
 pub struct FooModule {}
 
@@ -29,7 +28,7 @@ pub fn main() {
 epilogue!();
 ```
 
-If the module struct contains fields, it must use [`builder_modules`](builder_modules) instead.
+If the module struct contains fields, it must use [`#[builder_modules]`](builder_modules) instead.
 
 ```
 # use lockjaw::*;

@@ -11,7 +11,6 @@ preferred for such uses, qualifers are required for [`#[into_vec]`](module_attri
 
 ```
 # use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
 
 #[qualifier]
 pub struct Foo;

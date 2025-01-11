@@ -2,7 +2,7 @@ Annotates a non-public [`[injectable]`](injectable) struct, a [`#[module]`](modu
 trait used by components so their implementation can be generated.
 
 Most lockjaw code generation is done at the crate root or even in a different crate, and the item it
-uses may not always be visible at the generation site. Hence trying to make a private struct
+uses may not always be visible at the generation site. Hence, trying to make a private struct
 injectable may result in
 a [private type in public interface](https://doc.rust-lang.org/error-index.html#E0446) error, even
 though the struct is only injected at places that has visibility.

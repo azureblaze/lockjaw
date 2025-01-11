@@ -15,16 +15,16 @@ limitations under the License.
 */
 use std::ops::Deref;
 
-/// "Component Lifetime". Wrapper around an injection that may be scoped(owned by the component) or free standing(owned by
+/// "Component Lifetime". Wrapper around an injection that may be scoped(owned by the component) or freestanding(owned by
 /// the item injecting it). Deref to access the content.
 ///
-/// Typically this is used when the dependent does not care who owns the dependency, as it will
-/// not try to move it. Injecting scoped dependency as 'T' or injected free standing dependency as
-/// '&T' is a compile failure, but both can be injected as 'Cl<T>'
+/// Typically, this is used when the dependent does not care who owns the dependency, as it will
+/// not try to move it. Injecting scoped dependency as `T` or injected freestanding dependency as
+/// `&T` is a compile failure, but both can be injected as `Cl<T>`
 ///
 /// # Lifetime
 ///
-/// 'Cl'\'s lifetime is bounded by the component providing it.
+/// `Cl`\'s lifetime is bounded by the component providing it.
 pub enum Cl<'a, T: ?Sized + 'a> {
     Val(Box<T>),
     Ref(&'a T),

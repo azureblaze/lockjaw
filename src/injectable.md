@@ -3,7 +3,6 @@ Annotates a struct impl that can be provided to the dependency graph.
 ```
 # use lockjaw::{epilogue, injectable};
 # #[macro_use] extern crate lockjaw_processor;
-# lockjaw::prologue!("src/lib.rs");
 struct Bar{}
 
 #[injectable]
@@ -58,7 +57,7 @@ Injectables accept additional metadata in the form of
 
 ## `scope`
 
-**Optional** path to a [`component`](component), which makes the `injectable` a scoped singleton
+**Optional** path to a [`component`], which makes the `injectable` a scoped singleton
 under the `component`.
 
 The `injectable` will only be provided in the `component`, and all objects generated from the
@@ -69,7 +68,6 @@ or any objects that depends on it will share the lifetime of the
 
 ```
 # use lockjaw::{epilogue, injectable};
-# lockjaw::prologue!("src/lib.rs");
 pub struct Foo {}
 
 #[injectable(scope : crate::MyComponent)]

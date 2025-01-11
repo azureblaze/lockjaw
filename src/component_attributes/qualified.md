@@ -3,7 +3,6 @@ type can be requested.
 
 ```
 # use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
 
 #[qualifier]
 pub struct Foo;

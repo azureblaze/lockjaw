@@ -30,7 +30,6 @@ use crate::{Once, Provider};
 /// ```
 /// # use lockjaw::{epilogue, injectable, module, component, Cl, Lazy};
 /// # use std::cell::RefCell;
-/// # lockjaw::prologue!("src/lib.rs");
 /// pub struct Counter {
 ///     counter: i32,
 /// }

@@ -14,7 +14,6 @@ A subcomponent cannot outlive its parent component.
 
 ```
 # use lockjaw::*;
-# prologue!("src/lib.rs");
 struct SubcomponentModule {}
 
 #[module]

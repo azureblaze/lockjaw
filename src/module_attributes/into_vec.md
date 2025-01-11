@@ -13,7 +13,6 @@ If a `#[into_vec]` binding is also [`#[qualified(Q)]`](qualified), the result is
 
 ```
 # use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
 struct MyModule;
 
 #[module]

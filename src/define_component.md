@@ -19,7 +19,6 @@ For subcomponents use [`#[define_sumcomponent]`](define_subcomponent) instead.
 
 ```
 # use lockjaw::*;
-# prologue!("src/lib.rs");
 
 // The component can be defined by other crates.
 #[define_component]
@@ -46,17 +45,8 @@ pub fn main() {
     assert_eq!(<dyn MyEntryPoint>::get(component.as_ref()).i(), 42)
 }
 
-lockjaw::epilogue!(root);
+lockjaw::epilogue!();
 ```
-
-# Root crate
-
-Using `#[define_component]`/`#[define_subcomponent]` requires a root crate, which is done by passing
-`root` to the [`epilogue!()` macro](epilogue). Typically this is done on a binary.
-
-A root crate generates the implementation for the component, hence preventing any further extensions
-to the dependency graph. Lockjaw will prevent any other crates using lockjaw from depending directly
-or indirectly on a root crate.
 
 # Entry points
 

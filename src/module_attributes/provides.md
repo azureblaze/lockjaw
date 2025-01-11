@@ -6,7 +6,6 @@ runtime values stored in the module.
 
 ```
 # use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
 pub struct Bar {}
 #[injectable]
 impl Bar {
@@ -76,7 +75,6 @@ object or any objects that depends on it will share the lifetime _of_ the
 
 ```
 # use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
 
 pub struct Foo {}
 

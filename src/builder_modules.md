@@ -1,5 +1,5 @@
 Annotates a struct that contains [`modules`](module) instances to be installed in a
-[`component`](component) with the `builder_modules` field. If a module contains fields, it cannot be
+[`component`] with the `builder_modules` field. If a module contains fields, it cannot be
 auto generated and must be explicitly provided to
 [`COMPONENT.build()`](component#pub-fn-buildmodules-builder-modules---impl-component)
 
@@ -11,7 +11,6 @@ the `modules` field instead.
 
 ```
 # #[macro_use] extern crate lockjaw_processor;
-# lockjaw::prologue!("src/lib.rs");
 struct StringModule {
     string : String
 }

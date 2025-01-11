@@ -3,7 +3,6 @@ Annotates a trait to provide bindings access to an opaque [`#[define_component]`
 
 ```
 # use lockjaw::*;
-# prologue!("src/lib.rs");
 
 // The component can be defined by other crates.
 #[define_component]
@@ -30,7 +29,7 @@ pub fn main() {
     assert_eq!(<dyn MyEntryPoint>::get(component.as_ref()).i(), 42)
 }
 
-lockjaw::epilogue!(root);
+lockjaw::epilogue!();
 ```
 
 # Entry point methods

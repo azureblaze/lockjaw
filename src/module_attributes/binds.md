@@ -14,7 +14,6 @@ Cannot annotate a method that is already annotated with [`#[provides]`](#provide
 
 ```
 # use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
 pub trait MyTrait {
     fn hello(&self) -> String;
 }
@@ -73,7 +72,6 @@ any objects that depends on it will share the lifetime of the
 ```
 # use lockjaw::*;
 # use std::ops::Deref;
-# lockjaw::prologue!("src/lib.rs");
 pub trait Foo {}
 
 pub struct FooImpl{}

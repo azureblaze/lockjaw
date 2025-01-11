@@ -6,7 +6,6 @@ elements.
 
 ```
 # use lockjaw::*;
-# lockjaw::prologue!("src/lib.rs");
 struct MyModule;
 
 #[module]

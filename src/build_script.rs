@@ -16,7 +16,7 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-pub fn build_manifest() {
+pub(crate) fn build_manifest() {
     let dep_manifest = lockjaw_common::manifest_parser::build_manifest();
 
     let dep_manifest_path = format!("{}/dep_manifest.json", std::env::var("OUT_DIR").unwrap());
