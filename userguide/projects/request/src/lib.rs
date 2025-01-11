@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, epilogue, injectable, prologue};
-
-prologue!("src/lib.rs");
+use lockjaw::{component, epilogue, injectable};
 
 struct Foo {}
 

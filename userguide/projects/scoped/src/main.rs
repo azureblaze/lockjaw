@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{component, epilogue, injectable, module, prologue, Cl};
-
-prologue!("src/main.rs");
+use lockjaw::{component, epilogue, injectable, module, Cl};
 
 pub trait Logger {
     fn log(&self, msg: &str);

@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use lockjaw::{builder_modules, component, epilogue, module, prologue};
-
-prologue!("src/lib.rs");
+use lockjaw::{builder_modules, component, epilogue, module};
 
 // ANCHOR: module
 struct MyModule {
