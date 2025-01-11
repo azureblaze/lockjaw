@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#[cfg(test)]
+use lockjaw::{component, epilogue};
 use lockjaw::{component_visible, injectable, module, Cl, Singleton};
 use printer::Printer;
 
@@ -42,3 +44,18 @@ impl Module {
     #[binds]
     pub fn bind_printer(_impl: crate::PrinterImpl) -> Cl<dyn ::printer::Printer> {}
 }
+
+#[cfg(test)]
+#[component(modules: Module)]
+pub trait TestComponent {
+    fn printer(&'_ self) -> Cl<'_, dyn ::printer::Printer>;
+}
+
+#[test]
+fn printer_impl_print() {
+    let component = <dyn TestComponent>::new();
+    component.printer().print("hello world");
+}
+
+#[cfg(test)]
+epilogue!();

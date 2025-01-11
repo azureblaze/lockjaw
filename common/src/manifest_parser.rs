@@ -616,12 +616,14 @@ fn get_uses(
 ) -> Result<HashMap<String, UsePath>> {
     let mut deps = HashSet::new();
 
-    for dep in if cfg_test {
-        &lockjaw_package.direct_test_crate_deps
-    } else {
-        &lockjaw_package.direct_prod_crate_deps
-    } {
+    for dep in &lockjaw_package.direct_prod_crate_deps {
         deps.insert(dep.clone());
+    }
+
+    if cfg_test {
+        for dep in &lockjaw_package.direct_test_crate_deps {
+            deps.insert(dep.clone());
+        }
     }
     // default deps
     deps.insert("std".to_owned());
