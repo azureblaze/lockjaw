@@ -16,8 +16,12 @@ limitations under the License.
 
 mod attributes;
 mod build_log;
+#[doc(hidden)]
 pub mod environment;
+#[doc(hidden)]
 pub mod manifest;
+#[doc(hidden)]
 pub mod manifest_parser;
 mod parsing;
+#[doc(hidden)]
 pub mod type_data;

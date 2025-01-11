@@ -18,6 +18,7 @@ use crate::manifest_parser::Mod;
 use proc_macro2::Span;
 use std::fmt::{Debug, Display, Formatter};
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! log {
     ($($tokens: tt)*) => {
@@ -76,6 +77,7 @@ impl Display for FatalBuildScriptError {
 
 impl std::error::Error for FatalBuildScriptError {}
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! build_script_fatal {
     ($span:expr, $mod_:expr, $($tokens: tt)*) => {

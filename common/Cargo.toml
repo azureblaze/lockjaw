@@ -15,7 +15,7 @@
 
 [package]
 name = "lockjaw_common"
-description = "lockjaw common lib"
+description = "lockjaw common lib. only to be used by https://crates.io/crates/lockjaw."
 license = "Apache-2.0"
 version = "0.3.0"
 authors = ["Ta-wei Yen"]
