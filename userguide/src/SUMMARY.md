@@ -3,6 +3,7 @@
 [Introduction](intro.md)
 [Before using](before.md)
 [Glossary](glossary.md)
+[Changes](changes.md)
 
 ---
 
@@ -22,19 +23,19 @@
 - [Factory](factory.md)
 - [Optional Bindings](optional.md)
 - [Multibindings](multibindings.md)
-  - [Vec bindings](vec.md)
-  - [Map bindings](map.md)
-  - [Empty multibindings](empty_multibinding.md)
+    - [Vec bindings](vec.md)
+    - [Map bindings](map.md)
+    - [Empty multibindings](empty_multibinding.md)
 - [Subcomponents](subcomponent.md)
 - [Defined components](define_component.md)
 
 ---
 
 - [Caveats](caveats.md)
-  - [Path resolution](path_resolution.md)
-  - [Cross macro communication](cross_macro_communication.md)
-  - [Bypassing visibility](visibility_bypass.md)
-  - [Late implementation generation](late_impl_generation.md)
+    - [Path resolution](path_resolution.md)
+    - [Bypassing visibility](visibility_bypass.md)
+    - [Late implementation generation](late_impl_generation.md)
+
 ---
 
 [Code of conduct](code-of-conduct.md)

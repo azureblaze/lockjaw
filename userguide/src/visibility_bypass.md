@@ -2,7 +2,7 @@
 
 Visibility control works a bit weird with dependency injection. When a type is private, only context
 that have visibility should be able to inject it, but the dependency injection framework should
-still be able to construct it, even if the generated code is in some random `mod`. Currently Rust
+still be able to construct it, even if the generated code is in some random `mod`. Currently, Rust
 only allow visibility bypass to be granted to a `mod` that is a parent of the current `mod`.
 
 Lockjaw handles this with

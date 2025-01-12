@@ -11,11 +11,6 @@ language features to make Lockjaw usable.
 
 Lockjaw need to know the fully qualified path of a type, so they can be compared against each other.
 
-## [Cross macro communication](cross_macro_communication.md)
-
-Lockjaw has seperated declaration phase (what the bindings are) and code generation phase (building
-the dependency graph). The generation phase need to know everything the declaration phase has seen.
-
 ## [Bypassing visibility](visibility_bypass.md)
 
 A lot of symbols need should be private to the module/crate, but also give an exclusive bypass to

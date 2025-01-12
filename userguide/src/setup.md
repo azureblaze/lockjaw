@@ -26,36 +26,18 @@ in `main()` inside it:
 {{#include ../projects/setup/build.rs:main}}
 ```
 
-Lockjaw will ask you to do this if this step is missing.
+The build script is required at the 'root' of your project, included binaries and any sub-crate with tests. Lockjaw will
+ask you to do this if this step is missing.
 
-## Prologue macro
-
-Before using any Lockjaw attribute macros, the
-lockjaw [`prologue!()`](https://docs.rs/lockjaw/latest/lockjaw/macro.prologue.html) macro must be
-called:
-
-```rust,no_run,noplayground
-// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
-{{#include ../projects/setup/src/main.rs:prologue}}
-```
-
-The file path of the current source file should be passed to the prologue.
-
-Lockjaw need to perform some static analysis on the current source file to understand type names,
-which is an integral part of a dependency injection framework. If a type is encountered, what is its
-fully qualified name? Is it something imported with a `use` declaration? or if it is a locally
-declared, what is the `mod` path to the local scope?
-
-Lockjaw also generates a test to verify the source path is correct. However passing a wrong path
-often result in weird type resolution errors at compile time. Double-check the source path if there
-are type resolution issues.
+The build script scans through all source under the crate and its dependencies to locate any bindings that should be a
+part of the dependency graph. This is required as [path resolution](path_resolution.md) cannot be done in a `proc_macro`
 
 ## Epilogue macro
 
 You also must call
 the [`lockjaw::epilogue!()`](https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html) macro in the
-root of your crate (`lib.rs` or
-`main.rs`) after all other uses of lockjaw, preferably at the end of the file.
+root of your root crate (`lib.rs` or
+`main.rs`).
 
 ```rust,no_run,noplayground
 // https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs

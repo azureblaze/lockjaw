@@ -18,19 +18,10 @@ required for a `proc_macro` to be able to utilize it.
 [proc_macro2::Span::source_file()](https://docs.rs/proc-macro2/1.0.28/proc_macro2/struct.Span.html#method.source_file)
 also exists, but it is nightly feature and requires `procmacro2_semver_exempt` which is contagious.
 
-Since the with [cross macro communication](cross_macro_communication.md) hacks the user only need to
-do this once per file, we've decided to let the user pass the current path with
-the [`prologue!()`](https://docs.rs/lockjaw/latest/lockjaw/macro.prologue.html) macro. We will need
-to parse the whole file later anyway, so we take the file name and derive the `mod` path from it.
-
-To make sure the `prologue!()` macro is called in every file, it declares a hidden symbol locally
-which all other Lockjaw `proc_macro` will try to use, so if the `prolouge!()` is missing compilation
-will fail. In later steps we also verify `prologue!()` is the first Lockjaw macro called in the
-file, as the current file info is stored in global memory and must be reset in each file.
-
-`prolouge!()` also generates a test to make sure the path passed in matches what `file!()` would
-give. However using the wrong path will usually cause Lockjaw to fail miserably since all type info
-are messed up, and the test will not even be run, which makes it not too useful.
+In the Lockjaw build script this is resolved by looking at the crate's manifest and using
+`CARGO_CRATE_NAME`/`CARGO_PKG_NAME` along with `cargo metadata` to figure out the exact path to the source. Path info
+is only needed during dependency gathering which is no longer done with `proc_macro`, and component generation which is
+always `::crate::` and never reference by other part of the code.
 
 ## `mod` structure and `use` declarations
 
@@ -44,31 +35,4 @@ this, however the tokens it produces does not record
 proper [spans](https://docs.rs/proc-macro2/1.0.28/proc_macro2/struct.Span.html), so we cannot use it
 to find the position of `mod`.
 
-Lockjaw handles this by using another AST
-parser ([tree_sitter](https://crates.io/crates/tree-sitter)) to parse the file.
-
-## Finding which `mod` a token is in
-
-Position info of a token is encoded in
-the [span](https://docs.rs/proc-macro2/1.0.28/proc_macro2/struct.Span.html) object, but currently it
-is opaque. Lockjaw forcefully extract the data from
-span's [`Debug`](https://doc.rust-lang.org/std/fmt/trait.Debug.html) representation, which contains
-the token's byte range. No need to say this is an awful thing to do.
-
-Once the byte position is know, it can be used to find the deepest enclosing `mod`.
-
-## Handling file `mod`
-
-Rust currently handles file `mod` as includes internally. It inserts the content of the file
-directly into the token stream, and ends up in a giant stream for the whole crate. The consequence
-of this is the byte position the `proc_marco` token actually have is shifted around by inserted
-files, and will not match its byte position inside the file the 3p AST parser sees.
-
-Fortunately the Lockjaw `proc_macro` has the span of the `prologue!()` macro itself, and it knows
-the macro must appear only once inside the file. Lockjaw is able to inspect the AST to find the file
-position of the `prologue!()` macro, and calculate the offset between file position and token
-position.
-
-One of the effect is Lockjaw has to ban file `mod` that appears after `prologue!()`, as it will
-invalidate the offset. Theoretically Lockjaw can recursively calculate the size of the file `mod`,
-but limiting the position of file `mod` does not seem too bad.
+Lockjaw handles this by parsing the whole file in the build script so it knows which `mod` it is in.

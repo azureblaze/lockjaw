@@ -1,10 +1,15 @@
-# Cross macro communication
+# Cross macro communication(obsolete)
+
+<div class="warning">
+This only applies to lockjaw 0.3. It has since been resolved in 0.3 by moving dependency gathering
+to build scripts.
+</div>
 
 Lockjaw `proc_macro` are not independent, it requires inputs from other macros in strict order:
 
 1. A first pass on the file to [generate mod info for path resolution](path_resolution.md)
 2. Generating binding definition, with paths resolved to fully qualified path using info from step
-   1.
+    1.
 3. Actual generation of the components, after all bindings are defined.
 
 Additionally the binding info in step 2. may be needed across crates.

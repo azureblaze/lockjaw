@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+#![allow(dead_code, static_mut_refs, unused)]
 
 use lockjaw::{component, epilogue, injectable, module, Cl};
 
@@ -93,7 +94,6 @@ impl MyModule {
     // ANCHOR_END: binds
 }
 
-#[allow(unused)]
 // ANCHOR: provides_component
 #[component(modules: [MyModule])]
 trait ProvideComponent {
