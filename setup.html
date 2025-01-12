@@ -175,26 +175,15 @@ in <code>main()</code> inside it:</p>
 fn main() {
     lockjaw::build_script();
 }</code></pre>
-<p>Lockjaw will ask you to do this if this step is missing.</p>
-<h2 id="prologue-macro"><a class="header" href="#prologue-macro">Prologue macro</a></h2>
-<p>Before using any Lockjaw attribute macros, the
-lockjaw <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.prologue.html"><code>prologue!()</code></a> macro must be
-called:</p>
-<pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
-</code></pre>
-<p>The file path of the current source file should be passed to the prologue.</p>
-<p>Lockjaw need to perform some static analysis on the current source file to understand type names,
-which is an integral part of a dependency injection framework. If a type is encountered, what is its
-fully qualified name? Is it something imported with a <code>use</code> declaration? or if it is a locally
-declared, what is the <code>mod</code> path to the local scope?</p>
-<p>Lockjaw also generates a test to verify the source path is correct. However passing a wrong path
-often result in weird type resolution errors at compile time. Double-check the source path if there
-are type resolution issues.</p>
+<p>The build script is required at the 'root' of your project, included binaries and any sub-crate with tests. Lockjaw will
+ask you to do this if this step is missing.</p>
+<p>The build script scans through all source under the crate and its dependencies to locate any bindings that should be a
+part of the dependency graph. This is required as <a href="path_resolution.html">path resolution</a> cannot be done in a <code>proc_macro</code></p>
 <h2 id="epilogue-macro"><a class="header" href="#epilogue-macro">Epilogue macro</a></h2>
 <p>You also must call
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html"><code>lockjaw::epilogue!()</code></a> macro in the
-root of your crate (<code>lib.rs</code> or
-<code>main.rs</code>) after all other uses of lockjaw, preferably at the end of the file.</p>
+root of your root crate (<code>lib.rs</code> or
+<code>main.rs</code>).</p>
 <pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
 lockjaw::epilogue!();</code></pre>
 <p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/">Source</a> of this chapter</p>
@@ -203,7 +192,7 @@ lockjaw::epilogue!();</code></pre>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="glossary.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="changes.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -217,7 +206,7 @@ lockjaw::epilogue!();</code></pre>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="glossary.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="changes.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

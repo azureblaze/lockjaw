@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Cross macro communication - Lockjaw User Guide</title>
+        <title>Changes - Lockjaw User Guide</title>
 
 
         <!-- Custom HTML head -->
@@ -152,64 +152,39 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="cross-macro-communication"><a class="header" href="#cross-macro-communication">Cross macro communication</a></h1>
-<p>Lockjaw <code>proc_macro</code> are not independent, it requires inputs from other macros in strict order:</p>
-<ol>
-<li>A first pass on the file to <a href="path_resolution.html">generate mod info for path resolution</a></li>
-<li>Generating binding definition, with paths resolved to fully qualified path using info from step
-1.</li>
-<li>Actual generation of the components, after all bindings are defined.</li>
-</ol>
-<p>Additionally the binding info in step 2. may be needed across crates.</p>
-<h2 id="intra-crate-macro-communication"><a class="header" href="#intra-crate-macro-communication">Intra-crate macro communication</a></h2>
-<p>Lockjaw macros talk to each other by storing states in a static mutable variable. This requires the
-token/macro phase of rust to invoke all macros in a single process, single thread, sequentially as
-they appear in the source, as well as expanding file <code>mod</code> in place as soon as they are encountered.</p>
-<p>Rust does not have any guarantee when proc_macros are executed, the order they are executed, the
-threads they are executed on, or even the process they are executed on. This can easily break if the
-compilation mode changes, such as incremental compilation (some proc_marco are not re-invoked) and
-multi-threaded compilation.</p>
-<p>It would be nice if rust somehow allows proc_macro to generate pieces of serializable metadata that
-can be read by other proc_macros.</p>
-<h2 id="intra-crate-macro-communication-1"><a class="header" href="#intra-crate-macro-communication-1">Intra-crate macro communication</a></h2>
-<p>Lockjaw allows <code>#[inject]</code> in a crate to be used by another crate that depends on it. Additionally
-<code>#[denfine_component]</code> allows components to be generated at the root crate, using binding info from
-every crate it directly or indirectly depends on. This means a crate must be able to read the
-binding metadata of every crate.</p>
-<p>Lockjaw handles this by writing the binding metadata of each crate to a file, which other crates can
-read. This creates a few issues:</p>
-<h3 id="proc_macro-writes-data-to-build-script-out_dir"><a class="header" href="#proc_macro-writes-data-to-build-script-out_dir">proc_macro writes data to build script OUT_DIR</a></h3>
-<p>To handle cross-crate dependencies, lockjaw writes the bindings metadata to OUT_DIR so other crates
-can read it later.</p>
-<p>Rust only specifies the build script should write to OUT_DIR, while proc_macro seems to run on the
-same process and has the environment variable (when there is a build script, so lockjaw forces the
-user to use a build script even though it is doing nothing).</p>
-<h3 id="proc_macro-reads-data-from-disk"><a class="header" href="#proc_macro-reads-data-from-disk">proc_macro reads data from disk</a></h3>
-<p>Same as above, lockjaw proc_macro reads data from other crates output so cross-crate dependency
-graph can be generated.</p>
-<h3 id="proc_macro-writes-data-to-other-crates-out_dir"><a class="header" href="#proc_macro-writes-data-to-other-crates-out_dir">proc_macro writes data to other crate's OUT_DIR</a></h3>
-<p>Also for cross-crate dependency, the binding metadata from other crates are required. While lockjaw
-can determine the crate's dependencies with <code>cargo tree</code> (proc_macro spawning processes is probably
-also a bad idea), it has no idea where their OUT_DIR are.</p>
-<p>The current solution is to hardcode the proc_macro library's OUT_DIR into itself with a build
-script, and let other crates that uses lockjaw also write their OUT_DIR to the proc_macro library's
-OUT_DIR so it can be looked up later. Mutating data outside a crate's bound seems really bad.</p>
-<p>This can be solved if:</p>
+                        <h1 id="changes"><a class="header" href="#changes">Changes</a></h1>
+<h2 id="03"><a class="header" href="#03">0.3</a></h2>
 <ul>
-<li>Rust allow looking up OUT_DIR of crates depended on.</li>
-<li>Rust allow compile time reflection such as inspecting whether a const string exists and reading
-its value, so the metadata can be encoded.</li>
+<li>Dependency gathering is now done through the <a href="setup.html#build-script">build script</a> instead of proc_macro.
+<ul>
+<li>This removes the need for <a href="cross_macro_communication.html">cross macro communication</a> as all info is now readily
+available when proc_macro runs.</li>
+<li>Sources are parsed twice once in the build script and once by the compiler. However, this is already required to
+perform <a href="path_resolution.html">path resolution</a></li>
+<li>The proc_macro now only generate codes, using the result from the build script. The proc macro no longer need to
+resolve global path names.</li>
+<li>Path resolution/dependency gathering now use <a href="https://crates.io/crates/syn">syn</a> to parse the source instead of
+using <a href="https://crates.io/crates/tree-sitter-rust">tree-sitter-rust</a> to be more consistent with how proc_macro
+parse the code.</li>
+</ul>
+</li>
+<li>The <code>lockjaw::prologue!(path/to/src)</code> is removed.
+<ul>
+<li>The build script is able to directly infer the source path.</li>
+</ul>
+</li>
+<li>No longer need to specify <code>root</code>/<code>test</code> in <code>lockjaw::epilogue</code></li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="path_resolution.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="glossary.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="visibility_bypass.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="setup.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -219,11 +194,11 @@ its value, so the metadata can be encoded.</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="path_resolution.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="glossary.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="visibility_bypass.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="setup.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

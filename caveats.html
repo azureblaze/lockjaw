@@ -160,9 +160,6 @@ should not use Lockjaw in any serious project.</p>
 language features to make Lockjaw usable.</p>
 <h2 id="path-resolution"><a class="header" href="#path-resolution"><a href="path_resolution.html">Path resolution</a></a></h2>
 <p>Lockjaw need to know the fully qualified path of a type, so they can be compared against each other.</p>
-<h2 id="cross-macro-communication"><a class="header" href="#cross-macro-communication"><a href="cross_macro_communication.html">Cross macro communication</a></a></h2>
-<p>Lockjaw has seperated declaration phase (what the bindings are) and code generation phase (building
-the dependency graph). The generation phase need to know everything the declaration phase has seen.</p>
 <h2 id="bypassing-visibility"><a class="header" href="#bypassing-visibility"><a href="visibility_bypass.html">Bypassing visibility</a></a></h2>
 <p>A lot of symbols need should be private to the module/crate, but also give an exclusive bypass to
 Lockjaw, so it can be used by a component generated elsewhere, possibly a different crate.</p>

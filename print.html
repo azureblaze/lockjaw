@@ -269,6 +269,29 @@ a new instance, either by a user supplied method or Lockjaw internal generation.
 <h2 id="module"><a class="header" href="#module">Module</a></h2>
 <p>In all Lockjaw documentations, "module" refers to a <em>dependency injection module</em>. When referring to
 Rust modules <code>mod</code> will be used instead.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="changes"><a class="header" href="#changes">Changes</a></h1>
+<h2 id="03"><a class="header" href="#03">0.3</a></h2>
+<ul>
+<li>Dependency gathering is now done through the <a href="setup.html#build-script">build script</a> instead of proc_macro.
+<ul>
+<li>This removes the need for <a href="cross_macro_communication.html">cross macro communication</a> as all info is now readily
+available when proc_macro runs.</li>
+<li>Sources are parsed twice once in the build script and once by the compiler. However, this is already required to
+perform <a href="path_resolution.html">path resolution</a></li>
+<li>The proc_macro now only generate codes, using the result from the build script. The proc macro no longer need to
+resolve global path names.</li>
+<li>Path resolution/dependency gathering now use <a href="https://crates.io/crates/syn">syn</a> to parse the source instead of
+using <a href="https://crates.io/crates/tree-sitter-rust">tree-sitter-rust</a> to be more consistent with how proc_macro
+parse the code.</li>
+</ul>
+</li>
+<li>The <code>lockjaw::prologue!(path/to/src)</code> is removed.
+<ul>
+<li>The build script is able to directly infer the source path.</li>
+</ul>
+</li>
+<li>No longer need to specify <code>root</code>/<code>test</code> in <code>lockjaw::epilogue</code></li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
 <h2 id="cargo"><a class="header" href="#cargo">Cargo</a></h2>
 <p>Add lockjaw to the <code>[dependencies]</code> and <code>[build_dependencies]</code> section of your <code>Cargo.toml</code>:</p>
@@ -292,26 +315,15 @@ in <code>main()</code> inside it:</p>
 fn main() {
     lockjaw::build_script();
 }</code></pre>
-<p>Lockjaw will ask you to do this if this step is missing.</p>
-<h2 id="prologue-macro"><a class="header" href="#prologue-macro">Prologue macro</a></h2>
-<p>Before using any Lockjaw attribute macros, the
-lockjaw <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.prologue.html"><code>prologue!()</code></a> macro must be
-called:</p>
-<pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
-</code></pre>
-<p>The file path of the current source file should be passed to the prologue.</p>
-<p>Lockjaw need to perform some static analysis on the current source file to understand type names,
-which is an integral part of a dependency injection framework. If a type is encountered, what is its
-fully qualified name? Is it something imported with a <code>use</code> declaration? or if it is a locally
-declared, what is the <code>mod</code> path to the local scope?</p>
-<p>Lockjaw also generates a test to verify the source path is correct. However passing a wrong path
-often result in weird type resolution errors at compile time. Double-check the source path if there
-are type resolution issues.</p>
+<p>The build script is required at the 'root' of your project, included binaries and any sub-crate with tests. Lockjaw will
+ask you to do this if this step is missing.</p>
+<p>The build script scans through all source under the crate and its dependencies to locate any bindings that should be a
+part of the dependency graph. This is required as <a href="path_resolution.html">path resolution</a> cannot be done in a <code>proc_macro</code></p>
 <h2 id="epilogue-macro"><a class="header" href="#epilogue-macro">Epilogue macro</a></h2>
 <p>You also must call
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html"><code>lockjaw::epilogue!()</code></a> macro in the
-root of your crate (<code>lib.rs</code> or
-<code>main.rs</code>) after all other uses of lockjaw, preferably at the end of the file.</p>
+root of your root crate (<code>lib.rs</code> or
+<code>main.rs</code>).</p>
 <pre><code class="language-rust no_run noplayground">// https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/src/main.rs
 lockjaw::epilogue!();</code></pre>
 <p><a href="https://github.com/azureblaze/lockjaw/tree/main/userguide/projects/setup/">Source</a> of this chapter</p>
@@ -1198,9 +1210,6 @@ should not use Lockjaw in any serious project.</p>
 language features to make Lockjaw usable.</p>
 <h2 id="path-resolution"><a class="header" href="#path-resolution"><a href="path_resolution.html">Path resolution</a></a></h2>
 <p>Lockjaw need to know the fully qualified path of a type, so they can be compared against each other.</p>
-<h2 id="cross-macro-communication"><a class="header" href="#cross-macro-communication"><a href="cross_macro_communication.html">Cross macro communication</a></a></h2>
-<p>Lockjaw has seperated declaration phase (what the bindings are) and code generation phase (building
-the dependency graph). The generation phase need to know everything the declaration phase has seen.</p>
 <h2 id="bypassing-visibility"><a class="header" href="#bypassing-visibility"><a href="visibility_bypass.html">Bypassing visibility</a></a></h2>
 <p>A lot of symbols need should be private to the module/crate, but also give an exclusive bypass to
 Lockjaw, so it can be used by a component generated elsewhere, possibly a different crate.</p>
@@ -1221,17 +1230,10 @@ solution to this, but <a href="https://github.com/rust-lang/rfcs/pull/2320">eage
 required for a <code>proc_macro</code> to be able to utilize it.</p>
 <p><a href="https://docs.rs/proc-macro2/1.0.28/proc_macro2/struct.Span.html#method.source_file">proc_macro2::Span::source_file()</a>
 also exists, but it is nightly feature and requires <code>procmacro2_semver_exempt</code> which is contagious.</p>
-<p>Since the with <a href="cross_macro_communication.html">cross macro communication</a> hacks the user only need to
-do this once per file, we've decided to let the user pass the current path with
-the <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.prologue.html"><code>prologue!()</code></a> macro. We will need
-to parse the whole file later anyway, so we take the file name and derive the <code>mod</code> path from it.</p>
-<p>To make sure the <code>prologue!()</code> macro is called in every file, it declares a hidden symbol locally
-which all other Lockjaw <code>proc_macro</code> will try to use, so if the <code>prolouge!()</code> is missing compilation
-will fail. In later steps we also verify <code>prologue!()</code> is the first Lockjaw macro called in the
-file, as the current file info is stored in global memory and must be reset in each file.</p>
-<p><code>prolouge!()</code> also generates a test to make sure the path passed in matches what <code>file!()</code> would
-give. However using the wrong path will usually cause Lockjaw to fail miserably since all type info
-are messed up, and the test will not even be run, which makes it not too useful.</p>
+<p>In the Lockjaw build script this is resolved by looking at the crate's manifest and using
+<code>CARGO_CRATE_NAME</code>/<code>CARGO_PKG_NAME</code> along with <code>cargo metadata</code> to figure out the exact path to the source. Path info
+is only needed during dependency gathering which is no longer done with <code>proc_macro</code>, and component generation which is
+always <code>::crate::</code> and never reference by other part of the code.</p>
 <h2 id="mod-structure-and-use-declarations"><a class="header" href="#mod-structure-and-use-declarations"><code>mod</code> structure and <code>use</code> declarations</a></h2>
 <p>A file can still contain nested <code>mod</code> in it, each importing more symbols with the <code>use</code> declaration.
 For a given token, lockjaw needs to know which <code>mod</code> it is in, and what symbols are brought into
@@ -1241,79 +1243,11 @@ what <code>use</code> are inside it.</p>
 this, however the tokens it produces does not record
 proper <a href="https://docs.rs/proc-macro2/1.0.28/proc_macro2/struct.Span.html">spans</a>, so we cannot use it
 to find the position of <code>mod</code>.</p>
-<p>Lockjaw handles this by using another AST
-parser (<a href="https://crates.io/crates/tree-sitter">tree_sitter</a>) to parse the file.</p>
-<h2 id="finding-which-mod-a-token-is-in"><a class="header" href="#finding-which-mod-a-token-is-in">Finding which <code>mod</code> a token is in</a></h2>
-<p>Position info of a token is encoded in
-the <a href="https://docs.rs/proc-macro2/1.0.28/proc_macro2/struct.Span.html">span</a> object, but currently it
-is opaque. Lockjaw forcefully extract the data from
-span's <a href="https://doc.rust-lang.org/std/fmt/trait.Debug.html"><code>Debug</code></a> representation, which contains
-the token's byte range. No need to say this is an awful thing to do.</p>
-<p>Once the byte position is know, it can be used to find the deepest enclosing <code>mod</code>.</p>
-<h2 id="handling-file-mod"><a class="header" href="#handling-file-mod">Handling file <code>mod</code></a></h2>
-<p>Rust currently handles file <code>mod</code> as includes internally. It inserts the content of the file
-directly into the token stream, and ends up in a giant stream for the whole crate. The consequence
-of this is the byte position the <code>proc_marco</code> token actually have is shifted around by inserted
-files, and will not match its byte position inside the file the 3p AST parser sees.</p>
-<p>Fortunately the Lockjaw <code>proc_macro</code> has the span of the <code>prologue!()</code> macro itself, and it knows
-the macro must appear only once inside the file. Lockjaw is able to inspect the AST to find the file
-position of the <code>prologue!()</code> macro, and calculate the offset between file position and token
-position.</p>
-<p>One of the effect is Lockjaw has to ban file <code>mod</code> that appears after <code>prologue!()</code>, as it will
-invalidate the offset. Theoretically Lockjaw can recursively calculate the size of the file <code>mod</code>,
-but limiting the position of file <code>mod</code> does not seem too bad.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="cross-macro-communication-1"><a class="header" href="#cross-macro-communication-1">Cross macro communication</a></h1>
-<p>Lockjaw <code>proc_macro</code> are not independent, it requires inputs from other macros in strict order:</p>
-<ol>
-<li>A first pass on the file to <a href="path_resolution.html">generate mod info for path resolution</a></li>
-<li>Generating binding definition, with paths resolved to fully qualified path using info from step
-1.</li>
-<li>Actual generation of the components, after all bindings are defined.</li>
-</ol>
-<p>Additionally the binding info in step 2. may be needed across crates.</p>
-<h2 id="intra-crate-macro-communication"><a class="header" href="#intra-crate-macro-communication">Intra-crate macro communication</a></h2>
-<p>Lockjaw macros talk to each other by storing states in a static mutable variable. This requires the
-token/macro phase of rust to invoke all macros in a single process, single thread, sequentially as
-they appear in the source, as well as expanding file <code>mod</code> in place as soon as they are encountered.</p>
-<p>Rust does not have any guarantee when proc_macros are executed, the order they are executed, the
-threads they are executed on, or even the process they are executed on. This can easily break if the
-compilation mode changes, such as incremental compilation (some proc_marco are not re-invoked) and
-multi-threaded compilation.</p>
-<p>It would be nice if rust somehow allows proc_macro to generate pieces of serializable metadata that
-can be read by other proc_macros.</p>
-<h2 id="intra-crate-macro-communication-1"><a class="header" href="#intra-crate-macro-communication-1">Intra-crate macro communication</a></h2>
-<p>Lockjaw allows <code>#[inject]</code> in a crate to be used by another crate that depends on it. Additionally
-<code>#[denfine_component]</code> allows components to be generated at the root crate, using binding info from
-every crate it directly or indirectly depends on. This means a crate must be able to read the
-binding metadata of every crate.</p>
-<p>Lockjaw handles this by writing the binding metadata of each crate to a file, which other crates can
-read. This creates a few issues:</p>
-<h3 id="proc_macro-writes-data-to-build-script-out_dir"><a class="header" href="#proc_macro-writes-data-to-build-script-out_dir">proc_macro writes data to build script OUT_DIR</a></h3>
-<p>To handle cross-crate dependencies, lockjaw writes the bindings metadata to OUT_DIR so other crates
-can read it later.</p>
-<p>Rust only specifies the build script should write to OUT_DIR, while proc_macro seems to run on the
-same process and has the environment variable (when there is a build script, so lockjaw forces the
-user to use a build script even though it is doing nothing).</p>
-<h3 id="proc_macro-reads-data-from-disk"><a class="header" href="#proc_macro-reads-data-from-disk">proc_macro reads data from disk</a></h3>
-<p>Same as above, lockjaw proc_macro reads data from other crates output so cross-crate dependency
-graph can be generated.</p>
-<h3 id="proc_macro-writes-data-to-other-crates-out_dir"><a class="header" href="#proc_macro-writes-data-to-other-crates-out_dir">proc_macro writes data to other crate's OUT_DIR</a></h3>
-<p>Also for cross-crate dependency, the binding metadata from other crates are required. While lockjaw
-can determine the crate's dependencies with <code>cargo tree</code> (proc_macro spawning processes is probably
-also a bad idea), it has no idea where their OUT_DIR are.</p>
-<p>The current solution is to hardcode the proc_macro library's OUT_DIR into itself with a build
-script, and let other crates that uses lockjaw also write their OUT_DIR to the proc_macro library's
-OUT_DIR so it can be looked up later. Mutating data outside a crate's bound seems really bad.</p>
-<p>This can be solved if:</p>
-<ul>
-<li>Rust allow looking up OUT_DIR of crates depended on.</li>
-<li>Rust allow compile time reflection such as inspecting whether a const string exists and reading
-its value, so the metadata can be encoded.</li>
-</ul>
+<p>Lockjaw handles this by parsing the whole file in the build script so it knows which <code>mod</code> it is in.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bypassing-visibility-1"><a class="header" href="#bypassing-visibility-1">Bypassing visibility</a></h1>
 <p>Visibility control works a bit weird with dependency injection. When a type is private, only context
 that have visibility should be able to inject it, but the dependency injection framework should
-still be able to construct it, even if the generated code is in some random <code>mod</code>. Currently Rust
+still be able to construct it, even if the generated code is in some random <code>mod</code>. Currently, Rust
 only allow visibility bypass to be granted to a <code>mod</code> that is a parent of the current <code>mod</code>.</p>
 <p>Lockjaw handles this with
 the <a href="https://docs.rs/lockjaw/0.2.1/lockjaw/attr.component_visible.html"><code>#[component_visible]</code></a>
@@ -1329,11 +1263,20 @@ be added to a mod later either. However with Lockjaw information to generate the
 not be available at the time, especially for component builders. Furthermore, the implementation may
 not even be possible in the same crate
 for <a href="https://docs.rs/lockjaw/0.2.0/lockjaw/attr.define_component.html"><code>#[define_component]</code></a>.</p>
-<p>Component builders should be associated method of the component, or at least a free-standing
-function in the same <code>mod</code>. Otherwise it will be hard for users to locate them.</p>
+<p>Component builders should be associated method of the component, or at least a freestanding
+function in the same <code>mod</code>. Otherwise, it will be hard for users to locate them.</p>
 <p>Lockjaw handles this by implementing such methods by calling an <code>extern</code> method. Which will later
 be generated. While this works, if the user forgets to call the code generation macro, a cryptic
 linker error about missing symbol will appear.</p>
+<p>In addition, some late implementation methods needs a unique name since it might clash with other components. A unique
+name cannot be generated because the only thing we know is the local component name in a <code>proc_marco</code>, and a component
+with the same name might exist under a different <code>mod</code>/<code>crate</code>. Instead, the generated code declares a
+<code>static mut *const ()</code> address
+under the same <code>mod</code> as the component which it will <a href="https://doc.rust-lang.org/std/mem/fn.transmute.html">transmute</a>
+when it needs to call the implementation. The late generated implementation will set this address to the real
+implementation in the component's builder(implementation knows the full path of the address.). This is a constant
+assignment and hopefully the compiler can optimize it
+away.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="code-of-conduct"><a class="header" href="#code-of-conduct">Code of Conduct</a></h1>
 <h2 id="our-pledge"><a class="header" href="#our-pledge">Our Pledge</a></h2>
 <p>In the interest of fostering an open and welcoming environment, we as
