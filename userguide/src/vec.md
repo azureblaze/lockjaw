@@ -10,7 +10,7 @@ attribute, which means instead of directly binding to `T`, the binding should be
 With the bindings:
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_vec.rs:into_vec}}
+{{#include ../../integration_tests/tests/module_provides_into_vec.rs:into_vec}}
 ```
 
 `Vec<String>` can be injected with the values `["string1", "string2"]`. This works across all
@@ -19,7 +19,7 @@ modules that are installed.
 `#[into_vec]` can also be [`#[qualified]`](qualifiers.md)
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_vec.rs:qualified}}
+{{#include ../../integration_tests/tests/module_provides_into_vec.rs:qualified}}
 ```
 
 Which result in `#[qualified(Q)] Vec<String>`. Note that the container is qualified instead of the
@@ -28,7 +28,7 @@ content.
 `#[into_vec]` also works with [`#[binds]`](binds.md)
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_vec.rs:binds}}
+{{#include ../../integration_tests/tests/module_provides_into_vec.rs:binds}}
 ```
 
 Which allows `Vec<Cl<dyn Foo>>` to be injected. This is a common way to implement event callbacks.
@@ -40,7 +40,7 @@ with [`#[elements_into_vec]`](https://docs.rs/lockjaw/latest/lockjaw/module_attr
 can return `Vec<T>`, which will get merged with other `#[into_vec]` and `#[elements_into_vec]`.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_vec.rs:elements_into_vec}}
+{{#include ../../integration_tests/tests/module_provides_into_vec.rs:elements_into_vec}}
 ```
 
 This allows multiple bindings to be provided at once. It also allows a binding method to decide not

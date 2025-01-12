@@ -17,24 +17,6 @@ and[`#[define_subcomponent]`](https://docs.rs/lockjaw/latest/lockjaw/attr.define
 which automatically collects modules from the entire build dependency tree, so they no longer need
 to be manually installed.
 
-# Root crate
-
-When using `#[define_component]` the component is not immediately generated, since modules from
-crates depending on the current crate may still want to add to the dependency graph.
-
-Lockjaw needs to know which crate is the root crate that is not depended on by other crates, which
-is done by passing
-the [`root` identifier](https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html#root) to
-the [`epilogue!()` macro](https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html)
-
-```
-epilogue!(root);
-```
-
-Typically the root crate is the binary. Libraries can also be the root crate but that is probably
-not a good idea. Lockjaw will fail compilation if a crate using it depends on another crate that is
-a root crate.
-
 ## Automatically installing modules
 
 [`#[modules]`](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html) can be automatically
@@ -47,7 +29,7 @@ installed in every `#[define_component]` but not `#[define_subcomponent]`.
 Such modules cannot have fields.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_install_in.rs:install_in}}
+{{#include ../../integration_tests/tests/module_install_in.rs:install_in}}
 ```
 
 ## Entry points
@@ -75,7 +57,7 @@ method can be used to cast the opaque component into the entry point, and access
 graph.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/entry_point.rs:entry_point}}
+{{#include ../../integration_tests/tests/entry_point.rs:entry_point}}
 ```
 
 ## Testing with `#[define_component]`

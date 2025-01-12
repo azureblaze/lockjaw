@@ -10,7 +10,7 @@ the [#[binds_option_of]](https://docs.rs/lockjaw/latest/lockjaw/module_attribute
 method attribute in a [#[module]](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html)
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_binds_option_of.rs:binds}}
+{{#include ../../integration_tests/tests/module_binds_option_of.rs:binds}}
 ```
 
 The `#[binds_option_of]` method should take no parameter and return the type `T` to bind
@@ -18,7 +18,7 @@ as [`Option<T>`](https://doc.rust-lang.org/std/option/enum.Option.html). This do
 the `T`.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_binds_option_of.rs:component}}
+{{#include ../../integration_tests/tests/module_binds_option_of.rs:component}}
 ```
 
 If `T` is actually bound somewhere else, injecting `Option<T>` will result in `Some(T)`. Otherwise

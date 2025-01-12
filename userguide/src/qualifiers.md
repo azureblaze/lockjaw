@@ -35,7 +35,7 @@ A qualifier must be declared first using
 the [`#[qualifier]`](https://docs.rs/lockjaw/latest/lockjaw/attr.qualifier.html) attribute macro.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_qualifier.rs:decl}}
+{{#include ../../integration_tests/tests/module_provides_qualifier.rs:decl}}
 ```
 
 The struct body does not matter and probably should be empty.
@@ -46,7 +46,7 @@ attribute on a method in a [`#[module]`](https://docs.rs/lockjaw/latest/lockjaw/
 marking the return type as qualified. Lockjaw will treat the bindings as distinct types.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_qualifier.rs:module}}
+{{#include ../../integration_tests/tests/module_provides_qualifier.rs:module}}
 ```
 
 Qualified types can be injected using
@@ -54,9 +54,9 @@ the [`#[qualified]`](https://docs.rs/lockjaw/latest/lockjaw/component_attributes
 attribute on the parameter, or the component method.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_qualifier.rs:component}}
+{{#include ../../integration_tests/tests/module_provides_qualifier.rs:component}}
 ```
 
 ```rust,no_run,noplayground
-{{#include ../../tests/injectable_inject_qualified.rs:qualified}}
+{{#include ../../integration_tests/tests/injectable_inject_qualified.rs:qualified}}
 ```

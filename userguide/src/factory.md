@@ -35,7 +35,7 @@ instead
 of [`#[inject]`](https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html)
 
 ```rust,no_run,noplayground
-{{#include ../../tests/injectable_factory.rs:factory}}
+{{#include ../../integration_tests/tests/injectable_factory.rs:factory}}
 ```
 
 Runtime parameters needs to be marked with
@@ -46,7 +46,7 @@ attribute.
 taking only runtime parameters.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/injectable_factory.rs:factory_use}}
+{{#include ../../integration_tests/tests/injectable_factory.rs:factory_use}}
 ```
 
 ## Factory traits
@@ -56,7 +56,7 @@ The factory can also be instructed to implement a `trait` by using the
 .
 
 ```rust,no_run,noplayground
-{{#include ../../tests/injectable_factory_implementing.rs:factory}}
+{{#include ../../integration_tests/tests/injectable_factory_implementing.rs:factory}}
 ```
 
 The method name and runtime signature must match the `trait` method the factory should override.
@@ -64,7 +64,7 @@ The method name and runtime signature must match the `trait` method the factory 
 This is especially useful to bind the factory to a trait
 
 ```rust,no_run,noplayground
-{{#include ../../tests/injectable_factory_implementing.rs:bind}}
+{{#include ../../integration_tests/tests/injectable_factory_implementing.rs:bind}}
 ```
 
 ## Examples

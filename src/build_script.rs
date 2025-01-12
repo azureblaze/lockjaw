@@ -16,8 +16,6 @@ limitations under the License.
 
 #![allow(dead_code)]
 
-use lockjaw_common::log;
-
 pub(crate) fn build_manifest() {
     let dep_manifest = lockjaw_common::manifest_parser::build_manifest();
 
@@ -29,10 +27,12 @@ pub(crate) fn build_manifest() {
     )
     .expect("cannot write manifest");
 
+    /*
     log!(
         "dep manifest written to file:///{}",
         dep_manifest_path.replace("\\", "/")
     );
+    */
     println!(
         "cargo::rustc-env=LOCKJAW_DEP_MANIFEST={}",
         &dep_manifest_path

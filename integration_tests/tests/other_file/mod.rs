@@ -36,6 +36,7 @@ impl InjectableFromOtherFile {
 }
 
 #[lockjaw::component]
+#[allow(dead_code)]
 pub trait OtherComponent {
     fn other_file(&self) -> crate::other_file::InjectableFromOtherFile;
 }

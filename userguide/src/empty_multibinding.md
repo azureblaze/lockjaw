@@ -13,7 +13,7 @@ method that returns the collection type should be declared in such case, to let 
 multibinding collection is intended, but it may be empty.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_multibinds.rs:multibinds}}
+{{#include ../../integration_tests/tests/module_multibinds.rs:multibinds}}
 ```
 
 `#[multibinds]` also serves as documentation on the `#[module]` specifying it is expecting the

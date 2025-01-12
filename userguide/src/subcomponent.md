@@ -52,7 +52,7 @@ a [`#[module]`](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#) using
 the [`subcomponents` metadata](https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#subcomponents)
 
 ```rust,no_run,noplayground
-{{#include ../../tests/sub_component.rs:list}}
+{{#include ../../integration_tests/tests/sub_component.rs:list}}
 ```
 
 Then installing the `#[module]` in a parent component. The parent component can be either a regular

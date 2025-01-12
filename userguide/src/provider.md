@@ -49,7 +49,7 @@ especially common when singleton classes need to refer to each other. By using
 `Provider<T>` the cycle can be broken.
 
 ```rust,no_run,noplayground
-{{#include ../../tests/provider_cyclic.rs:cyclic}}
+{{#include ../../integration_tests/tests/provider_cyclic.rs:cyclic}}
 ```
 
 In this example, while instantiating `Bar`, instantiates a `Foo`, `Bar` won't be created

@@ -26,7 +26,7 @@ literal, lockjaw is unable to resolve more complex compile time constants.
 This example binds to `HashMap<String,String>`:
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_map.rs:string_key}}
+{{#include ../../integration_tests/tests/module_provides_into_map.rs:string_key}}
 ```
 
 ### `i32_key`
@@ -37,7 +37,7 @@ resolve more complex compile time constants.
 This example binds to `HashMap<i32,String>`:
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_map.rs:i32_key}}
+{{#include ../../integration_tests/tests/module_provides_into_map.rs:i32_key}}
 ```
 
 Other types are not implemented. `i32` ought to be enough for everyone.
@@ -52,13 +52,13 @@ no fields so Lockjaw knows how to compare them at compile time (meaning comparin
 enough).
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_map.rs:enum}}
+{{#include ../../integration_tests/tests/module_provides_into_map.rs:enum}}
 ```
 
 This example binds to `HashMap<E,String>`:
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_map.rs:enum_key}}
+{{#include ../../integration_tests/tests/module_provides_into_map.rs:enum_key}}
 ```
 
 Lockjaw is able to infer the enum type (`E`) if the value is imported (`use E::Bar`), but the code
@@ -70,7 +70,7 @@ properly inspect tokens inside the metadata.
 `#[into_map]` can also be [`#[qualified]`](qualifiers.md)
 
 ```rust,no_run,noplayground
-{{#include ../../tests/module_provides_into_map.rs:qualified}}
+{{#include ../../integration_tests/tests/module_provides_into_map.rs:qualified}}
 ```
 
 Which result in ` #[qualified(Q)] HashMap<String, String>`. Note that the container is qualified
