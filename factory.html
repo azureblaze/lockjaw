@@ -181,21 +181,38 @@ impl FooFacotory&lt;'_&gt; {
 using <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html"><code>#[factory]</code></a>
 instead
 of <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a></p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_factory.rs:factory}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[injectable]
+impl Foo {
+    #[factory]
+    fn create(#[runtime] i: i32, s: String) -&gt; Self {
+        Self { i, s }
+    }
+}</code></pre>
 <p>Runtime parameters needs to be marked with
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html#runtime"><code>#[runtime]</code></a>
 attribute.</p>
 <p><code>FooFactory</code> will be created by Lockjaw, with a method with the same name as the marked method
 taking only runtime parameters.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_factory.rs:factory_use}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    let foo = component.foo_factory().create(42);</code></pre>
 <h2 id="factory-traits"><a class="header" href="#factory-traits">Factory traits</a></h2>
 <p>The factory can also be instructed to implement a <code>trait</code> by using the
 <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html#implementing"><code>implementing</code> metadata</a>
 .</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_factory_implementing.rs:factory}}</code></pre>
+<pre><code class="language-rust no_run noplayground">pub trait FooCreator {
+    fn create(&amp;self, i: i32) -&gt; Foo;
+}
+
+#[injectable]
+impl Foo {
+    #[factory(implementing: FooCreator)]
+    fn create(#[runtime] i: i32, phrase: String) -&gt; Self {
+        Self { i, phrase }
+    }
+}</code></pre>
 <p>The method name and runtime signature must match the <code>trait</code> method the factory should override.</p>
 <p>This is especially useful to bind the factory to a trait</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_factory_implementing.rs:bind}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[binds]
+    pub fn bind_foo_creator(impl_: FooFactory) -&gt; Cl&lt;dyn FooCreator&gt; {}</code></pre>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
 <p>https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory.rs
 https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory_implementing.rs</p>

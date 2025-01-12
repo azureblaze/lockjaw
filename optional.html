@@ -160,11 +160,12 @@ and detect whether such binding exists.</p>
 <p>In Lockjaw a binding can be declared as optional by using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds_option_of.html">#[binds_option_of]</a>
 method attribute in a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html">#[module]</a></p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_binds_option_of.rs:binds}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[binds_option_of]
+    pub fn binds_option_of_string() -&gt; String {}</code></pre>
 <p>The <code>#[binds_option_of]</code> method should take no parameter and return the type <code>T</code> to bind
 as <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option&lt;T&gt;</code></a>. This does not actually bind
 the <code>T</code>.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_binds_option_of.rs:component}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    fn option_string(&amp;self) -&gt; Option&lt;String&gt;;</code></pre>
 <p>If <code>T</code> is actually bound somewhere else, injecting <code>Option&lt;T&gt;</code> will result in <code>Some(T)</code>. Otherwise
 it will be <code>None</code>.</p>
 

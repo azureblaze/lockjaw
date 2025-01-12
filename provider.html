@@ -191,7 +191,33 @@ situation and refuse to compile your project.</p>
 <p>However sometimes the dependency is only used at runtime, not at object construction. This is
 especially common when singleton classes need to refer to each other. By using
 <code>Provider&lt;T&gt;</code> the cycle can be broken.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/provider_cyclic.rs:cyclic}}</code></pre>
+<pre><code class="language-rust no_run noplayground">struct Foo&lt;'component&gt; {
+    bar_provider: Provider&lt;'component, Box&lt;Bar&lt;'component&gt;&gt;&gt;,
+}
+
+#[injectable]
+impl&lt;'component&gt; Foo&lt;'component&gt; {
+    #[inject]
+    pub fn new(bar: Provider&lt;'component, Box&lt;Bar&lt;'component&gt;&gt;&gt;) -&gt; Foo&lt;'component&gt; {
+        Self { bar_provider: bar }
+    }
+
+    pub fn create_bar(&amp;self) -&gt; Box&lt;Bar&lt;'component&gt;&gt; {
+        self.bar_provider.get()
+    }
+}
+
+struct Bar&lt;'component&gt; {
+    foo: Box&lt;Foo&lt;'component&gt;&gt;,
+}
+
+#[injectable]
+impl&lt;'component&gt; Bar&lt;'component&gt; {
+    #[inject]
+    pub fn new(foo: Box&lt;Foo&lt;'component&gt;&gt;) -&gt; Bar&lt;'component&gt; {
+        Self { foo }
+    }
+}</code></pre>
 <p>In this example, while instantiating <code>Bar</code>, instantiates a <code>Foo</code>, <code>Bar</code> won't be created
 until <code>Foo.create_bar()</code> is called, hence creating either won't trigger a stack overflow.</p>
 <p>Trying to call <code>Provider.get</code> may still lead to a stack overflow, and Lockjaw cannot check this for

@@ -162,7 +162,22 @@ anything to it itself, and clients aren't forced to use the event.</p>
 <p>A <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.multibinds.html"><code>#[multibinds]</code></a>
 method that returns the collection type should be declared in such case, to let Lockjaw know a
 multibinding collection is intended, but it may be empty.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_multibinds.rs:multibinds}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[module]
+impl MyModule {
+    #[multibinds]
+    fn vec_string() -&gt; Vec&lt;String&gt; {}
+
+    #[multibinds]
+    #[qualified(Q)]
+    fn q_vec_string() -&gt; Vec&lt;String&gt; {}
+
+    #[multibinds]
+    fn map_string_string() -&gt; HashMap&lt;String, String&gt; {}
+
+    #[multibinds]
+    #[qualified(Q)]
+    fn q_map_string_string() -&gt; HashMap&lt;String, String&gt; {}
+}</code></pre>
 <p><code>#[multibinds]</code> also serves as documentation on the <code>#[module]</code> specifying it is expecting the
 multibinding.</p>
 

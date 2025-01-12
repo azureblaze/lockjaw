@@ -180,18 +180,48 @@ working with third party libraries.</p>
 <p>Qualifiers are hints for Lockjaw to give a type different tags, so they can be bound separately.</p>
 <p>A qualifier must be declared first using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.qualifier.html"><code>#[qualifier]</code></a> attribute macro.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_qualifier.rs:decl}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[qualifier]
+pub struct Q1;
+</code></pre>
 <p>The struct body does not matter and probably should be empty.</p>
 <p>Once the qualifier is declared, it can then be used in
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.qualified.html"><code>#[qualified]</code></a>
 attribute on a method in a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html"><code>#[module]</code></a>,
 marking the return type as qualified. Lockjaw will treat the bindings as distinct types.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_qualifier.rs:module}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[module]
+impl MyModule {
+    #[provides]
+    pub fn provide_string() -&gt; String {
+        "string".to_owned()
+    }
+
+    #[provides]
+    #[qualified(Q1)]
+    pub fn provide_q1_string() -&gt; String {
+        "q1_string".to_owned()
+    }
+
+    #[provides]
+    #[qualified(Q2)]
+    pub fn provide_q2_string() -&gt; String {
+        "q2_string".to_owned()
+    }
+}</code></pre>
 <p>Qualified types can be injected using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/component_attributes/attr.qualified.html"><code>#[qualified]</code></a>
 attribute on the parameter, or the component method.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_qualifier.rs:component}}</code></pre>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_inject_qualified.rs:qualified}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[component(modules: [MyModule])]
+pub trait MyComponent {
+    fn string(&amp;self) -&gt; String;
+    #[qualified(Q1)]
+    fn q1_string(&amp;self) -&gt; String;
+    #[qualified(Q2)]
+    fn q2_string(&amp;self) -&gt; String;
+}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[inject]
+    pub fn new(#[qualified(Q)] s: String) -&gt; Foo {
+        Foo { s }
+    }</code></pre>
 
                     </main>
 

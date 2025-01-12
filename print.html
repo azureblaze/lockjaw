@@ -854,18 +854,48 @@ working with third party libraries.</p>
 <p>Qualifiers are hints for Lockjaw to give a type different tags, so they can be bound separately.</p>
 <p>A qualifier must be declared first using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.qualifier.html"><code>#[qualifier]</code></a> attribute macro.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_qualifier.rs:decl}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[qualifier]
+pub struct Q1;
+</code></pre>
 <p>The struct body does not matter and probably should be empty.</p>
 <p>Once the qualifier is declared, it can then be used in
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.qualified.html"><code>#[qualified]</code></a>
 attribute on a method in a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html"><code>#[module]</code></a>,
 marking the return type as qualified. Lockjaw will treat the bindings as distinct types.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_qualifier.rs:module}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[module]
+impl MyModule {
+    #[provides]
+    pub fn provide_string() -&gt; String {
+        "string".to_owned()
+    }
+
+    #[provides]
+    #[qualified(Q1)]
+    pub fn provide_q1_string() -&gt; String {
+        "q1_string".to_owned()
+    }
+
+    #[provides]
+    #[qualified(Q2)]
+    pub fn provide_q2_string() -&gt; String {
+        "q2_string".to_owned()
+    }
+}</code></pre>
 <p>Qualified types can be injected using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/component_attributes/attr.qualified.html"><code>#[qualified]</code></a>
 attribute on the parameter, or the component method.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_qualifier.rs:component}}</code></pre>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_inject_qualified.rs:qualified}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[component(modules: [MyModule])]
+pub trait MyComponent {
+    fn string(&amp;self) -&gt; String;
+    #[qualified(Q1)]
+    fn q1_string(&amp;self) -&gt; String;
+    #[qualified(Q2)]
+    fn q2_string(&amp;self) -&gt; String;
+}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[inject]
+    pub fn new(#[qualified(Q)] s: String) -&gt; Foo {
+        Foo { s }
+    }</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="providert"><a class="header" href="#providert"><code>Provider&lt;T&gt;</code></a></h1>
 <p>Normally when injecting a dependency, <em>one</em> instance of the dependency is <em>created before</em> creating
 the depending object. This may not be ideal since the depending object might:</p>
@@ -905,7 +935,33 @@ situation and refuse to compile your project.</p>
 <p>However sometimes the dependency is only used at runtime, not at object construction. This is
 especially common when singleton classes need to refer to each other. By using
 <code>Provider&lt;T&gt;</code> the cycle can be broken.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/provider_cyclic.rs:cyclic}}</code></pre>
+<pre><code class="language-rust no_run noplayground">struct Foo&lt;'component&gt; {
+    bar_provider: Provider&lt;'component, Box&lt;Bar&lt;'component&gt;&gt;&gt;,
+}
+
+#[injectable]
+impl&lt;'component&gt; Foo&lt;'component&gt; {
+    #[inject]
+    pub fn new(bar: Provider&lt;'component, Box&lt;Bar&lt;'component&gt;&gt;&gt;) -&gt; Foo&lt;'component&gt; {
+        Self { bar_provider: bar }
+    }
+
+    pub fn create_bar(&amp;self) -&gt; Box&lt;Bar&lt;'component&gt;&gt; {
+        self.bar_provider.get()
+    }
+}
+
+struct Bar&lt;'component&gt; {
+    foo: Box&lt;Foo&lt;'component&gt;&gt;,
+}
+
+#[injectable]
+impl&lt;'component&gt; Bar&lt;'component&gt; {
+    #[inject]
+    pub fn new(foo: Box&lt;Foo&lt;'component&gt;&gt;) -&gt; Bar&lt;'component&gt; {
+        Self { foo }
+    }
+}</code></pre>
 <p>In this example, while instantiating <code>Bar</code>, instantiates a <code>Foo</code>, <code>Bar</code> won't be created
 until <code>Foo.create_bar()</code> is called, hence creating either won't trigger a stack overflow.</p>
 <p>Trying to call <code>Provider.get</code> may still lead to a stack overflow, and Lockjaw cannot check this for
@@ -947,21 +1003,38 @@ impl FooFacotory&lt;'_&gt; {
 using <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html"><code>#[factory]</code></a>
 instead
 of <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.inject.html"><code>#[inject]</code></a></p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_factory.rs:factory}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[injectable]
+impl Foo {
+    #[factory]
+    fn create(#[runtime] i: i32, s: String) -&gt; Self {
+        Self { i, s }
+    }
+}</code></pre>
 <p>Runtime parameters needs to be marked with
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html#runtime"><code>#[runtime]</code></a>
 attribute.</p>
 <p><code>FooFactory</code> will be created by Lockjaw, with a method with the same name as the marked method
 taking only runtime parameters.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_factory.rs:factory_use}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    let foo = component.foo_factory().create(42);</code></pre>
 <h2 id="factory-traits"><a class="header" href="#factory-traits">Factory traits</a></h2>
 <p>The factory can also be instructed to implement a <code>trait</code> by using the
 <a href="https://docs.rs/lockjaw/latest/lockjaw/injectable_attributes/attr.factory.html#implementing"><code>implementing</code> metadata</a>
 .</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_factory_implementing.rs:factory}}</code></pre>
+<pre><code class="language-rust no_run noplayground">pub trait FooCreator {
+    fn create(&amp;self, i: i32) -&gt; Foo;
+}
+
+#[injectable]
+impl Foo {
+    #[factory(implementing: FooCreator)]
+    fn create(#[runtime] i: i32, phrase: String) -&gt; Self {
+        Self { i, phrase }
+    }
+}</code></pre>
 <p>The method name and runtime signature must match the <code>trait</code> method the factory should override.</p>
 <p>This is especially useful to bind the factory to a trait</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/injectable_factory_implementing.rs:bind}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[binds]
+    pub fn bind_foo_creator(impl_: FooFactory) -&gt; Cl&lt;dyn FooCreator&gt; {}</code></pre>
 <h2 id="examples-1"><a class="header" href="#examples-1">Examples</a></h2>
 <p>https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory.rs
 https://github.com/azureblaze/lockjaw/blob/main/tests/injectable_factory_implementing.rs</p>
@@ -973,11 +1046,12 @@ and detect whether such binding exists.</p>
 <p>In Lockjaw a binding can be declared as optional by using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.binds_option_of.html">#[binds_option_of]</a>
 method attribute in a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html">#[module]</a></p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_binds_option_of.rs:binds}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[binds_option_of]
+    pub fn binds_option_of_string() -&gt; String {}</code></pre>
 <p>The <code>#[binds_option_of]</code> method should take no parameter and return the type <code>T</code> to bind
 as <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option&lt;T&gt;</code></a>. This does not actually bind
 the <code>T</code>.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_binds_option_of.rs:component}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    fn option_string(&amp;self) -&gt; Option&lt;String&gt;;</code></pre>
 <p>If <code>T</code> is actually bound somewhere else, injecting <code>Option&lt;T&gt;</code> will result in <code>Some(T)</code>. Otherwise
 it will be <code>None</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="multibinding"><a class="header" href="#multibinding">Multibinding</a></h1>
@@ -995,21 +1069,46 @@ the <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.into_
 attribute, which means instead of directly binding to <code>T</code>, the binding should be collected into a
 <code>Vec&lt;T&gt;</code>.</p>
 <p>With the bindings:</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_vec.rs:into_vec}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[into_vec]
+    pub fn provide_string1() -&gt; String {
+        "string1".to_owned()
+    }
+
+    #[provides]
+    #[into_vec]
+    pub fn provide_string2() -&gt; String {
+        "string2".to_owned()
+    }</code></pre>
 <p><code>Vec&lt;String&gt;</code> can be injected with the values <code>["string1", "string2"]</code>. This works across all
 modules that are installed.</p>
 <p><code>#[into_vec]</code> can also be <a href="qualifiers.html"><code>#[qualified]</code></a></p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_vec.rs:qualified}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[qualified(Q)]
+    #[into_vec]
+    pub fn provide_q_string1() -&gt; String {
+        "q_string1".to_owned()
+    }</code></pre>
 <p>Which result in <code>#[qualified(Q)] Vec&lt;String&gt;</code>. Note that the container is qualified instead of the
 content.</p>
 <p><code>#[into_vec]</code> also works with <a href="binds.html"><code>#[binds]</code></a></p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_vec.rs:binds}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[binds]
+    #[into_vec]
+    pub fn bind_bar(impl_: crate::Bar) -&gt; Cl&lt;dyn crate::Foo&gt; {}
+
+    #[binds]
+    #[into_vec]
+    pub fn bind_baz(impl_: crate::Baz) -&gt; Cl&lt;dyn crate::Foo&gt; {}</code></pre>
 <p>Which allows <code>Vec&lt;Cl&lt;dyn Foo&gt;&gt;</code> to be injected. This is a common way to implement event callbacks.</p>
 <h2 id="providing-multiple-items"><a class="header" href="#providing-multiple-items">Providing multiple items</a></h2>
 <p>A method marked
 with <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.elements_into_vec.html"><code>#[elements_into_vec]</code></a>
 can return <code>Vec&lt;T&gt;</code>, which will get merged with other <code>#[into_vec]</code> and <code>#[elements_into_vec]</code>.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_vec.rs:elements_into_vec}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[elements_into_vec]
+    pub fn provide_strings() -&gt; Vec&lt;String&gt; {
+        vec!["string3".to_owned(), "string4".to_owned()]
+    }</code></pre>
 <p>This allows multiple bindings to be provided at once. It also allows a binding method to decide not
 to provide anything at runtime, by returning an empty <code>Vec</code>.</p>
 <h2 id="duplication-behaviors"><a class="header" href="#duplication-behaviors">Duplication behaviors</a></h2>
@@ -1044,12 +1143,32 @@ be specified by a metadata in the <code>#[into_map]</code> attribute.</p>
 a <a href="https://doc.rust-lang.org/std/string/struct.String.html"><code>String</code></a>. The value must be a string
 literal, lockjaw is unable to resolve more complex compile time constants.</p>
 <p>This example binds to <code>HashMap&lt;String,String&gt;</code>:</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:string_key}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[into_map(string_key: "1")]
+    pub fn provide_string1() -&gt; String {
+        "string1".to_owned()
+    }
+
+    #[provides]
+    #[into_map(string_key: "2")]
+    pub fn provide_string2() -&gt; String {
+        "string2".to_owned()
+    }</code></pre>
 <h3 id="i32_key"><a class="header" href="#i32_key"><code>i32_key</code></a></h3>
 <p><code>i32_key</code> specifies the map key is an <code>i32</code>. The value must be an i32 literal, lockjaw is unable to
 resolve more complex compile time constants.</p>
 <p>This example binds to <code>HashMap&lt;i32,String&gt;</code>:</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:i32_key}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[into_map(i32_key: 1)]
+    pub fn provide_i32_string1() -&gt; String {
+        "string1".to_owned()
+    }
+
+    #[provides]
+    #[into_map(i32_key: 2)]
+    pub fn provide_i32_string2() -&gt; String {
+        "string2".to_owned()
+    }</code></pre>
 <p>Other types are not implemented. <code>i32</code> ought to be enough for everyone.</p>
 <h3 id="enum_key"><a class="header" href="#enum_key"><code>enum_key</code></a></h3>
 <p><code>i32_key</code> specifies the map key is an <code>enum</code>. Since the <code>enum</code> is going to be used as the map key,
@@ -1058,15 +1177,34 @@ implementing <a href="https://doc.rust-lang.org/std/cmp/trait.Eq.html"><code>Eq<
 and <a href="https://doc.rust-lang.org/std/hash/trait.Hash.html"><code>Hash</code></a>. It also must be a simple enum with
 no fields so Lockjaw knows how to compare them at compile time (meaning comparing the name is
 enough).</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:enum}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[derive(Eq, PartialEq, Hash)]
+pub enum E {
+    Foo,
+    Bar,
+}</code></pre>
 <p>This example binds to <code>HashMap&lt;E,String&gt;</code>:</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:enum_key}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[into_map(enum_key: E::Foo)]
+    pub fn provide_enum_string1() -&gt; String {
+        "string1".to_owned()
+    }
+
+    #[provides]
+    #[into_map(enum_key: Bar)]
+    pub fn provide_enum_string2() -&gt; String {
+        "string2".to_owned()
+    }</code></pre>
 <p>Lockjaw is able to infer the enum type (<code>E</code>) if the value is imported (<code>use E::Bar</code>), but the code
 maybe be more readable if the type is explicitly spelled out, especially most IDEs today cannot
 properly inspect tokens inside the metadata.</p>
 <h2 id="qualifiers-2"><a class="header" href="#qualifiers-2">Qualifiers</a></h2>
 <p><code>#[into_map]</code> can also be <a href="qualifiers.html"><code>#[qualified]</code></a></p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_provides_into_map.rs:qualified}}</code></pre>
+<pre><code class="language-rust no_run noplayground">    #[provides]
+    #[qualified(Q)]
+    #[into_map(string_key: "1")]
+    pub fn provide_q_string1() -&gt; String {
+        "q_string1".to_owned()
+    }</code></pre>
 <p>Which result in <code> #[qualified(Q)] HashMap&lt;String, String&gt;</code>. Note that the container is qualified
 instead of the content.</p>
 <h2 id="dynamic-map-entries"><a class="header" href="#dynamic-map-entries">Dynamic map entries</a></h2>
@@ -1086,7 +1224,22 @@ anything to it itself, and clients aren't forced to use the event.</p>
 <p>A <a href="https://docs.rs/lockjaw/latest/lockjaw/module_attributes/attr.multibinds.html"><code>#[multibinds]</code></a>
 method that returns the collection type should be declared in such case, to let Lockjaw know a
 multibinding collection is intended, but it may be empty.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_multibinds.rs:multibinds}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[module]
+impl MyModule {
+    #[multibinds]
+    fn vec_string() -&gt; Vec&lt;String&gt; {}
+
+    #[multibinds]
+    #[qualified(Q)]
+    fn q_vec_string() -&gt; Vec&lt;String&gt; {}
+
+    #[multibinds]
+    fn map_string_string() -&gt; HashMap&lt;String, String&gt; {}
+
+    #[multibinds]
+    #[qualified(Q)]
+    fn q_map_string_string() -&gt; HashMap&lt;String, String&gt; {}
+}</code></pre>
 <p><code>#[multibinds]</code> also serves as documentation on the <code>#[module]</code> specifying it is expecting the
 multibinding.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="subcomponents"><a class="header" href="#subcomponents">Subcomponents</a></h1>
@@ -1128,7 +1281,8 @@ distinct scoped bindings, modules, but also has access to bindings in its parent
 <p>A <code>#[subcomponent]</code> is installed by first listing it in
 a <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#"><code>#[module]</code></a> using
 the <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html#subcomponents"><code>subcomponents</code> metadata</a></p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/sub_component.rs:list}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[module(subcomponents: [MySubcomponent])]
+impl ParentComponentModule {</code></pre>
 <p>Then installing the <code>#[module]</code> in a parent component. The parent component can be either a regular
 component or another subcomponent.</p>
 <h2 id="creating-a-instance-of-the-subcomponent"><a class="header" href="#creating-a-instance-of-the-subcomponent">Creating a instance of the subcomponent</a></h2>
@@ -1159,18 +1313,6 @@ provides <a href="https://docs.rs/lockjaw/latest/lockjaw/attr.define_component.h
 and<a href="https://docs.rs/lockjaw/latest/lockjaw/attr.define_subcomponent.html"><code>#[define_subcomponent]</code></a>
 which automatically collects modules from the entire build dependency tree, so they no longer need
 to be manually installed.</p>
-<h1 id="root-crate"><a class="header" href="#root-crate">Root crate</a></h1>
-<p>When using <code>#[define_component]</code> the component is not immediately generated, since modules from
-crates depending on the current crate may still want to add to the dependency graph.</p>
-<p>Lockjaw needs to know which crate is the root crate that is not depended on by other crates, which
-is done by passing
-the <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html#root"><code>root</code> identifier</a> to
-the <a href="https://docs.rs/lockjaw/latest/lockjaw/macro.epilogue.html"><code>epilogue!()</code> macro</a></p>
-<pre><code>epilogue!(root);
-</code></pre>
-<p>Typically the root crate is the binary. Libraries can also be the root crate but that is probably
-not a good idea. Lockjaw will fail compilation if a crate using it depends on another crate that is
-a root crate.</p>
 <h2 id="automatically-installing-modules"><a class="header" href="#automatically-installing-modules">Automatically installing modules</a></h2>
 <p><a href="https://docs.rs/lockjaw/latest/lockjaw/attr.module.html"><code>#[modules]</code></a> can be automatically
 installed in a component by using
@@ -1179,7 +1321,18 @@ metadata takes a path to a <code>#[define_component]</code> <code>trait</code>. 
 <a href="https://docs.rs/lockjaw/latest/lockjaw/trait.Singleton.html"><code>Singleton</code></a>, which means it should be
 installed in every <code>#[define_component]</code> but not <code>#[define_subcomponent]</code>.</p>
 <p>Such modules cannot have fields.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/module_install_in.rs:install_in}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[module(install_in: MyComponent)]
+impl MyModule {
+    #[provides]
+    pub fn provide_string() -&gt; String {
+        "string".to_owned()
+    }
+}
+
+#[define_component]
+pub trait MyComponent {
+    fn string(&amp;self) -&gt; String;
+}</code></pre>
 <h2 id="entry-points"><a class="header" href="#entry-points">Entry points</a></h2>
 <p>Ideally a component should only be used at the program's entry point, and rest of the program should
 all use dependency injection, instead of trying to pass the component around. However sometimes
@@ -1195,7 +1348,20 @@ installed, the</p>
 <pre><code class="language-rust no_run noplayground">&lt;dyn FooEntryPoint&gt;::get(component : &amp;dyn FooComponent) -&gt; &amp;dyn FooEntryPoint</code></pre>
 <p>method can be used to cast the opaque component into the entry point, and access the dependency
 graph.</p>
-<pre><code class="language-rust no_run noplayground">{{#include ../../tests/entry_point.rs:entry_point}}</code></pre>
+<pre><code class="language-rust no_run noplayground">#[entry_point(install_in: MyComponent)]
+pub trait MyEntryPoint {
+    fn i(&amp;self) -&gt; i32;
+}
+
+#[define_component]
+pub trait MyComponent {}
+
+#[test]
+pub fn main() {
+    let component: Box&lt;dyn MyComponent&gt; = &lt;dyn MyComponent&gt;::new();
+
+    assert_eq!(&lt;dyn MyEntryPoint&gt;::get(component.as_ref()).i(), 42)
+}</code></pre>
 <h2 id="testing-with-define_component"><a class="header" href="#testing-with-define_component">Testing with <code>#[define_component]</code></a></h2>
 <p>While compiling tests, Lockjaw gathers <code>install_in</code> modules only from the <code>[dev-dependencies]</code>
 section of <code>Cargo.toml</code> instead of the regular <code>[dependencies]</code>, even though <code>[dev-dependencies]</code>
